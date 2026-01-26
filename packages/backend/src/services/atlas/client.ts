@@ -22,6 +22,7 @@ export class AtlasClient {
       baseUrl: config.ATLAS_BASE_URL,
       apiKey: config.ATLAS_API_KEY,
       username: config.ATLAS_USERNAME,
+      password: config.ATLAS_PASSWORD,
       timeout: 30000,
       ...atlasConfig,
     };
@@ -33,12 +34,15 @@ export class AtlasClient {
     }
 
     try {
-      if (this.config.apiKey) {
+      if (this.config.username && this.config.password) {
+        const credentials = `${this.config.username}:${this.config.password}`;
+        this.authToken = Buffer.from(credentials).toString('base64');
+        this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        logger.info('ATLAS authenticated with Basic Auth');
+      } else if (this.config.apiKey) {
         this.authToken = this.config.apiKey;
         this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
         logger.info('ATLAS authenticated with API key');
-      } else if (this.config.username) {
-        logger.warn('Username-based auth not yet implemented, using public access');
       } else {
         logger.info('Using ATLAS public access (no authentication)');
       }
@@ -58,7 +62,11 @@ export class AtlasClient {
   ): Promise<JsonApiDocument<T>> {
     await this.authenticate();
 
-    const url = new URL(path, this.config.baseUrl);
+    const baseUrl = this.config.baseUrl.endsWith('/')
+      ? this.config.baseUrl
+      : `${this.config.baseUrl}/`;
+    const relativePath = path.startsWith('/') ? path.slice(1) : path;
+    const url = new URL(relativePath, baseUrl);
 
     if (options?.params) {
       if (options.params.page) {
@@ -86,8 +94,11 @@ export class AtlasClient {
     };
 
     if (this.authToken) {
-      headers.Authorization = `Bearer ${this.authToken}`;
+      const authScheme = this.config.username && this.config.password ? 'Basic' : 'Bearer';
+      headers.Authorization = `${authScheme} ${this.authToken}`;
     }
+
+    logger.info(`ATLAS API request: ${method} ${url.toString()}`);
 
     try {
       const response = await fetch(url.toString(), {
