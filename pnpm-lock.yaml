@@ -38,6 +38,9 @@ importers:
       '@node-rs/argon2':
         specifier: ^2.0.0
         version: 2.0.2
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
       drizzle-orm:
         specifier: ^1.0.0-beta.12
         version: 1.0.0-beta.9-e89174b(@types/mssql@9.1.9)(mssql@11.0.1)(postgres@3.4.8)
@@ -1364,6 +1367,10 @@ packages:
 
   dlv@1.1.3:
     resolution: {integrity: sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==}
+
+  dotenv@16.6.1:
+    resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
+    engines: {node: '>=12'}
 
   drizzle-kit@1.0.0-beta.9-e89174b:
     resolution: {integrity: sha512-Xrw3k8E2CbSZr+kqe3k5W4oxd2fbEyczjKtyGIkAq0x9Wqpa/VtAT6Mkh83sIzqG4OSN7lOoUafsDxSE/AR7RA==}
@@ -3520,6 +3527,8 @@ snapshots:
   didyoumean@1.2.2: {}
 
   dlv@1.1.3: {}
+
+  dotenv@16.6.1: {}
 
   drizzle-kit@1.0.0-beta.9-e89174b:
     dependencies:

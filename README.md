@@ -37,7 +37,7 @@ cp .env.example .env
 
 ```bash
 # Start PostgreSQL and Redis
-docker-compose up -d postgres redis
+docker-compose up -d db redis
 ```
 
 ### 4. Initialize Database

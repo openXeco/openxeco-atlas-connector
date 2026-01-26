@@ -24,6 +24,7 @@
     "@fastify/cors": "^10.0.2",
     "@fastify/jwt": "^9.0.2",
     "@node-rs/argon2": "^2.0.0",
+    "dotenv": "^16.4.5",
     "drizzle-orm": "^1.0.0-beta.12",
     "fastify": "^5.7.1",
     "postgres": "^3.4.5",
