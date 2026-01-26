@@ -121,6 +121,28 @@ openxeco-atlas-connector/
 | POST | `/api/auth/refresh` | Refresh access token | No |
 | GET | `/api/auth/me` | Get current user | Yes |
 
+### Taxonomies
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/taxonomies/sync` | Sync all taxonomies from ATLAS | Yes |
+| POST | `/api/taxonomies/sync/:type` | Sync specific taxonomy type | Yes |
+| GET | `/api/taxonomies/:type` | Get taxonomies by type | Yes |
+| GET | `/api/taxonomies/id/:id` | Get taxonomy by ID | Yes |
+| GET | `/api/taxonomies/search` | Search taxonomies | Yes |
+
+### Entities (Clusters)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/entities` | List all entities | Yes |
+| GET | `/api/entities/:id` | Get entity by ID | Yes |
+| POST | `/api/entities` | Create new entity | Yes |
+| PATCH | `/api/entities/:id` | Update entity | Yes |
+| DELETE | `/api/entities/:id` | Delete entity | Yes |
+| POST | `/api/entities/:id/sync` | Sync entity to ATLAS | Yes |
+| GET | `/api/entities/:id/versions` | Get entity version history | Yes |
+
 ### Health
 
 | Method | Endpoint | Description |
@@ -128,6 +150,33 @@ openxeco-atlas-connector/
 | GET | `/health` | Health check |
 | GET | `/health/live` | Liveness probe |
 | GET | `/health/ready` | Readiness probe |
+
+## Features
+
+### Phase 1: Foundation ✅
+- Monorepo with pnpm workspaces
+- Docker development environment (PostgreSQL 17, Redis 7)
+- Backend: Fastify 5.7 with TypeScript
+- Frontend: Next.js 16.1 with React 19
+- Database: Drizzle ORM with PostgreSQL
+- Code quality: ESLint, Prettier, TypeScript strict mode
+
+### Phase 2: Authentication ✅
+- JWT-based authentication with refresh tokens
+- Argon2 password hashing
+- Protected routes and middleware
+- Login page with form validation
+- Auth context and hooks
+- Auto token refresh
+
+### Phase 3: ATLAS Integration ✅
+- JSON:API client for ATLAS API
+- Taxonomy sync service (22 taxonomy types)
+- Entity CRUD operations
+- JSON:API transformer for data conversion
+- Entity versioning system
+- Sync status tracking
+- Database indexes for performance
 
 ## License
 
