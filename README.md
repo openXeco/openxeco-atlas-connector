@@ -213,6 +213,98 @@ openxeco-atlas-connector/
 - Comprehensive sync logging for audit trail
 - Sync status flow management (local → pending_push → synced/conflict/failed)
 
+### Phase 7: ATLAS-Compliant Registration ✅
+- Complete ECCC membership registration form field support
+- Structured address fields (country_code, city, street_address, postal_code)
+- Contact person/representative fields (first_name, last_name, email, position, phone)
+- Compliance fields (article_136_compliance, data_sharing_consent)
+- Headquarters and subsidiaries information fields
+- Expertise description with 800 character limit
+- JRC Cybersecurity Taxonomy relationships:
+  - Knowledge domains (thematic areas)
+  - Sectors
+  - Technologies
+  - Use cases
+  - Fields of activity (Article 8(3) expertise)
+- Conditional validation (headquarters, subsidiaries, majority shares)
+- Editorial workflow support (draft, ready_for_publication, to_be_rejected)
+- Complete field mapping to ATLAS JSON:API specification
+- Database migration for all new fields
+- Comprehensive validation with detailed error messages
+
+## ATLAS-Compliant Entity Registration
+
+The connector now fully implements the European Cybersecurity Competence Community (ECCC) membership registration requirements.
+
+### Mandatory Fields
+
+**Basic Information:**
+- Organization name (English) - `name`
+- Organization name (national language) - `nameNational`
+
+**Address (Structured):**
+- Country code (ISO 3166-1 alpha-2) - `countryCode`
+- City - `city`
+- Street address - `streetAddress`
+
+**Organization Details:**
+- General contact email - `email`
+- Website URL - `website`
+
+**Compliance:**
+- Article 138 compliance - `article138Compliance`
+- Data sharing consent - `dataShareConsent`
+
+**Contact Person:**
+- First name - `contactFirstName`
+- Last name - `contactLastName`
+- Email - `contactEmail`
+
+**Expertise:**
+- Expertise description (max 800 chars) - `expertiseDescription`
+
+**Taxonomy:**
+- Organization type - `clusterTypeId`
+- Fields of activity (Article 8(3)) - `fieldsOfActivityIds`
+
+### Example API Request
+
+```json
+{
+  "name": "Example Cybersecurity Org",
+  "nameNational": "Organisation Exemple",
+  "countryCode": "BE",
+  "city": "Brussels",
+  "streetAddress": "Rue de la Loi 123",
+  "email": "contact@example.org",
+  "website": "https://example.org",
+  "article138Compliance": true,
+  "dataShareConsent": true,
+  "contactFirstName": "John",
+  "contactLastName": "Doe",
+  "contactEmail": "john.doe@example.org",
+  "expertiseDescription": "Specialized in threat intelligence",
+  "clusterTypeId": "uuid-of-cluster-type",
+  "fieldsOfActivityIds": ["uuid-1", "uuid-2"]
+}
+```
+
+### Validation Rules
+
+- **Conditional validation**: If `isHeadquarter` is false, `headquarterInfo` is required
+- **Field length limits**: Short text (400 chars), Long text (800 chars)
+- **JRC Taxonomy**: At least one dimension required
+- **Email format**: Valid email addresses only
+- **URL format**: Valid URLs with scheme
+
+### Sync to ATLAS
+
+```bash
+POST /api/sync/entities/:id/push
+```
+
+This validates all mandatory fields, transforms to ATLAS JSON:API format, and creates/updates the cluster in ATLAS.
+
 ## License
 
 BSD-2-Clause license 
