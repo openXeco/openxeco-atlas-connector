@@ -366,22 +366,126 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         const [updated] = await db
           .update(entities)
           .set({
+            // Basic information
             ...(body.name && { name: body.name }),
+            ...(body.nameNational !== undefined && { nameNational: body.nameNational }),
+            ...(body.entityDepartment !== undefined && { entityDepartment: body.entityDepartment }),
             ...(body.description !== undefined && { description: body.description }),
-            ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl }),
-            ...(body.website !== undefined && { website: body.website }),
-            ...(body.address !== undefined && { address: body.address }),
+
+            // Address
+            ...(body.countryCode !== undefined && { countryCode: body.countryCode }),
+            ...(body.city !== undefined && { city: body.city }),
+            ...(body.streetAddress !== undefined && { streetAddress: body.streetAddress }),
+            ...(body.postalCode !== undefined && { postalCode: body.postalCode }),
             ...(body.latitude !== undefined && { latitude: body.latitude.toString() }),
             ...(body.longitude !== undefined && { longitude: body.longitude.toString() }),
+
+            // Organization details
+            ...(body.email !== undefined && { email: body.email }),
+            ...(body.phone !== undefined && { phone: body.phone }),
+            ...(body.website !== undefined && { website: body.website }),
+            ...(body.registrationNumber !== undefined && { registrationNumber: body.registrationNumber }),
+            ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl }),
+
+            // Headquarters
+            ...(body.isHeadquarter !== undefined && { isHeadquarter: body.isHeadquarter }),
+            ...(body.headquarterInfo !== undefined && { headquarterInfo: body.headquarterInfo }),
+
+            // Subsidiaries
+            ...(body.hasSubsidiaries !== undefined && { hasSubsidiaries: body.hasSubsidiaries }),
+            ...(body.subsidiariesDetails !== undefined && { subsidiariesDetails: body.subsidiariesDetails }),
+            ...(body.hasMajorityShares !== undefined && { hasMajorityShares: body.hasMajorityShares }),
+            ...(body.majoritySharesDetails !== undefined && { majoritySharesDetails: body.majoritySharesDetails }),
+
+            // Compliance
+            ...(body.article138Compliance !== undefined && { article138Compliance: body.article138Compliance }),
+            ...(body.dataShareConsent !== undefined && { dataShareConsent: body.dataShareConsent }),
+
+            // Contact person
+            ...(body.contactFirstName !== undefined && { contactFirstName: body.contactFirstName }),
+            ...(body.contactLastName !== undefined && { contactLastName: body.contactLastName }),
+            ...(body.contactEmail !== undefined && { contactEmail: body.contactEmail }),
+            ...(body.contactPosition !== undefined && { contactPosition: body.contactPosition }),
+            ...(body.contactPhone !== undefined && { contactPhone: body.contactPhone }),
+
+            // Expertise
+            ...(body.expertiseDescription !== undefined && { expertiseDescription: body.expertiseDescription }),
+            ...(body.goalsToAchieve !== undefined && { goalsToAchieve: body.goalsToAchieve }),
+            ...(body.goalsToContribute !== undefined && { goalsToContribute: body.goalsToContribute }),
+
+            // Taxonomy references
             ...(body.countryId !== undefined && { countryId: body.countryId }),
             ...(body.clusterTypeId !== undefined && { clusterTypeId: body.clusterTypeId }),
-            ...(body.legalStatusId !== undefined && { legalStatusId: body.legalStatusId }),
             ...(body.organizationTypeId !== undefined && { organizationTypeId: body.organizationTypeId }),
+
+            // Workflow
+            ...(body.moderationState !== undefined && { moderationState: body.moderationState }),
+
             updatedAt: new Date(),
             updatedBy: request.currentUser?.userId,
           })
           .where(eq(entities.id, id))
           .returning();
+
+        if (body.thematicAreaIds) {
+          await db.delete(entityThematicAreas).where(eq(entityThematicAreas.entityId, id));
+          if (body.thematicAreaIds.length > 0) {
+            await db.insert(entityThematicAreas).values(
+              body.thematicAreaIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              }))
+            );
+          }
+        }
+
+        if (body.sectorIds) {
+          await db.delete(entitySectors).where(eq(entitySectors.entityId, id));
+          if (body.sectorIds.length > 0) {
+            await db.insert(entitySectors).values(
+              body.sectorIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              }))
+            );
+          }
+        }
+
+        if (body.technologyIds) {
+          await db.delete(entityTechnologies).where(eq(entityTechnologies.entityId, id));
+          if (body.technologyIds.length > 0) {
+            await db.insert(entityTechnologies).values(
+              body.technologyIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              }))
+            );
+          }
+        }
+
+        if (body.useCaseIds) {
+          await db.delete(entityUseCases).where(eq(entityUseCases.entityId, id));
+          if (body.useCaseIds.length > 0) {
+            await db.insert(entityUseCases).values(
+              body.useCaseIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              }))
+            );
+          }
+        }
+
+        if (body.fieldsOfActivityIds) {
+          await db.delete(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, id));
+          if (body.fieldsOfActivityIds.length > 0) {
+            await db.insert(entityFieldsOfActivity).values(
+              body.fieldsOfActivityIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              }))
+            );
+          }
+        }
 
         const versions = await db
           .select()

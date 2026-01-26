@@ -439,7 +439,6 @@ export class AtlasClient {
       description: resource.attributes.body as string | undefined,
       logoUrl: resource.attributes.field_logo as string | undefined,
       website: resource.attributes.field_website as string | undefined,
-      address: resource.attributes.field_address as string | undefined,
       latitude: resource.attributes.field_latitude as number | undefined,
       longitude: resource.attributes.field_longitude as number | undefined,
       status: resource.attributes.status as string | undefined,
