@@ -40,7 +40,7 @@ export default function TaxonomyDetailPage({
 
     try {
       const response = await apiClient.get<{ data: Taxonomy[] }>(
-        `/taxonomies/${resolvedParams.type}`
+        `/api/taxonomies/${resolvedParams.type}`
       );
       setTaxonomies(response.data);
       setFilteredTaxonomies(response.data);
@@ -56,7 +56,7 @@ export default function TaxonomyDetailPage({
     setError(null);
 
     try {
-      await apiClient.post(`/taxonomies/sync/${resolvedParams.type}`, {});
+      await apiClient.post(`/api/taxonomies/sync/${resolvedParams.type}`, {});
       await loadTaxonomies();
     } catch (err) {
       setError('Failed to sync taxonomy from ATLAS');

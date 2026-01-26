@@ -33,7 +33,7 @@ export default function TaxonomiesPage() {
       for (const taxonomyType of TAXONOMY_TYPES) {
         try {
           const response = await apiClient.get<{ data: unknown[]; meta: { count: number } }>(
-            `/taxonomies/${taxonomyType.type}`
+            `/api/taxonomies/${taxonomyType.type}`
           );
           counts[taxonomyType.type] = response.meta?.count || response.data?.length || 0;
         } catch (err) {
@@ -54,7 +54,7 @@ export default function TaxonomiesPage() {
     setError(null);
     
     try {
-      await apiClient.post('/taxonomies/sync', {});
+      await apiClient.post('/api/taxonomies/sync', {});
       await loadStats();
     } catch (err) {
       setError('Failed to sync taxonomies from ATLAS');
