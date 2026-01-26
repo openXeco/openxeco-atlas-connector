@@ -187,6 +187,19 @@ openxeco-atlas-connector/
 - Real-time term counts per type
 - List and tree view modes
 
+### Phase 5: Entity Management ✅
+- Entity list page with data table (TanStack Table)
+- Column sorting and search functionality
+- Status and sync status badges with color coding
+- Multi-step form wizard for entity creation
+- Entity edit page with pre-filled data
+- Entity detail page with tabbed interface
+- Version history timeline
+- Taxonomy relationship display
+- Sync to ATLAS functionality from UI
+- CRUD operations with proper validation
+- Row actions (view, edit, delete) with dropdown menu
+
 ## License
 
 BSD-2-Clause license 
