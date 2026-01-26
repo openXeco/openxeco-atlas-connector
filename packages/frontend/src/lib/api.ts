@@ -26,10 +26,14 @@ class ApiClient {
       url += `?${searchParams.toString()}`;
     }
 
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+
     const response = await fetch(url, {
       ...fetchOptions,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
         ...fetchOptions.headers,
       },
     });
@@ -68,3 +72,4 @@ class ApiClient {
 }
 
 export const api = new ApiClient(API_BASE_URL);
+export const apiClient = api;

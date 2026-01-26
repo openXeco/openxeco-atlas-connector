@@ -1,7 +1,10 @@
+'use client';
+
 import { Building2, Tags, RefreshCw, AlertCircle } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 const stats = [
   { name: 'Total Entities', value: '0', icon: Building2, color: 'text-blue-600' },
@@ -12,11 +15,12 @@ const stats = [
 
 export default function DashboardPage() {
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex flex-1 flex-col">
-        <Header />
-        <main className="flex-1 overflow-auto bg-muted/30 p-6">
+    <ProtectedRoute>
+      <div className="flex h-screen">
+        <Sidebar />
+        <div className="flex flex-1 flex-col">
+          <Header />
+          <main className="flex-1 overflow-auto bg-muted/30 p-6">
           <div className="mb-8">
             <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
             <p className="text-muted-foreground">
@@ -64,5 +68,6 @@ export default function DashboardPage() {
         </main>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
