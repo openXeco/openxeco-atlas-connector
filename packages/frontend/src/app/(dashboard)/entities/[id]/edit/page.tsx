@@ -26,7 +26,7 @@ export default function EditEntityPage({
     const loadEntity = async () => {
       try {
         const response = await apiClient.get<{ data: Entity }>(
-          `/entities/${resolvedParams.id}`
+          `/api/entities/${resolvedParams.id}`
         );
         setEntity(response.data);
       } catch (err) {
@@ -41,7 +41,7 @@ export default function EditEntityPage({
   const handleSubmit = async (data: EntityFormData) => {
     setError(null);
     try {
-      await apiClient.patch(`/entities/${resolvedParams.id}`, data);
+      await apiClient.patch(`/api/entities/${resolvedParams.id}`, data);
       router.push(`/entities/${resolvedParams.id}`);
     } catch (err) {
       setError('Failed to update entity');

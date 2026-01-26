@@ -36,7 +36,7 @@ export default function EntitiesPage() {
       if (filters.syncStatus) params.append('syncStatus', filters.syncStatus);
 
       const response = await apiClient.get<{ data: Entity[] }>(
-        `/entities?${params.toString()}`
+        `/api/entities?${params.toString()}`
       );
       setEntities(response.data);
     } catch (err) {
@@ -70,7 +70,7 @@ export default function EntitiesPage() {
     if (!confirm('Are you sure you want to delete this entity?')) return;
 
     try {
-      await apiClient.delete(`/entities/${id}`);
+      await apiClient.delete(`/api/entities/${id}`);
       await loadEntities();
     } catch (err) {
       setError('Failed to delete entity');

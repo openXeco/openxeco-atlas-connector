@@ -200,6 +200,19 @@ openxeco-atlas-connector/
 - CRUD operations with proper validation
 - Row actions (view, edit, delete) with dropdown menu
 
+### Phase 6: ATLAS Sync ✅
+- Entity sync service with push/pull operations
+- Conflict detection and resolution logic
+- Diff comparison between local and ATLAS entities
+- Batch sync operations for multiple entities
+- Sync API endpoints (push, pull, diff, resolve, logs, status)
+- Sync status dashboard with real-time statistics
+- Sync history page with filterable logs
+- Conflict resolution UI with visual indicators
+- Sync status widget showing pending/conflict/failed entities
+- Comprehensive sync logging for audit trail
+- Sync status flow management (local → pending_push → synced/conflict/failed)
+
 ## License
 
 BSD-2-Clause license 

@@ -18,7 +18,7 @@ export default function NewEntityPage() {
   const handleSubmit = async (data: EntityFormData) => {
     setError(null);
     try {
-      const response = await apiClient.post<{ data: { id: string } }>('/entities', data);
+      const response = await apiClient.post<{ data: { id: string } }>('/api/entities', data);
       router.push(`/entities/${response.data.id}`);
     } catch (err) {
       setError('Failed to create entity');

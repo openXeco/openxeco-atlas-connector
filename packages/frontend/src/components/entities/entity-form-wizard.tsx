@@ -73,10 +73,10 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
     const loadTaxonomies = async () => {
       try {
         const [countriesRes, typesRes, legalRes, orgRes] = await Promise.all([
-          apiClient.get<{ data: Taxonomy[] }>('/taxonomies/country'),
-          apiClient.get<{ data: Taxonomy[] }>('/taxonomies/cluster_type'),
-          apiClient.get<{ data: Taxonomy[] }>('/taxonomies/legal_status'),
-          apiClient.get<{ data: Taxonomy[] }>('/taxonomies/organization_type'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/country'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_type'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/legal_status'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/organization_type'),
         ]);
         setCountries(countriesRes.data);
         setClusterTypes(typesRes.data);

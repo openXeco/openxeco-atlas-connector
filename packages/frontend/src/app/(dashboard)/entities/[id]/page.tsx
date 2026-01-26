@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Pencil, Trash2, RefreshCw, ExternalLink, MapPin, Globe, Building2, FileText, Clock } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, RefreshCw, ExternalLink, MapPin, Globe, Building2, FileText, Clock, AlertCircle } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -35,7 +35,7 @@ export default function EntityDetailPage({
 
     try {
       const response = await apiClient.get<{ data: Entity }>(
-        `/entities/${resolvedParams.id}`
+        `/api/entities/${resolvedParams.id}`
       );
       setEntity(response.data);
 
@@ -51,7 +51,7 @@ export default function EntityDetailPage({
         for (const taxId of taxIds) {
           try {
             const taxResponse = await apiClient.get<{ data: Taxonomy }>(
-              `/taxonomies/id/${taxId}`
+              `/api/taxonomies/id/${taxId}`
             );
             taxMap[taxId] = taxResponse.data;
           } catch (err) {
@@ -70,7 +70,7 @@ export default function EntityDetailPage({
   const loadVersions = async () => {
     try {
       const response = await apiClient.get<{ data: EntityVersion[] }>(
-        `/entities/${resolvedParams.id}/versions`
+        `/api/entities/${resolvedParams.id}/versions`
       );
       setVersions(response.data);
     } catch (err) {
@@ -91,7 +91,7 @@ export default function EntityDetailPage({
     if (!confirm('Are you sure you want to delete this entity?')) return;
 
     try {
-      await apiClient.delete(`/entities/${resolvedParams.id}`);
+      await apiClient.delete(`/api/entities/${resolvedParams.id}`);
       router.push('/entities');
     } catch (err) {
       setError('Failed to delete entity');
@@ -103,7 +103,7 @@ export default function EntityDetailPage({
     setError(null);
 
     try {
-      await apiClient.post(`/entities/${resolvedParams.id}/sync`, {});
+      await apiClient.post(`/api/entities/${resolvedParams.id}/sync`, {});
       await loadEntity();
     } catch (err) {
       setError('Failed to sync entity to ATLAS');
@@ -210,6 +210,16 @@ export default function EntityDetailPage({
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {entity.syncStatus === 'conflict' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/entities/${resolvedParams.id}/resolve`)}
+                    className="gap-2 border-orange-200 text-orange-700 hover:bg-orange-50"
+                  >
+                    <AlertCircle className="h-4 w-4" />
+                    Resolve Conflict
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={handleSync}
@@ -217,7 +227,7 @@ export default function EntityDetailPage({
                   className="gap-2"
                 >
                   <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-                  {syncing ? 'Syncing...' : 'Sync to ATLAS'}
+                  {syncing ? 'Pushing...' : 'Push to ATLAS'}
                 </Button>
                 <Button variant="outline" onClick={handleEdit} className="gap-2">
                   <Pencil className="h-4 w-4" />
