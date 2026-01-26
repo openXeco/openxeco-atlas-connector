@@ -13,8 +13,8 @@ import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Entities', href: '/entities', icon: Building2 },
   { name: 'Taxonomies', href: '/taxonomies', icon: Tags },
+  { name: 'Entities', href: '/entities', icon: Building2 },
   { name: 'Sync', href: '/sync', icon: RefreshCw },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
