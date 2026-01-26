@@ -9,7 +9,7 @@ const queryClient = postgres(config.DATABASE_URL, {
   connect_timeout: 10,
 });
 
-export const db = drizzle(queryClient, { schema });
+export const db = drizzle(config.DATABASE_URL, { schema });
 
 export async function closeDatabase(): Promise<void> {
   await queryClient.end();
