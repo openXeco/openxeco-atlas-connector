@@ -40,8 +40,11 @@ export const logger = {
     }
   },
 
-  error(message: string, meta?: Record<string, unknown>): void {
+  error(message: string, error?: Error | Record<string, unknown>): void {
     if (shouldLog('error')) {
+      const meta = error instanceof Error 
+        ? { message: error.message, stack: error.stack }
+        : error;
       console.error(formatMessage('error', message, meta));
     }
   },
