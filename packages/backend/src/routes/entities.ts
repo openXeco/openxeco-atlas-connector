@@ -2,26 +2,125 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { eq, desc } from 'drizzle-orm';
 import { db } from '../config/database.js';
-import { entities, entityVersions } from '../db/schema.js';
+import {
+  entities,
+  entityVersions,
+  entityThematicAreas,
+  entitySectors,
+  entityTechnologies,
+  entityUseCases,
+  entityFieldsOfActivity,
+} from '../db/schema.js';
 import { authenticate } from '../middleware/auth.js';
 import { atlasClient } from '../services/atlas/client.js';
 import { jsonApiTransformer } from '../services/atlas/transformer.js';
 
-const createEntitySchema = z.object({
-  name: z.string().min(1).max(500),
+// Base validation schema for ATLAS-compliant entity registration
+const baseEntitySchema = z.object({
+  // Basic information (mandatory)
+  name: z.string().min(1).max(500), // title (English) *
+  nameNational: z.string().min(1).max(400).optional(), // field_institution_name_in_nation *
+  entityDepartment: z.string().max(400).optional(),
   description: z.string().optional(),
-  logoUrl: z.string().url().optional(),
-  website: z.string().url().optional(),
-  address: z.string().optional(),
+  
+  // Address (structured) - mandatory fields
+  countryCode: z.string().length(2).optional(), // field_address.country_code *
+  city: z.string().max(400).optional(), // field_address.locality *
+  streetAddress: z.string().max(400).optional(), // field_address.address_line *
+  postalCode: z.string().max(20).optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  
+  // Organization details (mandatory)
+  email: z.string().email().optional(), // field_general_contact_e_mail *
+  phone: z.string().max(50).optional(),
+  website: z.string().url().optional(), // field_url.uri *
+  registrationNumber: z.string().max(100).optional(),
+  logoUrl: z.string().url().optional(),
+  
+  // Headquarters information
+  isHeadquarter: z.boolean().optional(), // field_question_headquarter *
+  headquarterInfo: z.string().optional(), // required if isHeadquarter is false
+  
+  // Subsidiaries and ownership
+  hasSubsidiaries: z.boolean().optional(), // field_question_subsidiaries *
+  subsidiariesDetails: z.string().optional(), // required if hasSubsidiaries is true
+  hasMajorityShares: z.boolean().optional(), // field_question_majority *
+  majoritySharesDetails: z.string().optional(), // required if hasMajorityShares is true
+  
+  // Compliance (mandatory)
+  article138Compliance: z.boolean().optional(), // field_article_136_compliance *
+  dataShareConsent: z.boolean().optional(), // field_data_sharing_consent *
+  
+  // Contact person / Representative (mandatory)
+  contactFirstName: z.string().max(400).optional(), // field_first_name *
+  contactLastName: z.string().max(400).optional(), // field_family_name *
+  contactEmail: z.string().email().optional(), // field_e_mail *
+  contactPosition: z.string().max(400).optional(),
+  contactPhone: z.string().max(50).optional(),
+  
+  // Expertise (mandatory)
+  expertiseDescription: z.string().max(800).optional(), // field_field_of_activity_descr * (max 800 chars)
+  goalsToAchieve: z.string().max(800).optional(),
+  goalsToContribute: z.string().max(800).optional(),
+  
+  // Taxonomy references
   countryId: z.string().uuid().optional(),
-  clusterTypeId: z.string().uuid().optional(),
-  legalStatusId: z.string().uuid().optional(),
+  clusterTypeId: z.string().uuid().optional(), // field_cluster_type *
   organizationTypeId: z.string().uuid().optional(),
+  
+  // JRC Taxonomy relationships (at least one dimension required)
+  thematicAreaIds: z.array(z.string().uuid()).optional(), // Knowledge domains
+  sectorIds: z.array(z.string().uuid()).optional(),
+  technologyIds: z.array(z.string().uuid()).optional(),
+  useCaseIds: z.array(z.string().uuid()).optional(),
+  fieldsOfActivityIds: z.array(z.string().uuid()).optional(), // Article 8(3) expertise *
+  
+  // Workflow
+  moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
 });
 
-const updateEntitySchema = createEntitySchema.partial();
+// Create schema with conditional validation
+const createEntitySchema = baseEntitySchema.refine(
+  (data) => {
+    // If isHeadquarter is false, headquarterInfo is required
+    if (data.isHeadquarter === false && !data.headquarterInfo) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'Headquarter information is required when organization is not the main headquarter',
+    path: ['headquarterInfo'],
+  }
+).refine(
+  (data) => {
+    // If hasSubsidiaries is true, subsidiariesDetails is required
+    if (data.hasSubsidiaries === true && !data.subsidiariesDetails) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'Subsidiaries details are required when organization has subsidiaries',
+    path: ['subsidiariesDetails'],
+  }
+).refine(
+  (data) => {
+    // If hasMajorityShares is true, majoritySharesDetails is required
+    if (data.hasMajorityShares === true && !data.majoritySharesDetails) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'Majority shares details are required when organization holds majority shares',
+    path: ['majoritySharesDetails'],
+  }
+);
+
+// Update schema (partial of base schema, refinements applied at validation time if needed)
+const updateEntitySchema = baseEntitySchema.partial();
 
 export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get(
@@ -110,23 +209,112 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         const [entity] = await db
           .insert(entities)
           .values({
+            // Basic information
             name: body.name,
+            nameNational: body.nameNational,
+            entityDepartment: body.entityDepartment,
             description: body.description,
-            logoUrl: body.logoUrl,
-            website: body.website,
-            address: body.address,
+            
+            // Address
+            countryCode: body.countryCode,
+            city: body.city,
+            streetAddress: body.streetAddress,
+            postalCode: body.postalCode,
             latitude: body.latitude?.toString(),
             longitude: body.longitude?.toString(),
+            
+            // Organization details
+            email: body.email,
+            phone: body.phone,
+            website: body.website,
+            registrationNumber: body.registrationNumber,
+            logoUrl: body.logoUrl,
+            
+            // Headquarters
+            isHeadquarter: body.isHeadquarter,
+            headquarterInfo: body.headquarterInfo,
+            
+            // Subsidiaries
+            hasSubsidiaries: body.hasSubsidiaries,
+            subsidiariesDetails: body.subsidiariesDetails,
+            hasMajorityShares: body.hasMajorityShares,
+            majoritySharesDetails: body.majoritySharesDetails,
+            
+            // Compliance
+            article138Compliance: body.article138Compliance,
+            dataShareConsent: body.dataShareConsent,
+            
+            // Contact person
+            contactFirstName: body.contactFirstName,
+            contactLastName: body.contactLastName,
+            contactEmail: body.contactEmail,
+            contactPosition: body.contactPosition,
+            contactPhone: body.contactPhone,
+            
+            // Expertise
+            expertiseDescription: body.expertiseDescription,
+            goalsToAchieve: body.goalsToAchieve,
+            goalsToContribute: body.goalsToContribute,
+            
+            // Taxonomy references
             countryId: body.countryId,
             clusterTypeId: body.clusterTypeId,
-            legalStatusId: body.legalStatusId,
             organizationTypeId: body.organizationTypeId,
+            
+            // Workflow
             status: 'draft',
+            moderationState: body.moderationState || 'draft',
             syncStatus: 'local',
             createdBy: request.currentUser?.userId,
             updatedBy: request.currentUser?.userId,
           })
           .returning();
+
+        // Insert JRC Taxonomy relationships
+        if (body.thematicAreaIds && body.thematicAreaIds.length > 0) {
+          await db.insert(entityThematicAreas).values(
+            body.thematicAreaIds.map((taxonomyId) => ({
+              entityId: entity.id,
+              taxonomyId,
+            }))
+          );
+        }
+
+        if (body.sectorIds && body.sectorIds.length > 0) {
+          await db.insert(entitySectors).values(
+            body.sectorIds.map((taxonomyId) => ({
+              entityId: entity.id,
+              taxonomyId,
+            }))
+          );
+        }
+
+        if (body.technologyIds && body.technologyIds.length > 0) {
+          await db.insert(entityTechnologies).values(
+            body.technologyIds.map((taxonomyId) => ({
+              entityId: entity.id,
+              taxonomyId,
+            }))
+          );
+        }
+
+        if (body.useCaseIds && body.useCaseIds.length > 0) {
+          await db.insert(entityUseCases).values(
+            body.useCaseIds.map((taxonomyId) => ({
+              entityId: entity.id,
+              taxonomyId,
+            }))
+          );
+        }
+
+        if (body.fieldsOfActivityIds && body.fieldsOfActivityIds.length > 0) {
+          await db.insert(entityFieldsOfActivity).values(
+            body.fieldsOfActivityIds.map((taxonomyId) => ({
+              entityId: entity.id,
+              taxonomyId,
+            }))
+          );
+        }
 
         await db.insert(entityVersions).values({
           entityId: entity.id,
