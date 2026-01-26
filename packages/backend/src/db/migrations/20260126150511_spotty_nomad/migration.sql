@@ -53,6 +53,33 @@ CREATE TABLE IF NOT EXISTS "entities" (
 	"updated_by" uuid
 );
 --> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "name_national" varchar(400);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "entity_department" varchar(400);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "moderation_state" varchar(50) DEFAULT 'draft';--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "country_code" varchar(2);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "city" varchar(400);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "street_address" varchar(400);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "postal_code" varchar(20);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "email" varchar(255);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "phone" varchar(50);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "registration_number" varchar(100);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "is_headquarter" boolean;--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "headquarter_info" text;--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "has_subsidiaries" boolean;--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "subsidiaries_details" text;--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "has_majority_shares" boolean;--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "majority_shares_details" text;--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "article_138_compliance" boolean;--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "data_share_consent" boolean;--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "contact_first_name" varchar(400);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "contact_last_name" varchar(400);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "contact_email" varchar(255);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "contact_position" varchar(400);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "contact_phone" varchar(50);--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "expertise_description" text;--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "goals_to_achieve" text;--> statement-breakpoint
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "goals_to_contribute" text;--> statement-breakpoint
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "entity_fields_of_activity" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"entity_id" uuid NOT NULL,
