@@ -98,34 +98,135 @@ export interface ClusterAttributes {
 export interface Cluster {
   id: string;
   atlasId: string;
+  
+  // Basic information
   name: string;
+  nameNational?: string;
+  entityDepartment?: string;
   description?: string;
-  logoUrl?: string;
-  website?: string;
-  address?: string;
+  
+  // Address (structured)
+  countryCode?: string;
+  city?: string;
+  streetAddress?: string;
+  postalCode?: string;
   latitude?: number;
   longitude?: number;
-  status?: string;
+  
+  // Organization details
+  email?: string;
+  phone?: string;
+  website?: string;
+  registrationNumber?: string;
+  logoUrl?: string;
+  
+  // Headquarters
+  isHeadquarter?: boolean;
+  headquarterInfo?: string;
+  
+  // Subsidiaries
+  hasSubsidiaries?: boolean;
+  subsidiariesDetails?: string;
+  hasMajorityShares?: boolean;
+  majoritySharesDetails?: string;
+  
+  // Compliance
+  article138Compliance?: boolean;
+  dataShareConsent?: boolean;
+  
+  // Contact person
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPosition?: string;
+  contactPhone?: string;
+  
+  // Expertise
+  expertiseDescription?: string;
+  goalsToAchieve?: string;
+  goalsToContribute?: string;
+  
+  // Taxonomy references
   countryId?: string;
   clusterTypeId?: string;
-  legalStatusId?: string;
   organizationTypeId?: string;
+  
+  // JRC Taxonomy IDs
+  thematicAreaIds?: string[];
+  sectorIds?: string[];
+  technologyIds?: string[];
+  useCaseIds?: string[];
+  fieldsOfActivityIds?: string[];
+  
+  // Workflow
+  status?: string;
+  moderationState?: string;
+  
   metadata?: Record<string, unknown>;
 }
 
 export interface ClusterInput {
+  // Basic information
   name: string;
+  nameNational?: string;
+  entityDepartment?: string;
   description?: string;
-  logoUrl?: string;
-  website?: string;
-  address?: string;
+  
+  // Address (structured)
+  countryCode?: string;
+  city?: string;
+  streetAddress?: string;
+  postalCode?: string;
   latitude?: number;
   longitude?: number;
+  
+  // Organization details
+  email?: string;
+  phone?: string;
+  website?: string;
+  registrationNumber?: string;
+  logoUrl?: string;
+  
+  // Headquarters
+  isHeadquarter?: boolean;
+  headquarterInfo?: string;
+  
+  // Subsidiaries
+  hasSubsidiaries?: boolean;
+  subsidiariesDetails?: string;
+  hasMajorityShares?: boolean;
+  majoritySharesDetails?: string;
+  
+  // Compliance
+  article138Compliance?: boolean;
+  dataShareConsent?: boolean;
+  
+  // Contact person
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPosition?: string;
+  contactPhone?: string;
+  
+  // Expertise
+  expertiseDescription?: string;
+  goalsToAchieve?: string;
+  goalsToContribute?: string;
+  
+  // Taxonomy references
   countryId?: string;
   clusterTypeId?: string;
-  legalStatusId?: string;
   organizationTypeId?: string;
-  taxonomyIds?: string[];
+  
+  // JRC Taxonomy IDs
+  thematicAreaIds?: string[];
+  sectorIds?: string[];
+  technologyIds?: string[];
+  useCaseIds?: string[];
+  fieldsOfActivityIds?: string[];
+  
+  // Workflow
+  moderationState?: string;
 }
 
 export interface AtlasConfig {

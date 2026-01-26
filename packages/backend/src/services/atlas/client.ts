@@ -218,7 +218,6 @@ export class AtlasClient {
       description: resource.attributes.body as string | undefined,
       logoUrl: resource.attributes.field_logo as string | undefined,
       website: resource.attributes.field_website as string | undefined,
-      address: resource.attributes.field_address as string | undefined,
       latitude: resource.attributes.field_latitude as number | undefined,
       longitude: resource.attributes.field_longitude as number | undefined,
       status: resource.attributes.status as string | undefined,
@@ -257,7 +256,6 @@ export class AtlasClient {
       description: resource.attributes.body as string | undefined,
       logoUrl: resource.attributes.field_logo as string | undefined,
       website: resource.attributes.field_website as string | undefined,
-      address: resource.attributes.field_address as string | undefined,
       latitude: resource.attributes.field_latitude as number | undefined,
       longitude: resource.attributes.field_longitude as number | undefined,
       status: resource.attributes.status as string | undefined,
@@ -272,13 +270,57 @@ export class AtlasClient {
       data: {
         type: 'node--cluster',
         attributes: {
-          title: data.name,
+          // Basic information
+          title: data.name, // English name *
+          field_institution_name_in_nation: data.nameNational, // National language name *
+          field_entity_department: data.entityDepartment,
           body: data.description,
-          field_logo: data.logoUrl,
-          field_website: data.website,
-          field_address: data.address,
+          
+          // Address (structured) *
+          field_address: data.countryCode && data.city && data.streetAddress ? {
+            country_code: data.countryCode,
+            locality: data.city,
+            address_line1: data.streetAddress,
+            postal_code: data.postalCode,
+          } : undefined,
           field_latitude: data.latitude,
           field_longitude: data.longitude,
+          
+          // Organization details
+          field_general_contact_e_mail: data.email, // *
+          field_phone_number: data.phone,
+          field_url: data.website ? { uri: data.website } : undefined, // *
+          field_registration_number: data.registrationNumber,
+          field_logo: data.logoUrl,
+          
+          // Headquarters
+          field_question_headquarter: data.isHeadquarter, // *
+          field_headquarter: data.headquarterInfo,
+          
+          // Subsidiaries
+          field_question_subsidiaries: data.hasSubsidiaries, // *
+          field_subsidiaries_eu: data.subsidiariesDetails,
+          field_question_majority: data.hasMajorityShares, // *
+          field_majority_shares_noneu: data.majoritySharesDetails,
+          
+          // Compliance
+          field_article_136_compliance: data.article138Compliance, // *
+          field_data_sharing_consent: data.dataShareConsent, // *
+          
+          // Contact person / Representative
+          field_first_name: data.contactFirstName, // *
+          field_family_name: data.contactLastName, // *
+          field_e_mail: data.contactEmail, // *
+          field_position: data.contactPosition,
+          field_representative_phone_numbe: data.contactPhone,
+          
+          // Expertise
+          field_field_of_activity_descr: data.expertiseDescription, // * (max 800 chars)
+          field_goals_to_achieve: data.goalsToAchieve,
+          field_goals_to_contribute: data.goalsToContribute,
+          
+          // Workflow
+          moderation_state: data.moderationState || 'draft',
         },
         relationships: this.buildRelationships(data),
       },
@@ -303,7 +345,6 @@ export class AtlasClient {
       description: resource.attributes.body as string | undefined,
       logoUrl: resource.attributes.field_logo as string | undefined,
       website: resource.attributes.field_website as string | undefined,
-      address: resource.attributes.field_address as string | undefined,
       latitude: resource.attributes.field_latitude as number | undefined,
       longitude: resource.attributes.field_longitude as number | undefined,
       status: resource.attributes.status as string | undefined,
@@ -314,19 +355,67 @@ export class AtlasClient {
   async updateCluster(id: string, data: Partial<ClusterInput>): Promise<Cluster> {
     logger.info(`Updating cluster: ${id}`);
 
+    const attributes: Record<string, unknown> = {};
+    
+    // Basic information
+    if (data.name) attributes.title = data.name;
+    if (data.nameNational !== undefined) attributes.field_institution_name_in_nation = data.nameNational;
+    if (data.entityDepartment !== undefined) attributes.field_entity_department = data.entityDepartment;
+    if (data.description !== undefined) attributes.body = data.description;
+    
+    // Address (structured)
+    if (data.countryCode || data.city || data.streetAddress || data.postalCode) {
+      attributes.field_address = {
+        ...(data.countryCode && { country_code: data.countryCode }),
+        ...(data.city && { locality: data.city }),
+        ...(data.streetAddress && { address_line1: data.streetAddress }),
+        ...(data.postalCode && { postal_code: data.postalCode }),
+      };
+    }
+    if (data.latitude !== undefined) attributes.field_latitude = data.latitude;
+    if (data.longitude !== undefined) attributes.field_longitude = data.longitude;
+    
+    // Organization details
+    if (data.email !== undefined) attributes.field_general_contact_e_mail = data.email;
+    if (data.phone !== undefined) attributes.field_phone_number = data.phone;
+    if (data.website !== undefined) attributes.field_url = { uri: data.website };
+    if (data.registrationNumber !== undefined) attributes.field_registration_number = data.registrationNumber;
+    if (data.logoUrl !== undefined) attributes.field_logo = data.logoUrl;
+    
+    // Headquarters
+    if (data.isHeadquarter !== undefined) attributes.field_question_headquarter = data.isHeadquarter;
+    if (data.headquarterInfo !== undefined) attributes.field_headquarter = data.headquarterInfo;
+    
+    // Subsidiaries
+    if (data.hasSubsidiaries !== undefined) attributes.field_question_subsidiaries = data.hasSubsidiaries;
+    if (data.subsidiariesDetails !== undefined) attributes.field_subsidiaries_eu = data.subsidiariesDetails;
+    if (data.hasMajorityShares !== undefined) attributes.field_question_majority = data.hasMajorityShares;
+    if (data.majoritySharesDetails !== undefined) attributes.field_majority_shares_noneu = data.majoritySharesDetails;
+    
+    // Compliance
+    if (data.article138Compliance !== undefined) attributes.field_article_136_compliance = data.article138Compliance;
+    if (data.dataShareConsent !== undefined) attributes.field_data_sharing_consent = data.dataShareConsent;
+    
+    // Contact person
+    if (data.contactFirstName !== undefined) attributes.field_first_name = data.contactFirstName;
+    if (data.contactLastName !== undefined) attributes.field_family_name = data.contactLastName;
+    if (data.contactEmail !== undefined) attributes.field_e_mail = data.contactEmail;
+    if (data.contactPosition !== undefined) attributes.field_position = data.contactPosition;
+    if (data.contactPhone !== undefined) attributes.field_representative_phone_numbe = data.contactPhone;
+    
+    // Expertise
+    if (data.expertiseDescription !== undefined) attributes.field_field_of_activity_descr = data.expertiseDescription;
+    if (data.goalsToAchieve !== undefined) attributes.field_goals_to_achieve = data.goalsToAchieve;
+    if (data.goalsToContribute !== undefined) attributes.field_goals_to_contribute = data.goalsToContribute;
+    
+    // Workflow
+    if (data.moderationState !== undefined) attributes.moderation_state = data.moderationState;
+
     const body = {
       data: {
         type: 'node--cluster',
         id,
-        attributes: {
-          ...(data.name && { title: data.name }),
-          ...(data.description && { body: data.description }),
-          ...(data.logoUrl && { field_logo: data.logoUrl }),
-          ...(data.website && { field_website: data.website }),
-          ...(data.address && { field_address: data.address }),
-          ...(data.latitude && { field_latitude: data.latitude }),
-          ...(data.longitude && { field_longitude: data.longitude }),
-        },
+        attributes,
         relationships: this.buildRelationships(data),
       },
     };
@@ -361,34 +450,72 @@ export class AtlasClient {
   private buildRelationships(data: Partial<ClusterInput>): Record<string, unknown> {
     const relationships: Record<string, unknown> = {};
 
+    // Country reference
     if (data.countryId) {
       relationships.field_country = {
         data: { type: 'taxonomy_term--country', id: data.countryId },
       };
     }
 
+    // Organization type (cluster_type) *
     if (data.clusterTypeId) {
       relationships.field_cluster_type = {
         data: { type: 'taxonomy_term--cluster_type', id: data.clusterTypeId },
       };
     }
 
-    if (data.legalStatusId) {
-      relationships.field_legal_status = {
-        data: { type: 'taxonomy_term--legal_status', id: data.legalStatusId },
-      };
-    }
-
+    // Organization type taxonomy
     if (data.organizationTypeId) {
       relationships.field_organization_type = {
         data: { type: 'taxonomy_term--organization_type', id: data.organizationTypeId },
       };
     }
 
-    if (data.taxonomyIds && data.taxonomyIds.length > 0) {
-      relationships.field_taxonomies = {
-        data: data.taxonomyIds.map((id) => ({
-          type: 'taxonomy_term',
+    // JRC Cybersecurity Taxonomy - Knowledge domains (thematic areas)
+    if (data.thematicAreaIds && data.thematicAreaIds.length > 0) {
+      relationships.field_cluster_thematic_area = {
+        data: data.thematicAreaIds.map((id: string) => ({
+          type: 'taxonomy_term--cluster_thematic_area',
+          id,
+        })),
+      };
+    }
+
+    // JRC Cybersecurity Taxonomy - Sectors
+    if (data.sectorIds && data.sectorIds.length > 0) {
+      relationships.field_sectors = {
+        data: data.sectorIds.map((id: string) => ({
+          type: 'taxonomy_term--sectors',
+          id,
+        })),
+      };
+    }
+
+    // JRC Cybersecurity Taxonomy - Technologies
+    if (data.technologyIds && data.technologyIds.length > 0) {
+      relationships.field_technologies = {
+        data: data.technologyIds.map((id: string) => ({
+          type: 'taxonomy_term--technologies',
+          id,
+        })),
+      };
+    }
+
+    // JRC Cybersecurity Taxonomy - Use cases
+    if (data.useCaseIds && data.useCaseIds.length > 0) {
+      relationships.field_use_cases = {
+        data: data.useCaseIds.map((id: string) => ({
+          type: 'taxonomy_term--use_cases',
+          id,
+        })),
+      };
+    }
+
+    // Article 8(3) expertise (fields of activity) *
+    if (data.fieldsOfActivityIds && data.fieldsOfActivityIds.length > 0) {
+      relationships.field_field_of_activity = {
+        data: data.fieldsOfActivityIds.map((id: string) => ({
+          type: 'taxonomy_term--fields_of_activity',
           id,
         })),
       };
