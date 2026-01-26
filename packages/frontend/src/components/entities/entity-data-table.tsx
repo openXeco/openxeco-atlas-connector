@@ -43,8 +43,10 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case 'published':
       return 'bg-green-500/10 text-green-700 hover:bg-green-500/20';
-    case 'pending':
+    case 'ready_for_publication':
       return 'bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20';
+    case 'to_be_rejected':
+      return 'bg-orange-500/10 text-orange-700 hover:bg-orange-500/20';
     case 'draft':
       return 'bg-gray-500/10 text-gray-700 hover:bg-gray-500/20';
     case 'rejected':

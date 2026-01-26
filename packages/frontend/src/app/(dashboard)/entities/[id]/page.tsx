@@ -42,7 +42,6 @@ export default function EntityDetailPage({
       const taxIds = [
         response.data.countryId,
         response.data.clusterTypeId,
-        response.data.legalStatusId,
         response.data.organizationTypeId,
       ].filter(Boolean) as string[];
 
@@ -153,8 +152,10 @@ export default function EntityDetailPage({
     switch (status) {
       case 'published':
         return 'bg-green-500/10 text-green-700';
-      case 'pending':
+      case 'ready_for_publication':
         return 'bg-yellow-500/10 text-yellow-700';
+      case 'to_be_rejected':
+        return 'bg-orange-500/10 text-orange-700';
       case 'draft':
         return 'bg-gray-500/10 text-gray-700';
       case 'rejected':
@@ -265,6 +266,22 @@ export default function EntityDetailPage({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {entity.nameNational && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                          Name (National Language)
+                        </h4>
+                        <p className="text-sm">{entity.nameNational}</p>
+                      </div>
+                    )}
+                    {entity.entityDepartment && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                          Department
+                        </h4>
+                        <p className="text-sm">{entity.entityDepartment}</p>
+                      </div>
+                    )}
                     {entity.description && (
                       <div>
                         <h4 className="mb-2 text-sm font-medium text-muted-foreground">
@@ -290,6 +307,30 @@ export default function EntityDetailPage({
                         </a>
                       </div>
                     )}
+                    {entity.email && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                          Organization Email
+                        </h4>
+                        <p className="text-sm">{entity.email}</p>
+                      </div>
+                    )}
+                    {entity.phone && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                          Organization Phone
+                        </h4>
+                        <p className="text-sm">{entity.phone}</p>
+                      </div>
+                    )}
+                    {entity.registrationNumber && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                          Registration Number
+                        </h4>
+                        <p className="text-sm">{entity.registrationNumber}</p>
+                      </div>
+                    )}
                     {entity.logoUrl && (
                       <div>
                         <h4 className="mb-2 text-sm font-medium text-muted-foreground">
@@ -300,6 +341,53 @@ export default function EntityDetailPage({
                           alt={entity.name}
                           className="h-16 w-16 rounded-md border object-contain"
                         />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Contact & Compliance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {(entity.contactFirstName || entity.contactLastName) && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                          Contact Person
+                        </h4>
+                        <p className="text-sm">
+                          {[entity.contactFirstName, entity.contactLastName]
+                            .filter(Boolean)
+                            .join(' ')}
+                        </p>
+                        {entity.contactEmail && (
+                          <p className="text-sm text-muted-foreground">{entity.contactEmail}</p>
+                        )}
+                      </div>
+                    )}
+                    {(entity.article138Compliance !== null || entity.dataShareConsent !== null) && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                          Compliance
+                        </h4>
+                        <p className="text-sm">
+                          Article 138 Compliance: {entity.article138Compliance ? 'Yes' : 'No'}
+                        </p>
+                        <p className="text-sm">
+                          Data Sharing Consent: {entity.dataShareConsent ? 'Yes' : 'No'}
+                        </p>
+                      </div>
+                    )}
+                    {entity.expertiseDescription && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                          Expertise Description
+                        </h4>
+                        <p className="text-sm">{entity.expertiseDescription}</p>
                       </div>
                     )}
                   </CardContent>
@@ -321,12 +409,17 @@ export default function EntityDetailPage({
                         <p className="text-sm">{taxonomies[entity.countryId].name}</p>
                       </div>
                     )}
-                    {entity.address && (
+                    {(entity.streetAddress || entity.city || entity.postalCode || entity.countryCode) && (
                       <div>
                         <h4 className="mb-2 text-sm font-medium text-muted-foreground">
                           Address
                         </h4>
-                        <p className="text-sm">{entity.address}</p>
+                        <p className="text-sm">
+                          {[entity.streetAddress, entity.postalCode, entity.city]
+                            .filter(Boolean)
+                            .join(', ')}
+                          {entity.countryCode ? ` (${entity.countryCode})` : ''}
+                        </p>
                       </div>
                     )}
                     {entity.latitude && entity.longitude && (
@@ -356,14 +449,6 @@ export default function EntityDetailPage({
                           Cluster Type
                         </h4>
                         <p className="text-sm">{taxonomies[entity.clusterTypeId].name}</p>
-                      </div>
-                    )}
-                    {entity.legalStatusId && taxonomies[entity.legalStatusId] && (
-                      <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Legal Status
-                        </h4>
-                        <p className="text-sm">{taxonomies[entity.legalStatusId].name}</p>
                       </div>
                     )}
                     {entity.organizationTypeId && taxonomies[entity.organizationTypeId] && (
