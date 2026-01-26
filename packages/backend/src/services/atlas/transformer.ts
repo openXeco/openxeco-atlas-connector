@@ -33,15 +33,6 @@ export class JsonApiTransformer {
       };
     }
 
-    if (entity.legalStatusId) {
-      relationships.field_legal_status = {
-        data: {
-          type: 'taxonomy_term--legal_status',
-          id: entity.legalStatusId,
-        },
-      };
-    }
-
     if (entity.organizationTypeId) {
       relationships.field_organization_type = {
         data: {
@@ -68,7 +59,6 @@ export class JsonApiTransformer {
         body: entity.description || '',
         field_logo: entity.logoUrl,
         field_website: entity.website,
-        field_address: entity.address,
         field_latitude: entity.latitude ? parseFloat(entity.latitude) : undefined,
         field_longitude: entity.longitude ? parseFloat(entity.longitude) : undefined,
         status: entity.status,
@@ -96,7 +86,6 @@ export class JsonApiTransformer {
       description: attrs.body as string | undefined,
       logoUrl: attrs.field_logo as string | undefined,
       website: attrs.field_website as string | undefined,
-      address: attrs.field_address as string | undefined,
       latitude: attrs.field_latitude as number | undefined,
       longitude: attrs.field_longitude as number | undefined,
       status: attrs.status as string | undefined,
@@ -112,10 +101,6 @@ export class JsonApiTransformer {
 
       if (rels.field_cluster_type?.data && !Array.isArray(rels.field_cluster_type.data)) {
         cluster.clusterTypeId = rels.field_cluster_type.data.id;
-      }
-
-      if (rels.field_legal_status?.data && !Array.isArray(rels.field_legal_status.data)) {
-        cluster.legalStatusId = rels.field_legal_status.data.id;
       }
 
       if (rels.field_organization_type?.data && !Array.isArray(rels.field_organization_type.data)) {
@@ -141,19 +126,64 @@ export class JsonApiTransformer {
   toEntityFromCluster(cluster: Cluster, userId?: string): Partial<Entity> {
     return {
       atlasId: cluster.atlasId,
+      
+      // Basic information
       name: cluster.name,
+      nameNational: cluster.nameNational,
+      entityDepartment: cluster.entityDepartment,
       description: cluster.description,
-      status: cluster.status || 'draft',
-      syncStatus: 'synced',
-      countryId: cluster.countryId,
-      clusterTypeId: cluster.clusterTypeId,
-      legalStatusId: cluster.legalStatusId,
-      organizationTypeId: cluster.organizationTypeId,
-      logoUrl: cluster.logoUrl,
-      website: cluster.website,
-      address: cluster.address,
+      
+      // Address (structured)
+      countryCode: cluster.countryCode,
+      city: cluster.city,
+      streetAddress: cluster.streetAddress,
+      postalCode: cluster.postalCode,
       latitude: cluster.latitude?.toString(),
       longitude: cluster.longitude?.toString(),
+      
+      // Organization details
+      email: cluster.email,
+      phone: cluster.phone,
+      website: cluster.website,
+      registrationNumber: cluster.registrationNumber,
+      logoUrl: cluster.logoUrl,
+      
+      // Headquarters
+      isHeadquarter: cluster.isHeadquarter,
+      headquarterInfo: cluster.headquarterInfo,
+      
+      // Subsidiaries
+      hasSubsidiaries: cluster.hasSubsidiaries,
+      subsidiariesDetails: cluster.subsidiariesDetails,
+      hasMajorityShares: cluster.hasMajorityShares,
+      majoritySharesDetails: cluster.majoritySharesDetails,
+      
+      // Compliance
+      article138Compliance: cluster.article138Compliance,
+      dataShareConsent: cluster.dataShareConsent,
+      
+      // Contact person
+      contactFirstName: cluster.contactFirstName,
+      contactLastName: cluster.contactLastName,
+      contactEmail: cluster.contactEmail,
+      contactPosition: cluster.contactPosition,
+      contactPhone: cluster.contactPhone,
+      
+      // Expertise
+      expertiseDescription: cluster.expertiseDescription,
+      goalsToAchieve: cluster.goalsToAchieve,
+      goalsToContribute: cluster.goalsToContribute,
+      
+      // Taxonomy references
+      countryId: cluster.countryId,
+      clusterTypeId: cluster.clusterTypeId,
+      organizationTypeId: cluster.organizationTypeId,
+      
+      // Workflow
+      status: cluster.status || 'draft',
+      moderationState: cluster.moderationState || 'draft',
+      syncStatus: 'synced',
+      
       metadata: cluster.metadata,
       lastSyncedAt: new Date(),
       updatedBy: userId,
@@ -162,17 +192,60 @@ export class JsonApiTransformer {
 
   toClusterInputFromEntity(entity: Entity): ClusterInput {
     return {
+      // Basic information
       name: entity.name,
+      nameNational: entity.nameNational || undefined,
+      entityDepartment: entity.entityDepartment || undefined,
       description: entity.description || undefined,
-      logoUrl: entity.logoUrl || undefined,
-      website: entity.website || undefined,
-      address: entity.address || undefined,
+      
+      // Address (structured)
+      countryCode: entity.countryCode || undefined,
+      city: entity.city || undefined,
+      streetAddress: entity.streetAddress || undefined,
+      postalCode: entity.postalCode || undefined,
       latitude: entity.latitude ? parseFloat(entity.latitude) : undefined,
       longitude: entity.longitude ? parseFloat(entity.longitude) : undefined,
+      
+      // Organization details
+      email: entity.email || undefined,
+      phone: entity.phone || undefined,
+      website: entity.website || undefined,
+      registrationNumber: entity.registrationNumber || undefined,
+      logoUrl: entity.logoUrl || undefined,
+      
+      // Headquarters
+      isHeadquarter: entity.isHeadquarter ?? undefined,
+      headquarterInfo: entity.headquarterInfo || undefined,
+      
+      // Subsidiaries
+      hasSubsidiaries: entity.hasSubsidiaries ?? undefined,
+      subsidiariesDetails: entity.subsidiariesDetails || undefined,
+      hasMajorityShares: entity.hasMajorityShares ?? undefined,
+      majoritySharesDetails: entity.majoritySharesDetails || undefined,
+      
+      // Compliance
+      article138Compliance: entity.article138Compliance ?? undefined,
+      dataShareConsent: entity.dataShareConsent ?? undefined,
+      
+      // Contact person
+      contactFirstName: entity.contactFirstName || undefined,
+      contactLastName: entity.contactLastName || undefined,
+      contactEmail: entity.contactEmail || undefined,
+      contactPosition: entity.contactPosition || undefined,
+      contactPhone: entity.contactPhone || undefined,
+      
+      // Expertise
+      expertiseDescription: entity.expertiseDescription || undefined,
+      goalsToAchieve: entity.goalsToAchieve || undefined,
+      goalsToContribute: entity.goalsToContribute || undefined,
+      
+      // Taxonomy references
       countryId: entity.countryId || undefined,
       clusterTypeId: entity.clusterTypeId || undefined,
-      legalStatusId: entity.legalStatusId || undefined,
       organizationTypeId: entity.organizationTypeId || undefined,
+      
+      // Workflow
+      moderationState: entity.moderationState || undefined,
     };
   }
 
