@@ -127,35 +127,151 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"updated_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_atlas_id_idx" ON "entities" ("atlas_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_status_idx" ON "entities" ("status");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_moderation_state_idx" ON "entities" ("moderation_state");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_sync_status_idx" ON "entities" ("sync_status");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_country_code_idx" ON "entities" ("country_code");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_created_by_idx" ON "entities" ("created_by");--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "entity_field_of_activity_unique_idx" ON "entity_fields_of_activity" ("entity_id","taxonomy_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_field_of_activity_entity_id_idx" ON "entity_fields_of_activity" ("entity_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_field_of_activity_taxonomy_id_idx" ON "entity_fields_of_activity" ("taxonomy_id");--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "entity_sector_unique_idx" ON "entity_sectors" ("entity_id","taxonomy_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_sector_entity_id_idx" ON "entity_sectors" ("entity_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_sector_taxonomy_id_idx" ON "entity_sectors" ("taxonomy_id");--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "entity_technology_unique_idx" ON "entity_technologies" ("entity_id","taxonomy_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_technology_entity_id_idx" ON "entity_technologies" ("entity_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_technology_taxonomy_id_idx" ON "entity_technologies" ("taxonomy_id");--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "entity_thematic_area_unique_idx" ON "entity_thematic_areas" ("entity_id","taxonomy_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_thematic_area_entity_id_idx" ON "entity_thematic_areas" ("entity_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_thematic_area_taxonomy_id_idx" ON "entity_thematic_areas" ("taxonomy_id");--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "entity_use_case_unique_idx" ON "entity_use_cases" ("entity_id","taxonomy_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_use_case_entity_id_idx" ON "entity_use_cases" ("entity_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_use_case_taxonomy_id_idx" ON "entity_use_cases" ("taxonomy_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_version_entity_id_idx" ON "entity_versions" ("entity_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "entity_version_created_at_idx" ON "entity_versions" ("created_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "sync_log_entity_type_idx" ON "sync_logs" ("entity_type");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "sync_log_status_idx" ON "sync_logs" ("status");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "sync_log_created_at_idx" ON "sync_logs" ("created_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "taxonomy_type_idx" ON "taxonomies" ("taxonomy_type");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "taxonomy_atlas_id_idx" ON "taxonomies" ("atlas_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "taxonomy_parent_id_idx" ON "taxonomies" ("parent_id");--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_atlas_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_atlas_id_idx ON entities (atlas_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_status_idx') THEN
+    EXECUTE 'CREATE INDEX entity_status_idx ON entities (status)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_moderation_state_idx') THEN
+    EXECUTE 'CREATE INDEX entity_moderation_state_idx ON entities (moderation_state)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_sync_status_idx') THEN
+    EXECUTE 'CREATE INDEX entity_sync_status_idx ON entities (sync_status)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_country_code_idx') THEN
+    EXECUTE 'CREATE INDEX entity_country_code_idx ON entities (country_code)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_created_by_idx') THEN
+    EXECUTE 'CREATE INDEX entity_created_by_idx ON entities (created_by)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_field_of_activity_unique_idx') THEN
+    EXECUTE 'CREATE UNIQUE INDEX entity_field_of_activity_unique_idx ON entity_fields_of_activity (entity_id, taxonomy_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_field_of_activity_entity_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_field_of_activity_entity_id_idx ON entity_fields_of_activity (entity_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_field_of_activity_taxonomy_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_field_of_activity_taxonomy_id_idx ON entity_fields_of_activity (taxonomy_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_sector_unique_idx') THEN
+    EXECUTE 'CREATE UNIQUE INDEX entity_sector_unique_idx ON entity_sectors (entity_id, taxonomy_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_sector_entity_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_sector_entity_id_idx ON entity_sectors (entity_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_sector_taxonomy_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_sector_taxonomy_id_idx ON entity_sectors (taxonomy_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_technology_unique_idx') THEN
+    EXECUTE 'CREATE UNIQUE INDEX entity_technology_unique_idx ON entity_technologies (entity_id, taxonomy_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_technology_entity_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_technology_entity_id_idx ON entity_technologies (entity_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_technology_taxonomy_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_technology_taxonomy_id_idx ON entity_technologies (taxonomy_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_thematic_area_unique_idx') THEN
+    EXECUTE 'CREATE UNIQUE INDEX entity_thematic_area_unique_idx ON entity_thematic_areas (entity_id, taxonomy_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_thematic_area_entity_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_thematic_area_entity_id_idx ON entity_thematic_areas (entity_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_thematic_area_taxonomy_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_thematic_area_taxonomy_id_idx ON entity_thematic_areas (taxonomy_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_use_case_unique_idx') THEN
+    EXECUTE 'CREATE UNIQUE INDEX entity_use_case_unique_idx ON entity_use_cases (entity_id, taxonomy_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_use_case_entity_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_use_case_entity_id_idx ON entity_use_cases (entity_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_use_case_taxonomy_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_use_case_taxonomy_id_idx ON entity_use_cases (taxonomy_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_version_entity_id_idx') THEN
+    EXECUTE 'CREATE INDEX entity_version_entity_id_idx ON entity_versions (entity_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'entity_version_created_at_idx') THEN
+    EXECUTE 'CREATE INDEX entity_version_created_at_idx ON entity_versions (created_at)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'sync_log_entity_type_idx') THEN
+    EXECUTE 'CREATE INDEX sync_log_entity_type_idx ON sync_logs (entity_type)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'sync_log_status_idx') THEN
+    EXECUTE 'CREATE INDEX sync_log_status_idx ON sync_logs (status)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'sync_log_created_at_idx') THEN
+    EXECUTE 'CREATE INDEX sync_log_created_at_idx ON sync_logs (created_at)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'taxonomy_type_idx') THEN
+    EXECUTE 'CREATE INDEX taxonomy_type_idx ON taxonomies (taxonomy_type)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'taxonomy_atlas_id_idx') THEN
+    EXECUTE 'CREATE INDEX taxonomy_atlas_id_idx ON taxonomies (atlas_id)';
+  END IF;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'taxonomy_parent_id_idx') THEN
+    EXECUTE 'CREATE INDEX taxonomy_parent_id_idx ON taxonomies (parent_id)';
+  END IF;
+END $$;--> statement-breakpoint
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'entities_country_id_taxonomies_id_fkey') THEN
     ALTER TABLE "entities" ADD CONSTRAINT "entities_country_id_taxonomies_id_fkey" FOREIGN KEY ("country_id") REFERENCES "taxonomies"("id");
