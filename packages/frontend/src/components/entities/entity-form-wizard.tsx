@@ -28,7 +28,8 @@ const entitySchema = z.object({
   nameNational: z.string().min(1, 'National name is required').max(400),
   name: z.string().min(1, 'Name is required').max(500),
   entityDepartment: z.string().max(400).optional(),
-  countryCode: z.string().length(2, 'Use ISO-3166 alpha-2 code'),
+  countryId: z.string().uuid('Select a country'),
+  countryCode: z.string().length(2, 'Use ISO-3166 alpha-2 code').optional(),
   streetAddress: z.string().min(1, 'Street address is required').max(400),
   city: z.string().min(1, 'City is required').max(400),
   postalCode: z.string().max(20).optional(),
@@ -279,24 +280,32 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="countryCode">Country *</Label>
+                  <Label htmlFor="countryId">Country *</Label>
                   <Select
-                    value={formData.countryCode}
-                    onValueChange={(value: string) => setValue('countryCode', value)}
+                    value={formData.countryId}
+                    onValueChange={(value: string) => {
+                      setValue('countryId', value);
+                      // Extract 2-letter country code from country name for countryCode field
+                      const selectedCountry = countries.find(c => c.id === value);
+                      if (selectedCountry) {
+                        // Use first 2 letters of name as fallback (will need proper mapping in production)
+                        setValue('countryCode', selectedCountry.name.substring(0, 2).toUpperCase());
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a country" />
                     </SelectTrigger>
                     <SelectContent>
                       {countries.map((country) => (
-                        <SelectItem key={country.id} value={country.name.substring(0, 2).toUpperCase()}>
+                        <SelectItem key={country.id} value={country.id}>
                           {country.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.countryCode && (
-                    <p className="text-sm text-destructive">{errors.countryCode.message}</p>
+                  {errors.countryId && (
+                    <p className="text-sm text-destructive">{errors.countryId.message}</p>
                   )}
                 </div>
 
@@ -697,7 +706,8 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                         <span className="font-medium">National Name:</span> {formData.nameNational}
                       </div>
                       <div>
-                        <span className="font-medium">Country:</span> {formData.countryCode}
+                        <span className="font-medium">Country:</span>{' '}
+                        {countries.find((c) => c.id === formData.countryId)?.name || formData.countryCode}
                       </div>
                       <div>
                         <span className="font-medium">City:</span> {formData.city}
