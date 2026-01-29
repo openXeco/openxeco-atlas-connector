@@ -45,3 +45,5 @@ coverage/
 # Misc
 *.local
 .turbo/
+
+CLAUDE.md

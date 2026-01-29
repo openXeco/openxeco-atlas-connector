@@ -17,49 +17,68 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { ConsentCheckbox } from '@/components/entities/consent-checkbox';
 import { apiClient } from '@/lib/api';
 import type { EntityFormData } from '@/types/entity';
 import type { Taxonomy } from '@/types/taxonomy';
 
 const entitySchema = z.object({
-  name: z.string().min(1, 'Name is required').max(500),
+  // Step 1: Organisation
   nameNational: z.string().min(1, 'National name is required').max(400),
+  name: z.string().min(1, 'Name is required').max(500),
   entityDepartment: z.string().max(400).optional(),
-  description: z.string().optional(),
-  email: z.string().email('Invalid email'),
-  website: z.string().url('Invalid URL'),
-  logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   countryCode: z.string().length(2, 'Use ISO-3166 alpha-2 code'),
-  city: z.string().min(1, 'City is required').max(400),
   streetAddress: z.string().min(1, 'Street address is required').max(400),
+  city: z.string().min(1, 'City is required').max(400),
   postalCode: z.string().max(20).optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  countryId: z.string().uuid().optional(),
-  clusterTypeId: z.string().uuid('Select a cluster type'),
-  organizationTypeId: z.string().uuid().optional(),
-  contactFirstName: z.string().min(1, 'Contact first name is required').max(400),
-  contactLastName: z.string().min(1, 'Contact last name is required').max(400),
-  contactEmail: z.string().email('Invalid contact email'),
-  contactPosition: z.string().max(400).optional(),
-  contactPhone: z.string().max(50).optional(),
-  article138Compliance: z.boolean(),
-  dataShareConsent: z.boolean(),
-  expertiseDescription: z.string().min(1, 'Expertise description is required').max(800),
-  goalsToAchieve: z.string().max(800).optional(),
-  goalsToContribute: z.string().max(800).optional(),
-  fieldsOfActivityIds: z.array(z.string().uuid()).min(1, 'Select a field of activity'),
-  thematicAreaIds: z.array(z.string().uuid()).optional(),
-  sectorIds: z.array(z.string().uuid()).optional(),
-  technologyIds: z.array(z.string().uuid()).optional(),
-  useCaseIds: z.array(z.string().uuid()).optional(),
+  registrationNumber: z.string().max(100).optional(),
   isHeadquarter: z.boolean().optional(),
   headquarterInfo: z.string().optional(),
+  website: z.string().url('Invalid URL'),
+  phone: z.string().max(50).optional(),
+  email: z.string().email('Invalid email'),
+  organizationTypeId: z.string().uuid().optional(),
   hasSubsidiaries: z.boolean().optional(),
   subsidiariesDetails: z.string().optional(),
   hasMajorityShares: z.boolean().optional(),
   majoritySharesDetails: z.string().optional(),
+  article138Compliance: z.boolean(),
+
+  // Step 2: Contact Person
+  contactFirstName: z.string().min(1, 'First name is required').max(400),
+  contactLastName: z.string().min(1, 'Last name is required').max(400),
+  contactPosition: z.string().max(400).optional(),
+  contactEmail: z.string().email('Invalid contact email'),
+  contactPhone: z.string().max(50).optional(),
+
+  // Step 3: Expertise/Taxonomy
+  fieldsOfActivityIds: z.array(z.string().uuid()).min(1, 'Select at least one field of activity'),
+  expertiseDescription: z.string().min(1, 'Expertise description is required').max(800),
+  thematicAreaIds: z.array(z.string().uuid()).optional(),
+  sectorIds: z.array(z.string().uuid()).optional(),
+  otherSectors: z.string().max(800).optional(),
+  technologyIds: z.array(z.string().uuid()).optional(),
+  otherTechnologies: z.string().max(800).optional(),
+  useCaseIds: z.array(z.string().uuid()).optional(),
+  otherUseCases: z.string().max(800).optional(),
+  goalsToAchieve: z.string().max(800).optional(),
+  goalsToContribute: z.string().max(800).optional(),
+
+  // Step 4: Disclaimer & Confirmation
+  dataProtectionConsent: z.boolean(),
+  formCompletionConfirmed: z.boolean(),
+
+  // Additional fields (not in form steps but needed)
+  description: z.string().optional(),
+  logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  countryId: z.string().uuid().optional(),
+  clusterTypeId: z.string().uuid().optional(),
+  dataShareConsent: z.boolean().optional(),
   moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
+  subDomainIds: z.record(z.string(), z.array(z.string().uuid())).optional(),
 });
 
 interface EntityFormWizardProps {
@@ -68,21 +87,32 @@ interface EntityFormWizardProps {
   onCancel: () => void;
 }
 
-type Step = 'basic' | 'location' | 'classification' | 'compliance' | 'review';
+type Step = 'organisation' | 'contact' | 'expertise' | 'confirmation';
 
 const steps: { id: Step; title: string; description: string }[] = [
-  { id: 'basic', title: 'Basic Information', description: 'Organization and contact details' },
-  { id: 'location', title: 'Location', description: 'Structured address and coordinates' },
-  { id: 'classification', title: 'Classification', description: 'Types and taxonomies' },
-  { id: 'compliance', title: 'Compliance & Expertise', description: 'Compliance and expertise fields' },
-  { id: 'review', title: 'Review', description: 'Review and submit' },
+  { id: 'organisation', title: 'Organisation', description: 'Organization details and address' },
+  { id: 'contact', title: 'Contact Person', description: 'Representative information' },
+  { id: 'expertise', title: 'Expertise/Taxonomy', description: 'Fields of activity and expertise' },
+  { id: 'confirmation', title: 'Disclaimer & Confirmation', description: 'Review and consent' },
 ];
 
+const GDPR_DISCLAIMER = `<p>The NCC, to which the application will be submitted, will process personal data in accordance with the Regulation (EU) 2016/679 (GDPR) and the ECCC will process personal data in accordance with the Regulation (EU) 2018/1725 (EUDPR). The legal basis for the processing operation is art. 6(1)(e) GDPR and art. 5(1)(a) EUDPR on the basis of articles 7 and 8 of Regulation (EU) 2021/887.</p>
+<p>Additional information on the personal data processed, possible processors and retention periods will be specified in the relevant Data Protection Notices.</p>
+<p>The entity hereby confirms that all information provided in the registration form is truthful and accurate.</p>
+<p>The entity acknowledges and hereby agrees that the information provided in the registration process will be shared only with the ECCC and other NCCs established by each Member State and will not be shared further.</p>
+<p>The entity acknowledges and hereby agrees that the following information will be publicly available on the websites of the ECCC and NCCs established by each Member State in line with the Regulation:</p>
+<ul>
+<li>name</li>
+<li>country of establishment</li>
+<li>website</li>
+<li>type of organization as foreseen in art. 8 para 2 of the Regulation</li>
+<li>fields of activity/expertise</li>
+</ul>`;
+
 export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityFormWizardProps) {
-  const [currentStep, setCurrentStep] = useState<Step>('basic');
+  const [currentStep, setCurrentStep] = useState<Step>('organisation');
   const [submitting, setSubmitting] = useState(false);
   const [countries, setCountries] = useState<Taxonomy[]>([]);
-  const [clusterTypes, setClusterTypes] = useState<Taxonomy[]>([]);
   const [organizationTypes, setOrganizationTypes] = useState<Taxonomy[]>([]);
   const [fieldsOfActivity, setFieldsOfActivity] = useState<Taxonomy[]>([]);
   const [thematicAreas, setThematicAreas] = useState<Taxonomy[]>([]);
@@ -98,7 +128,16 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
     formState: { errors },
   } = useForm<EntityFormData>({
     resolver: zodResolver(entitySchema),
-    defaultValues: initialData || {},
+    defaultValues: {
+      fieldsOfActivityIds: [],
+      thematicAreaIds: [],
+      sectorIds: [],
+      technologyIds: [],
+      useCaseIds: [],
+      dataProtectionConsent: false,
+      formCompletionConfirmed: false,
+      ...initialData,
+    },
   });
 
   useEffect(() => {
@@ -106,7 +145,6 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
       try {
         const [
           countriesRes,
-          typesRes,
           orgRes,
           fieldsRes,
           thematicRes,
@@ -115,7 +153,6 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
           useCasesRes,
         ] = await Promise.all([
           apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/country'),
-          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_type'),
           apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/organization_type'),
           apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/fields_of_activity'),
           apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_thematic_area'),
@@ -124,7 +161,6 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
           apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/use_cases'),
         ]);
         setCountries(countriesRes.data);
-        setClusterTypes(typesRes.data);
         setOrganizationTypes(orgRes.data);
         setFieldsOfActivity(fieldsRes.data);
         setThematicAreas(thematicRes.data);
@@ -206,26 +242,15 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
             <CardDescription>{steps[currentStepIndex].description}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {currentStep === 'basic' && (
+            {/* Step 1: Organisation */}
+            {currentStep === 'organisation' && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    {...register('name')}
-                    placeholder="Enter entity name"
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="nameNational">Name (National Language) *</Label>
+                  <Label htmlFor="nameNational">Name (in national language) *</Label>
                   <Input
                     id="nameNational"
                     {...register('nameNational')}
-                    placeholder="Enter national language name"
+                    placeholder="Enter name in national language"
                   />
                   {errors.nameNational && (
                     <p className="text-sm text-destructive">{errors.nameNational.message}</p>
@@ -233,7 +258,19 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="entityDepartment">Department</Label>
+                  <Label htmlFor="name">Name in English *</Label>
+                  <Input
+                    id="name"
+                    {...register('name')}
+                    placeholder="Enter name in English"
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="entityDepartment">Entity / Department (if applicable)</Label>
                   <Input
                     id="entityDepartment"
                     {...register('entityDepartment')}
@@ -242,453 +279,24 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    {...register('description')}
-                    placeholder="Enter entity description"
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Organization Email *</Label>
-                  <Input
-                    id="email"
-                    {...register('email')}
-                    placeholder="contact@example.org"
-                    type="email"
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Organization Phone</Label>
-                  <Input
-                    id="phone"
-                    {...register('phone')}
-                    placeholder="+49 30 123456"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website *</Label>
-                  <Input
-                    id="website"
-                    {...register('website')}
-                    placeholder="https://example.com"
-                    type="url"
-                  />
-                  {errors.website && (
-                    <p className="text-sm text-destructive">{errors.website.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="registrationNumber">Registration Number</Label>
-                  <Input
-                    id="registrationNumber"
-                    {...register('registrationNumber')}
-                    placeholder="Registration number"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="logoUrl">Logo URL</Label>
-                  <Input
-                    id="logoUrl"
-                    {...register('logoUrl')}
-                    placeholder="https://example.com/logo.png"
-                    type="url"
-                  />
-                  {errors.logoUrl && (
-                    <p className="text-sm text-destructive">{errors.logoUrl.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="fieldsOfActivityIds">Fields of Activity *</Label>
+                  <Label htmlFor="countryCode">Country *</Label>
                   <Select
-                    value={formData.fieldsOfActivityIds?.[0]}
-                    onValueChange={(value: string) => setValue('fieldsOfActivityIds', [value])}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select field of activity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {fieldsOfActivity.map((field) => (
-                        <SelectItem key={field.id} value={field.id}>
-                          {field.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.fieldsOfActivityIds && (
-                    <p className="text-sm text-destructive">{errors.fieldsOfActivityIds.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="thematicAreaIds">Knowledge Domains</Label>
-                  <Select
-                    value={formData.thematicAreaIds?.[0]}
-                    onValueChange={(value: string) => setValue('thematicAreaIds', [value])}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select knowledge domain" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {thematicAreas.map((area) => (
-                        <SelectItem key={area.id} value={area.id}>
-                          {area.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="sectorIds">Sectors</Label>
-                  <Select
-                    value={formData.sectorIds?.[0]}
-                    onValueChange={(value: string) => setValue('sectorIds', [value])}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select sector" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sectors.map((sector) => (
-                        <SelectItem key={sector.id} value={sector.id}>
-                          {sector.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="technologyIds">Technologies</Label>
-                  <Select
-                    value={formData.technologyIds?.[0]}
-                    onValueChange={(value: string) => setValue('technologyIds', [value])}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select technology" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {technologies.map((tech) => (
-                        <SelectItem key={tech.id} value={tech.id}>
-                          {tech.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="useCaseIds">Use Cases</Label>
-                  <Select
-                    value={formData.useCaseIds?.[0]}
-                    onValueChange={(value: string) => setValue('useCaseIds', [value])}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select use case" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {useCases.map((useCase) => (
-                        <SelectItem key={useCase.id} value={useCase.id}>
-                          {useCase.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            )}
-
-            {currentStep === 'compliance' && (
-              <>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="contactFirstName">Contact First Name *</Label>
-                    <Input
-                      id="contactFirstName"
-                      {...register('contactFirstName')}
-                      placeholder="First name"
-                    />
-                    {errors.contactFirstName && (
-                      <p className="text-sm text-destructive">
-                        {errors.contactFirstName.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contactLastName">Contact Last Name *</Label>
-                    <Input
-                      id="contactLastName"
-                      {...register('contactLastName')}
-                      placeholder="Last name"
-                    />
-                    {errors.contactLastName && (
-                      <p className="text-sm text-destructive">
-                        {errors.contactLastName.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="isHeadquarter">Main Headquarter *</Label>
-                    <Select
-                      value={formData.isHeadquarter === true ? 'true' : formData.isHeadquarter === false ? 'false' : ''}
-                      onValueChange={(value: string) => setValue('isHeadquarter', value === 'true')}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Yes</SelectItem>
-                        <SelectItem value="false">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="headquarterInfo">Headquarter Info</Label>
-                    <Input
-                      id="headquarterInfo"
-                      {...register('headquarterInfo')}
-                      placeholder="If not HQ, provide details"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="hasSubsidiaries">Has Subsidiaries *</Label>
-                    <Select
-                      value={formData.hasSubsidiaries === true ? 'true' : formData.hasSubsidiaries === false ? 'false' : ''}
-                      onValueChange={(value: string) => setValue('hasSubsidiaries', value === 'true')}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Yes</SelectItem>
-                        <SelectItem value="false">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="subsidiariesDetails">Subsidiaries Details</Label>
-                    <Input
-                      id="subsidiariesDetails"
-                      {...register('subsidiariesDetails')}
-                      placeholder="If yes, provide details"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="hasMajorityShares">Holds Majority Shares *</Label>
-                    <Select
-                      value={formData.hasMajorityShares === true ? 'true' : formData.hasMajorityShares === false ? 'false' : ''}
-                      onValueChange={(value: string) => setValue('hasMajorityShares', value === 'true')}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Yes</SelectItem>
-                        <SelectItem value="false">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="majoritySharesDetails">Majority Shares Details</Label>
-                    <Input
-                      id="majoritySharesDetails"
-                      {...register('majoritySharesDetails')}
-                      placeholder="If yes, provide details"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contactEmail">Contact Email *</Label>
-                  <Input
-                    id="contactEmail"
-                    {...register('contactEmail')}
-                    placeholder="contact@example.org"
-                    type="email"
-                  />
-                  {errors.contactEmail && (
-                    <p className="text-sm text-destructive">{errors.contactEmail.message}</p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="contactPosition">Contact Position</Label>
-                    <Input
-                      id="contactPosition"
-                      {...register('contactPosition')}
-                      placeholder="Position"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contactPhone">Contact Phone</Label>
-                    <Input
-                      id="contactPhone"
-                      {...register('contactPhone')}
-                      placeholder="Phone number"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="article138Compliance">Article 138 Compliance *</Label>
-                    <Select
-                      value={formData.article138Compliance === true ? 'true' : formData.article138Compliance === false ? 'false' : ''}
-                      onValueChange={(value: string) => setValue('article138Compliance', value === 'true')}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Yes</SelectItem>
-                        <SelectItem value="false">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.article138Compliance && (
-                      <p className="text-sm text-destructive">
-                        {errors.article138Compliance.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dataShareConsent">Data Sharing Consent *</Label>
-                    <Select
-                      value={formData.dataShareConsent === true ? 'true' : formData.dataShareConsent === false ? 'false' : ''}
-                      onValueChange={(value: string) => setValue('dataShareConsent', value === 'true')}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Yes</SelectItem>
-                        <SelectItem value="false">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.dataShareConsent && (
-                      <p className="text-sm text-destructive">
-                        {errors.dataShareConsent.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="expertiseDescription">Expertise Description *</Label>
-                  <Textarea
-                    id="expertiseDescription"
-                    {...register('expertiseDescription')}
-                    placeholder="Describe expertise (max 800 chars)"
-                    rows={4}
-                  />
-                  {errors.expertiseDescription && (
-                    <p className="text-sm text-destructive">
-                      {errors.expertiseDescription.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="goalsToAchieve">Goals to Achieve</Label>
-                  <Textarea
-                    id="goalsToAchieve"
-                    {...register('goalsToAchieve')}
-                    placeholder="Goals to achieve"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="goalsToContribute">Goals to Contribute</Label>
-                  <Textarea
-                    id="goalsToContribute"
-                    {...register('goalsToContribute')}
-                    placeholder="Goals to contribute"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="moderationState">Moderation State</Label>
-                  <Select
-                    value={formData.moderationState || ''}
-                    onValueChange={(value: string) => setValue('moderationState', value as EntityFormData['moderationState'])}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select moderation state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="ready_for_publication">Ready for Publication</SelectItem>
-                      <SelectItem value="to_be_rejected">To be Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            )}
-
-            {currentStep === 'location' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="countryCode">Country Code (ISO-3166) *</Label>
-                  <Input
-                    id="countryCode"
-                    {...register('countryCode')}
-                    placeholder="DE"
-                    maxLength={2}
-                  />
-                  {errors.countryCode && (
-                    <p className="text-sm text-destructive">{errors.countryCode.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="countryId">Country (Taxonomy)</Label>
-                  <Select
-                    value={formData.countryId}
-                    onValueChange={(value: string) => setValue('countryId', value)}
+                    value={formData.countryCode}
+                    onValueChange={(value: string) => setValue('countryCode', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a country" />
                     </SelectTrigger>
                     <SelectContent>
                       {countries.map((country) => (
-                        <SelectItem key={country.id} value={country.id}>
+                        <SelectItem key={country.id} value={country.name.substring(0, 2).toUpperCase()}>
                           {country.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="city">City *</Label>
-                  <Input
-                    id="city"
-                    {...register('city')}
-                    placeholder="City"
-                  />
-                  {errors.city && (
-                    <p className="text-sm text-destructive">{errors.city.message}</p>
+                  {errors.countryCode && (
+                    <p className="text-sm text-destructive">{errors.countryCode.message}</p>
                   )}
                 </div>
 
@@ -705,62 +313,91 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="postalCode">Postal Code</Label>
+                  <Label htmlFor="city">City *</Label>
                   <Input
-                    id="postalCode"
-                    {...register('postalCode')}
-                    placeholder="Postal code"
+                    id="city"
+                    {...register('city')}
+                    placeholder="City"
+                  />
+                  {errors.city && (
+                    <p className="text-sm text-destructive">{errors.city.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="registrationNumber">Company/organization registration number</Label>
+                  <Input
+                    id="registrationNumber"
+                    {...register('registrationNumber')}
+                    placeholder="Registration number"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="latitude">Latitude</Label>
-                    <Input
-                      id="latitude"
-                      {...register('latitude', { valueAsNumber: true })}
-                      placeholder="0.000000"
-                      type="number"
-                      step="any"
-                    />
+                    <Label htmlFor="isHeadquarter">Is this your main seat / headquarter? *</Label>
+                    <Select
+                      value={formData.isHeadquarter === true ? 'true' : formData.isHeadquarter === false ? 'false' : ''}
+                      onValueChange={(value: string) => setValue('isHeadquarter', value === 'true')}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Yes</SelectItem>
+                        <SelectItem value="false">No</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="longitude">Longitude</Label>
-                    <Input
-                      id="longitude"
-                      {...register('longitude', { valueAsNumber: true })}
-                      placeholder="0.000000"
-                      type="number"
-                      step="any"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {currentStep === 'classification' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="clusterTypeId">Cluster Type *</Label>
-                  <Select
-                    value={formData.clusterTypeId}
-                    onValueChange={(value: string) => setValue('clusterTypeId', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select cluster type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clusterTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {formData.isHeadquarter === false && (
+                    <div className="space-y-2">
+                      <Label htmlFor="headquarterInfo">Main seat / headquarter details *</Label>
+                      <Input
+                        id="headquarterInfo"
+                        {...register('headquarterInfo')}
+                        placeholder="Name and address of main seat"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="organizationTypeId">Organization Type</Label>
+                  <Label htmlFor="website">Website *</Label>
+                  <Input
+                    id="website"
+                    {...register('website')}
+                    placeholder="https://example.com"
+                    type="url"
+                  />
+                  {errors.website && (
+                    <p className="text-sm text-destructive">{errors.website.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone number</Label>
+                  <Input
+                    id="phone"
+                    {...register('phone')}
+                    placeholder="+49 30 123456"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    {...register('email')}
+                    placeholder="contact@example.org"
+                    type="email"
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="organizationTypeId">Organization type *</Label>
                   <Select
                     value={formData.organizationTypeId}
                     onValueChange={(value: string) => setValue('organizationTypeId', value)}
@@ -777,49 +414,352 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="hasSubsidiaries">Has subsidiaries in EU Member States? *</Label>
+                    <Select
+                      value={formData.hasSubsidiaries === true ? 'true' : formData.hasSubsidiaries === false ? 'false' : ''}
+                      onValueChange={(value: string) => setValue('hasSubsidiaries', value === 'true')}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Yes</SelectItem>
+                        <SelectItem value="false">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {formData.hasSubsidiaries === true && (
+                    <div className="space-y-2">
+                      <Label htmlFor="subsidiariesDetails">If yes, please specify *</Label>
+                      <Input
+                        id="subsidiariesDetails"
+                        {...register('subsidiariesDetails')}
+                        placeholder="Subsidiaries details"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="hasMajorityShares">Holds majority shares outside Member States? *</Label>
+                    <Select
+                      value={formData.hasMajorityShares === true ? 'true' : formData.hasMajorityShares === false ? 'false' : ''}
+                      onValueChange={(value: string) => setValue('hasMajorityShares', value === 'true')}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Yes</SelectItem>
+                        <SelectItem value="false">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {formData.hasMajorityShares === true && (
+                    <div className="space-y-2">
+                      <Label htmlFor="majoritySharesDetails">If yes, please specify *</Label>
+                      <Input
+                        id="majoritySharesDetails"
+                        {...register('majoritySharesDetails')}
+                        placeholder="Majority shares details"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="article138Compliance">Article 136 Compliance *</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Does your organization comply with the requirements described in Article 136 of the EU Financial Regulation?
+                  </p>
+                  <Select
+                    value={formData.article138Compliance === true ? 'true' : formData.article138Compliance === false ? 'false' : ''}
+                    onValueChange={(value: string) => setValue('article138Compliance', value === 'true')}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Yes</SelectItem>
+                      <SelectItem value="false">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.article138Compliance && (
+                    <p className="text-sm text-destructive">{errors.article138Compliance.message}</p>
+                  )}
+                </div>
               </>
             )}
 
-            {currentStep === 'review' && (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="mb-4 text-lg font-semibold">Review Your Entity</h3>
-                  <div className="space-y-3 rounded-lg border p-4">
-                    <div>
-                      <span className="font-medium">Name:</span> {formData.name}
-                    </div>
-                    {formData.description && (
+            {/* Step 2: Contact Person */}
+            {currentStep === 'contact' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="contactFirstName">Name (First Name) *</Label>
+                  <Input
+                    id="contactFirstName"
+                    {...register('contactFirstName')}
+                    placeholder="First name"
+                  />
+                  {errors.contactFirstName && (
+                    <p className="text-sm text-destructive">{errors.contactFirstName.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactLastName">Surname *</Label>
+                  <Input
+                    id="contactLastName"
+                    {...register('contactLastName')}
+                    placeholder="Last name"
+                  />
+                  {errors.contactLastName && (
+                    <p className="text-sm text-destructive">{errors.contactLastName.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactPosition">Position</Label>
+                  <Input
+                    id="contactPosition"
+                    {...register('contactPosition')}
+                    placeholder="Position"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Email *</Label>
+                  <Input
+                    id="contactEmail"
+                    {...register('contactEmail')}
+                    placeholder="contact@example.org"
+                    type="email"
+                  />
+                  {errors.contactEmail && (
+                    <p className="text-sm text-destructive">{errors.contactEmail.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactPhone">Phone number (direct)</Label>
+                  <Input
+                    id="contactPhone"
+                    {...register('contactPhone')}
+                    placeholder="Phone number"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Step 3: Expertise/Taxonomy */}
+            {currentStep === 'expertise' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Fields of Activity (Article 8(3)) *</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Your organization&apos;s expertise in the field of cybersecurity according to Article 8(3) of Regulation (EU) 2021/887.
+                  </p>
+                  <MultiSelect
+                    options={fieldsOfActivity.map((f) => ({ id: f.id, name: f.name }))}
+                    value={formData.fieldsOfActivityIds || []}
+                    onChange={(values) => setValue('fieldsOfActivityIds', values)}
+                    placeholder="Select fields of activity"
+                  />
+                  {errors.fieldsOfActivityIds && (
+                    <p className="text-sm text-destructive">{errors.fieldsOfActivityIds.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="expertiseDescription">Expertise - detailed description *</Label>
+                  <Textarea
+                    id="expertiseDescription"
+                    {...register('expertiseDescription')}
+                    placeholder="Describe your expertise (max 800 characters)"
+                    rows={4}
+                    maxLength={800}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {formData.expertiseDescription?.length || 0}/800 characters
+                  </p>
+                  {errors.expertiseDescription && (
+                    <p className="text-sm text-destructive">{errors.expertiseDescription.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Expertise according to the Cybersecurity Taxonomy (Knowledge Domains)</Label>
+                  <MultiSelect
+                    options={thematicAreas.map((t) => ({ id: t.id, name: t.name }))}
+                    value={formData.thematicAreaIds || []}
+                    onChange={(values) => setValue('thematicAreaIds', values)}
+                    placeholder="Select knowledge domains"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Sectors according to the Cybersecurity Taxonomy</Label>
+                  <MultiSelect
+                    options={sectors.map((s) => ({ id: s.id, name: s.name }))}
+                    value={formData.sectorIds || []}
+                    onChange={(values) => setValue('sectorIds', values)}
+                    placeholder="Select sectors"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="otherSectors">Other sectors</Label>
+                  <Textarea
+                    id="otherSectors"
+                    {...register('otherSectors')}
+                    placeholder="Specify other sectors not listed above"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Technologies according to the Cybersecurity Taxonomy</Label>
+                  <MultiSelect
+                    options={technologies.map((t) => ({ id: t.id, name: t.name }))}
+                    value={formData.technologyIds || []}
+                    onChange={(values) => setValue('technologyIds', values)}
+                    placeholder="Select technologies"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="otherTechnologies">Other technologies</Label>
+                  <Textarea
+                    id="otherTechnologies"
+                    {...register('otherTechnologies')}
+                    placeholder="Specify other technologies not listed above"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Use cases according to the Cybersecurity Taxonomy</Label>
+                  <MultiSelect
+                    options={useCases.map((u) => ({ id: u.id, name: u.name }))}
+                    value={formData.useCaseIds || []}
+                    onChange={(values) => setValue('useCaseIds', values)}
+                    placeholder="Select use cases"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="otherUseCases">Other use cases</Label>
+                  <Textarea
+                    id="otherUseCases"
+                    {...register('otherUseCases')}
+                    placeholder="Specify other use cases not listed above"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="goalsToAchieve">What do you seek to achieve by joining the community?</Label>
+                  <Textarea
+                    id="goalsToAchieve"
+                    {...register('goalsToAchieve')}
+                    placeholder="Goals to achieve"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="goalsToContribute">How and in which goals and tasks of the community can you contribute?</Label>
+                  <Textarea
+                    id="goalsToContribute"
+                    {...register('goalsToContribute')}
+                    placeholder="Goals to contribute"
+                    rows={3}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Step 4: Disclaimer & Confirmation */}
+            {currentStep === 'confirmation' && (
+              <>
+                <div className="space-y-6">
+                  <div className="rounded-lg border p-4 space-y-4">
+                    <h3 className="text-lg font-semibold">Review Your Submission</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="font-medium">Description:</span>{' '}
-                        {formData.description}
+                        <span className="font-medium">Organization Name:</span> {formData.name}
                       </div>
-                    )}
-                    {formData.website && (
+                      <div>
+                        <span className="font-medium">National Name:</span> {formData.nameNational}
+                      </div>
+                      <div>
+                        <span className="font-medium">Country:</span> {formData.countryCode}
+                      </div>
+                      <div>
+                        <span className="font-medium">City:</span> {formData.city}
+                      </div>
+                      <div>
+                        <span className="font-medium">Email:</span> {formData.email}
+                      </div>
                       <div>
                         <span className="font-medium">Website:</span> {formData.website}
                       </div>
-                    )}
-                    {formData.countryId && (
                       <div>
-                        <span className="font-medium">Country:</span>{' '}
-                        {countries.find((c) => c.id === formData.countryId)?.name}
+                        <span className="font-medium">Contact:</span> {formData.contactFirstName} {formData.contactLastName}
                       </div>
-                    )}
-                    {formData.clusterTypeId && (
                       <div>
-                        <span className="font-medium">Cluster Type:</span>{' '}
-                        {clusterTypes.find((t) => t.id === formData.clusterTypeId)?.name}
+                        <span className="font-medium">Contact Email:</span> {formData.contactEmail}
                       </div>
-                    )}
-                    {formData.organizationTypeId && (
-                      <div>
-                        <span className="font-medium">Organization Type:</span>{' '}
-                        {organizationTypes.find((t) => t.id === formData.organizationTypeId)?.name}
+                      <div className="col-span-2">
+                        <span className="font-medium">Fields of Activity:</span>{' '}
+                        {(formData.fieldsOfActivityIds || [])
+                          .map((id) => fieldsOfActivity.find((f) => f.id === id)?.name)
+                          .filter(Boolean)
+                          .join(', ') || 'None selected'}
                       </div>
-                    )}
+                    </div>
+                  </div>
+
+                  <ConsentCheckbox
+                    id="dataProtectionConsent"
+                    label="I accept the Confidentiality and Data Protection Notes"
+                    description={GDPR_DISCLAIMER}
+                    checked={formData.dataProtectionConsent || false}
+                    onCheckedChange={(checked) => setValue('dataProtectionConsent', checked)}
+                    required
+                    error={errors.dataProtectionConsent?.message}
+                  />
+
+                  <ConsentCheckbox
+                    id="formCompletionConfirmed"
+                    label="I have finished filling the form and accept the answers to be reviewed by the NCC"
+                    checked={formData.formCompletionConfirmed || false}
+                    onCheckedChange={(checked) => setValue('formCompletionConfirmed', checked)}
+                    required
+                    error={errors.formCompletionConfirmed?.message}
+                  />
+
+                  <div className="space-y-2">
+                    <Label htmlFor="moderationState">Submission Status</Label>
+                    <Select
+                      value={formData.moderationState || 'draft'}
+                      onValueChange={(value: string) => setValue('moderationState', value as EntityFormData['moderationState'])}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft (Save for later)</SelectItem>
+                        <SelectItem value="ready_for_publication">Ready for Publication (Submit for review)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -844,7 +784,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
               </Button>
             ) : (
               <Button type="submit" disabled={submitting}>
-                {submitting ? 'Creating...' : 'Create Entity'}
+                {submitting ? 'Submitting...' : 'Submit'}
               </Button>
             )}
           </div>

@@ -10,6 +10,7 @@ import {
   entityTechnologies,
   entityUseCases,
   entityFieldsOfActivity,
+  entitySubDomains,
 } from '../db/schema.js';
 import { authenticate } from '../middleware/auth.js';
 import { atlasClient } from '../services/atlas/client.js';
@@ -63,7 +64,16 @@ const baseEntitySchema = z.object({
   expertiseDescription: z.string().max(800).optional(), // field_field_of_activity_descr * (max 800 chars)
   goalsToAchieve: z.string().max(800).optional(),
   goalsToContribute: z.string().max(800).optional(),
-  
+
+  // "Other" text fields for taxonomies
+  otherSectors: z.string().max(800).optional(),
+  otherTechnologies: z.string().max(800).optional(),
+  otherUseCases: z.string().max(800).optional(),
+
+  // Consent fields (ECCC form Step 4)
+  dataProtectionConsent: z.boolean().optional(), // GDPR disclaimer acceptance
+  formCompletionConfirmed: z.boolean().optional(), // Final submission confirmation
+
   // Taxonomy references
   countryId: z.string().uuid().optional(),
   clusterTypeId: z.string().uuid().optional(), // field_cluster_type *
@@ -75,7 +85,10 @@ const baseEntitySchema = z.object({
   technologyIds: z.array(z.string().uuid()).optional(),
   useCaseIds: z.array(z.string().uuid()).optional(),
   fieldsOfActivityIds: z.array(z.string().uuid()).optional(), // Article 8(3) expertise *
-  
+
+  // Sub-domain taxonomy relationships (hierarchical - keyed by parent domain ID)
+  subDomainIds: z.record(z.string().uuid(), z.array(z.string().uuid())).optional(),
+
   // Workflow
   moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
 });
@@ -116,6 +129,30 @@ const createEntitySchema = baseEntitySchema.refine(
   {
     message: 'Majority shares details are required when organization holds majority shares',
     path: ['majoritySharesDetails'],
+  }
+).refine(
+  (data) => {
+    // dataProtectionConsent must be true for publication
+    if (data.moderationState === 'ready_for_publication' && !data.dataProtectionConsent) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'Data protection consent is required for publication',
+    path: ['dataProtectionConsent'],
+  }
+).refine(
+  (data) => {
+    // formCompletionConfirmed must be true for publication
+    if (data.moderationState === 'ready_for_publication' && !data.formCompletionConfirmed) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'Form completion confirmation is required for publication',
+    path: ['formCompletionConfirmed'],
   }
 );
 
@@ -255,7 +292,16 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             expertiseDescription: body.expertiseDescription,
             goalsToAchieve: body.goalsToAchieve,
             goalsToContribute: body.goalsToContribute,
-            
+
+            // "Other" text fields
+            otherSectors: body.otherSectors,
+            otherTechnologies: body.otherTechnologies,
+            otherUseCases: body.otherUseCases,
+
+            // Consent fields
+            dataProtectionConsent: body.dataProtectionConsent,
+            formCompletionConfirmed: body.formCompletionConfirmed,
+
             // Taxonomy references
             countryId: body.countryId,
             clusterTypeId: body.clusterTypeId,
@@ -314,6 +360,23 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
               taxonomyId,
             }))
           );
+        }
+
+        // Handle sub-domain taxonomy relationships (hierarchical)
+        if (body.subDomainIds) {
+          const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = [];
+          for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
+            for (const taxonomyId of subDomainIdList) {
+              subDomainInserts.push({
+                entityId: entity.id,
+                taxonomyId,
+                parentDomainId,
+              });
+            }
+          }
+          if (subDomainInserts.length > 0) {
+            await db.insert(entitySubDomains).values(subDomainInserts);
+          }
         }
 
         await db.insert(entityVersions).values({
@@ -413,6 +476,15 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             ...(body.goalsToAchieve !== undefined && { goalsToAchieve: body.goalsToAchieve }),
             ...(body.goalsToContribute !== undefined && { goalsToContribute: body.goalsToContribute }),
 
+            // "Other" text fields
+            ...(body.otherSectors !== undefined && { otherSectors: body.otherSectors }),
+            ...(body.otherTechnologies !== undefined && { otherTechnologies: body.otherTechnologies }),
+            ...(body.otherUseCases !== undefined && { otherUseCases: body.otherUseCases }),
+
+            // Consent fields
+            ...(body.dataProtectionConsent !== undefined && { dataProtectionConsent: body.dataProtectionConsent }),
+            ...(body.formCompletionConfirmed !== undefined && { formCompletionConfirmed: body.formCompletionConfirmed }),
+
             // Taxonomy references
             ...(body.countryId !== undefined && { countryId: body.countryId }),
             ...(body.clusterTypeId !== undefined && { clusterTypeId: body.clusterTypeId }),
@@ -484,6 +556,24 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
                 taxonomyId,
               }))
             );
+          }
+        }
+
+        // Handle sub-domain taxonomy relationships (hierarchical)
+        if (body.subDomainIds) {
+          await db.delete(entitySubDomains).where(eq(entitySubDomains.entityId, id));
+          const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = [];
+          for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
+            for (const taxonomyId of subDomainIdList) {
+              subDomainInserts.push({
+                entityId: id,
+                taxonomyId,
+                parentDomainId,
+              });
+            }
+          }
+          if (subDomainInserts.length > 0) {
+            await db.insert(entitySubDomains).values(subDomainInserts);
           }
         }
 

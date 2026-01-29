@@ -46,6 +46,13 @@ export interface Entity {
   expertiseDescription: string | null;
   goalsToAchieve: string | null;
   goalsToContribute: string | null;
+  // "Other" text fields for taxonomies
+  otherSectors: string | null;
+  otherTechnologies: string | null;
+  otherUseCases: string | null;
+  // Consent fields
+  dataProtectionConsent: boolean | null;
+  formCompletionConfirmed: boolean | null;
   metadata: unknown;
   createdAt: Date;
   updatedAt: Date;
@@ -95,6 +102,13 @@ export interface EntityFormData {
   expertiseDescription?: string;
   goalsToAchieve?: string;
   goalsToContribute?: string;
+  // "Other" text fields for taxonomies
+  otherSectors?: string;
+  otherTechnologies?: string;
+  otherUseCases?: string;
+  // Consent fields (ECCC form Step 4)
+  dataProtectionConsent?: boolean;
+  formCompletionConfirmed?: boolean;
   countryId?: string;
   clusterTypeId?: string;
   organizationTypeId?: string;
@@ -103,6 +117,8 @@ export interface EntityFormData {
   technologyIds?: string[];
   useCaseIds?: string[];
   fieldsOfActivityIds?: string[];
+  // Sub-domain taxonomy relationships (hierarchical - keyed by parent domain ID)
+  subDomainIds?: Record<string, string[]>;
   moderationState?: EntityStatus;
 }
 

@@ -90,7 +90,16 @@ export const entities = pgTable('entities', {
   expertiseDescription: text('expertise_description'), // field_field_of_activity_descr * (max 800 chars)
   goalsToAchieve: text('goals_to_achieve'), // field_goals_to_achieve
   goalsToContribute: text('goals_to_contribute'), // field_goals_to_contribute
-  
+
+  // "Other" text fields for taxonomies not in predefined list
+  otherSectors: text('other_sectors'),
+  otherTechnologies: text('other_technologies'),
+  otherUseCases: text('other_use_cases'),
+
+  // Consent fields (ECCC form Step 4)
+  dataProtectionConsent: boolean('data_protection_consent'), // GDPR disclaimer acceptance
+  formCompletionConfirmed: boolean('form_completion_confirmed'), // Final submission confirmation
+
   // Taxonomy references (foreign keys)
   countryId: uuid('country_id').references(() => taxonomies.id),
   clusterTypeId: uuid('cluster_type_id').references(() => taxonomies.id), // field_cluster_type *
@@ -180,6 +189,20 @@ export const entityFieldsOfActivity = pgTable('entity_fields_of_activity', {
   taxonomyIdIdx: index('entity_field_of_activity_taxonomy_id_idx').on(table.taxonomyId),
 }));
 
+// Sub-domain taxonomy relationships (hierarchical - children of thematic areas)
+export const entitySubDomains = pgTable('entity_sub_domains', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  entityId: uuid('entity_id').notNull().references(() => entities.id, { onDelete: 'cascade' }),
+  taxonomyId: uuid('taxonomy_id').notNull().references(() => taxonomies.id, { onDelete: 'cascade' }),
+  parentDomainId: uuid('parent_domain_id').references(() => taxonomies.id), // Links to the parent thematic area
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => ({
+  entityTaxonomyIdx: uniqueIndex('entity_sub_domain_unique_idx').on(table.entityId, table.taxonomyId),
+  entityIdIdx: index('entity_sub_domain_entity_id_idx').on(table.entityId),
+  taxonomyIdIdx: index('entity_sub_domain_taxonomy_id_idx').on(table.taxonomyId),
+  parentDomainIdIdx: index('entity_sub_domain_parent_id_idx').on(table.parentDomainId),
+}));
+
 export const syncLogs = pgTable('sync_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
   entityType: varchar('entity_type', { length: 100 }).notNull(),
@@ -219,5 +242,7 @@ export type EntityUseCase = typeof entityUseCases.$inferSelect;
 export type NewEntityUseCase = typeof entityUseCases.$inferInsert;
 export type EntityFieldOfActivity = typeof entityFieldsOfActivity.$inferSelect;
 export type NewEntityFieldOfActivity = typeof entityFieldsOfActivity.$inferInsert;
+export type EntitySubDomain = typeof entitySubDomains.$inferSelect;
+export type NewEntitySubDomain = typeof entitySubDomains.$inferInsert;
 export type SyncLog = typeof syncLogs.$inferSelect;
 export type NewSyncLog = typeof syncLogs.$inferInsert;
