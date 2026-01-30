@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { ConsentCheckbox } from '@/components/entities/consent-checkbox';
+import { ImportOpenXecoDialog } from '@/components/entities/import-openxeco-dialog';
 import { apiClient } from '@/lib/api';
 import type { EntityFormData } from '@/types/entity';
 import type { Taxonomy } from '@/types/taxonomy';
@@ -75,7 +76,6 @@ const entitySchema = z.object({
   logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
-  countryId: z.string().uuid().optional(),
   clusterTypeId: z.string().uuid().optional(),
   dataShareConsent: z.boolean().optional(),
   moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
@@ -201,8 +201,26 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
     }
   };
 
+  const handleImportData = (importedData: Partial<EntityFormData>) => {
+    // Apply imported data to form fields
+    Object.entries(importedData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        setValue(key as keyof EntityFormData, value as EntityFormData[keyof EntityFormData]);
+      }
+    });
+    // Reset to first step after import
+    setCurrentStep('organisation');
+  };
+
   return (
     <div className="mx-auto max-w-4xl">
+      {/* Import button - only show when creating new entity */}
+      {!initialData?.name && (
+        <div className="mb-6 flex justify-end">
+          <ImportOpenXecoDialog onImport={handleImportData} />
+        </div>
+      )}
+
       <div className="mb-8 flex items-center justify-between">
         {steps.map((step, index) => (
           <div key={step.id} className="flex flex-1 items-center">
