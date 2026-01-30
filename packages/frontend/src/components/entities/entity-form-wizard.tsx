@@ -247,9 +247,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
             {currentStep === 'organisation' && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="nameNational">Name (in national language) *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q101">Name (in national language) *</Label>
                   <Input
-                    id="nameNational"
+                    id="FORM-ECCC-001-Q101"
                     {...register('nameNational')}
                     placeholder="Enter name in national language"
                   />
@@ -259,9 +259,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name in English *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q101b">Name in English *</Label>
                   <Input
-                    id="name"
+                    id="FORM-ECCC-001-Q101b"
                     {...register('name')}
                     placeholder="Enter name in English"
                   />
@@ -271,16 +271,16 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="entityDepartment">Entity / Department (if applicable)</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q101c">Entity / Department (if applicable)</Label>
                   <Input
-                    id="entityDepartment"
+                    id="FORM-ECCC-001-Q101c"
                     {...register('entityDepartment')}
                     placeholder="Department or unit"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="countryId">Country *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q102">Country *</Label>
                   <Select
                     value={formData.countryId}
                     onValueChange={(value: string) => {
@@ -293,7 +293,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                       }
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="FORM-ECCC-001-Q102">
                       <SelectValue placeholder="Select a country" />
                     </SelectTrigger>
                     <SelectContent>
@@ -310,9 +310,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="streetAddress">Street Address *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q103">Street Address *</Label>
                   <Input
-                    id="streetAddress"
+                    id="FORM-ECCC-001-Q103"
                     {...register('streetAddress')}
                     placeholder="Street address"
                   />
@@ -322,9 +322,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="city">City *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q104">City *</Label>
                   <Input
-                    id="city"
+                    id="FORM-ECCC-001-Q104"
                     {...register('city')}
                     placeholder="City"
                   />
@@ -334,9 +334,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="registrationNumber">Company/organization registration number</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q105">Company/organization registration number</Label>
                   <Input
-                    id="registrationNumber"
+                    id="FORM-ECCC-001-Q105"
                     {...register('registrationNumber')}
                     placeholder="Registration number"
                   />
@@ -344,12 +344,12 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="isHeadquarter">Is this your main seat / headquarter? *</Label>
+                    <Label htmlFor="FORM-ECCC-001-Q106">Is this your main seat / headquarter? *</Label>
                     <Select
                       value={formData.isHeadquarter === true ? 'true' : formData.isHeadquarter === false ? 'false' : ''}
                       onValueChange={(value: string) => setValue('isHeadquarter', value === 'true')}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="FORM-ECCC-001-Q106">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -360,9 +360,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                   </div>
                   {formData.isHeadquarter === false && (
                     <div className="space-y-2">
-                      <Label htmlFor="headquarterInfo">Main seat / headquarter details *</Label>
+                      <Label htmlFor="FORM-ECCC-001-Q106b">Main seat / headquarter details *</Label>
                       <Input
-                        id="headquarterInfo"
+                        id="FORM-ECCC-001-Q106b"
                         {...register('headquarterInfo')}
                         placeholder="Name and address of main seat"
                       />
@@ -371,9 +371,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="website">Website *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q107">Website *</Label>
                   <Input
-                    id="website"
+                    id="FORM-ECCC-001-Q107"
                     {...register('website')}
                     placeholder="https://example.com"
                     type="url"
@@ -384,18 +384,18 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone number</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q108">Phone number</Label>
                   <Input
-                    id="phone"
+                    id="FORM-ECCC-001-Q108"
                     {...register('phone')}
                     placeholder="+49 30 123456"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q109">Email *</Label>
                   <Input
-                    id="email"
+                    id="FORM-ECCC-001-Q109"
                     {...register('email')}
                     placeholder="contact@example.org"
                     type="email"
@@ -406,12 +406,12 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="organizationTypeId">Organization type *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q110">Organization type *</Label>
                   <Select
                     value={formData.organizationTypeId}
                     onValueChange={(value: string) => setValue('organizationTypeId', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="FORM-ECCC-001-Q110">
                       <SelectValue placeholder="Select organization type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -426,12 +426,12 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="hasSubsidiaries">Has subsidiaries in EU Member States? *</Label>
+                    <Label htmlFor="FORM-ECCC-001-Q111">Has subsidiaries in EU Member States? *</Label>
                     <Select
                       value={formData.hasSubsidiaries === true ? 'true' : formData.hasSubsidiaries === false ? 'false' : ''}
                       onValueChange={(value: string) => setValue('hasSubsidiaries', value === 'true')}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="FORM-ECCC-001-Q111">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -442,9 +442,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                   </div>
                   {formData.hasSubsidiaries === true && (
                     <div className="space-y-2">
-                      <Label htmlFor="subsidiariesDetails">If yes, please specify *</Label>
+                      <Label htmlFor="FORM-ECCC-001-Q111b">If yes, please specify *</Label>
                       <Input
-                        id="subsidiariesDetails"
+                        id="FORM-ECCC-001-Q111b"
                         {...register('subsidiariesDetails')}
                         placeholder="Subsidiaries details"
                       />
@@ -454,12 +454,12 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="hasMajorityShares">Holds majority shares outside Member States? *</Label>
+                    <Label htmlFor="FORM-ECCC-001-Q112">Holds majority shares outside Member States? *</Label>
                     <Select
                       value={formData.hasMajorityShares === true ? 'true' : formData.hasMajorityShares === false ? 'false' : ''}
                       onValueChange={(value: string) => setValue('hasMajorityShares', value === 'true')}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="FORM-ECCC-001-Q112">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -470,9 +470,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                   </div>
                   {formData.hasMajorityShares === true && (
                     <div className="space-y-2">
-                      <Label htmlFor="majoritySharesDetails">If yes, please specify *</Label>
+                      <Label htmlFor="FORM-ECCC-001-Q112b">If yes, please specify *</Label>
                       <Input
-                        id="majoritySharesDetails"
+                        id="FORM-ECCC-001-Q112b"
                         {...register('majoritySharesDetails')}
                         placeholder="Majority shares details"
                       />
@@ -481,7 +481,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="article138Compliance">Article 136 Compliance *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q113">Article 136 Compliance *</Label>
                   <p className="text-sm text-muted-foreground mb-2">
                     Does your organization comply with the requirements described in Article 136 of the EU Financial Regulation?
                   </p>
@@ -489,7 +489,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     value={formData.article138Compliance === true ? 'true' : formData.article138Compliance === false ? 'false' : ''}
                     onValueChange={(value: string) => setValue('article138Compliance', value === 'true')}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="FORM-ECCC-001-Q113">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
@@ -508,9 +508,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
             {currentStep === 'contact' && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="contactFirstName">Name (First Name) *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q201">Name (First Name) *</Label>
                   <Input
-                    id="contactFirstName"
+                    id="FORM-ECCC-001-Q201"
                     {...register('contactFirstName')}
                     placeholder="First name"
                   />
@@ -520,9 +520,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contactLastName">Surname *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q202">Surname *</Label>
                   <Input
-                    id="contactLastName"
+                    id="FORM-ECCC-001-Q202"
                     {...register('contactLastName')}
                     placeholder="Last name"
                   />
@@ -532,18 +532,18 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contactPosition">Position</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q203">Position</Label>
                   <Input
-                    id="contactPosition"
+                    id="FORM-ECCC-001-Q203"
                     {...register('contactPosition')}
                     placeholder="Position"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contactEmail">Email *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q205">Email *</Label>
                   <Input
-                    id="contactEmail"
+                    id="FORM-ECCC-001-Q205"
                     {...register('contactEmail')}
                     placeholder="contact@example.org"
                     type="email"
@@ -554,9 +554,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contactPhone">Phone number (direct)</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q206">Phone number (direct)</Label>
                   <Input
-                    id="contactPhone"
+                    id="FORM-ECCC-001-Q206"
                     {...register('contactPhone')}
                     placeholder="Phone number"
                   />
@@ -567,8 +567,8 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
             {/* Step 3: Expertise/Taxonomy */}
             {currentStep === 'expertise' && (
               <>
-                <div className="space-y-2">
-                  <Label>Fields of Activity (Article 8(3)) *</Label>
+                <div className="space-y-2" id="FORM-ECCC-001-Q301-container">
+                  <Label htmlFor="FORM-ECCC-001-Q301">Fields of Activity (Article 8(3)) *</Label>
                   <p className="text-sm text-muted-foreground mb-2">
                     Your organization&apos;s expertise in the field of cybersecurity according to Article 8(3) of Regulation (EU) 2021/887.
                   </p>
@@ -584,9 +584,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expertiseDescription">Expertise - detailed description *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q302">Expertise - detailed description *</Label>
                   <Textarea
-                    id="expertiseDescription"
+                    id="FORM-ECCC-001-Q302"
                     {...register('expertiseDescription')}
                     placeholder="Describe your expertise (max 800 characters)"
                     rows={4}
@@ -600,8 +600,8 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Expertise according to the Cybersecurity Taxonomy (Knowledge Domains)</Label>
+                <div className="space-y-2" id="FORM-ECCC-001-Q303-1-container">
+                  <Label htmlFor="FORM-ECCC-001-Q303-1">Expertise according to the Cybersecurity Taxonomy (Knowledge Domains)</Label>
                   <MultiSelect
                     options={thematicAreas.map((t) => ({ id: t.id, name: t.name }))}
                     value={formData.thematicAreaIds || []}
@@ -610,8 +610,8 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Sectors according to the Cybersecurity Taxonomy</Label>
+                <div className="space-y-2" id="FORM-ECCC-001-Q303-3-container">
+                  <Label htmlFor="FORM-ECCC-001-Q303-3">Sectors according to the Cybersecurity Taxonomy</Label>
                   <MultiSelect
                     options={sectors.map((s) => ({ id: s.id, name: s.name }))}
                     value={formData.sectorIds || []}
@@ -621,17 +621,17 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="otherSectors">Other sectors</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q303-4">Other sectors</Label>
                   <Textarea
-                    id="otherSectors"
+                    id="FORM-ECCC-001-Q303-4"
                     {...register('otherSectors')}
                     placeholder="Specify other sectors not listed above"
                     rows={2}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Technologies according to the Cybersecurity Taxonomy</Label>
+                <div className="space-y-2" id="FORM-ECCC-001-Q303-5-container">
+                  <Label htmlFor="FORM-ECCC-001-Q303-5">Technologies according to the Cybersecurity Taxonomy</Label>
                   <MultiSelect
                     options={technologies.map((t) => ({ id: t.id, name: t.name }))}
                     value={formData.technologyIds || []}
@@ -641,17 +641,17 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="otherTechnologies">Other technologies</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q303-6">Other technologies</Label>
                   <Textarea
-                    id="otherTechnologies"
+                    id="FORM-ECCC-001-Q303-6"
                     {...register('otherTechnologies')}
                     placeholder="Specify other technologies not listed above"
                     rows={2}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Use cases according to the Cybersecurity Taxonomy</Label>
+                <div className="space-y-2" id="FORM-ECCC-001-Q303-7-container">
+                  <Label htmlFor="FORM-ECCC-001-Q303-7">Use cases according to the Cybersecurity Taxonomy</Label>
                   <MultiSelect
                     options={useCases.map((u) => ({ id: u.id, name: u.name }))}
                     value={formData.useCaseIds || []}
@@ -661,9 +661,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="otherUseCases">Other use cases</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q303-8">Other use cases</Label>
                   <Textarea
-                    id="otherUseCases"
+                    id="FORM-ECCC-001-Q303-8"
                     {...register('otherUseCases')}
                     placeholder="Specify other use cases not listed above"
                     rows={2}
@@ -671,9 +671,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="goalsToAchieve">What do you seek to achieve by joining the community?</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q303-2">What do you seek to achieve by joining the community?</Label>
                   <Textarea
-                    id="goalsToAchieve"
+                    id="FORM-ECCC-001-Q303-2"
                     {...register('goalsToAchieve')}
                     placeholder="Goals to achieve"
                     rows={3}
@@ -681,9 +681,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="goalsToContribute">How and in which goals and tasks of the community can you contribute?</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q305">How and in which goals and tasks of the community can you contribute?</Label>
                   <Textarea
-                    id="goalsToContribute"
+                    id="FORM-ECCC-001-Q305"
                     {...register('goalsToContribute')}
                     placeholder="Goals to contribute"
                     rows={3}
@@ -735,7 +735,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                   </div>
 
                   <ConsentCheckbox
-                    id="dataProtectionConsent"
+                    id="FORM-ECCC-001-Q114"
                     label="I accept the Confidentiality and Data Protection Notes"
                     description={GDPR_DISCLAIMER}
                     checked={formData.dataProtectionConsent || false}
@@ -745,7 +745,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                   />
 
                   <ConsentCheckbox
-                    id="formCompletionConfirmed"
+                    id="FORM-ECCC-001-Q501"
                     label="I have finished filling the form and accept the answers to be reviewed by the NCC"
                     checked={formData.formCompletionConfirmed || false}
                     onCheckedChange={(checked) => setValue('formCompletionConfirmed', checked)}
