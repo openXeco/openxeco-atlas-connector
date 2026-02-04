@@ -1,44 +1,47 @@
 services:
   frontend:
     build:
-      context: ./packages/frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: packages/frontend/Dockerfile
       target: production
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     ports:
-      - "3000:3000"
+      - 3000
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
-      - backend
+      backend:
+        condition: service_started
     networks:
-      - atlas-network
+      - dokploy-network
     restart: unless-stopped
 
   backend:
     build:
-      context: ./packages/backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: packages/backend/Dockerfile
       target: production
     ports:
-      - "3001:3001"
+      - 3001
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-atlas_connector}
+      - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-1h}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
       - ATLAS_BASE_URL=${ATLAS_BASE_URL}
-      - ATLAS_API_KEY=${ATLAS_API_KEY}
-      - ATLAS_USERNAME=${ATLAS_USERNAME}
+      - ATLAS_API_KEY=${ATLAS_API_KEY:-}
+      - ATLAS_USERNAME=${ATLAS_USERNAME:-}
+      - ATLAS_PASSWORD=${ATLAS_PASSWORD:-}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - atlas-network
+      - dokploy-network
     restart: unless-stopped
 
   db:
@@ -55,7 +58,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - atlas-network
+      - dokploy-network
     restart: unless-stopped
 
   redis:
@@ -68,7 +71,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - atlas-network
+      - dokploy-network
     restart: unless-stopped
 
 volumes:
@@ -76,5 +79,5 @@ volumes:
   redis_data:
 
 networks:
-  atlas-network:
-    driver: bridge
+  dokploy-network:
+    external: true

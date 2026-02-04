@@ -1,15 +1,15 @@
 services:
   frontend:
     build:
-      context: ./packages/frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: packages/frontend/Dockerfile
       target: development
     ports:
       - "3000:3000"
     volumes:
-      - ./packages/frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - ./packages/frontend:/app/packages/frontend
+      - /app/packages/frontend/node_modules
+      - /app/packages/frontend/.next
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://backend:3001
@@ -20,14 +20,14 @@ services:
 
   backend:
     build:
-      context: ./packages/backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: packages/backend/Dockerfile
       target: development
     ports:
       - "3001:3001"
     volumes:
-      - ./packages/backend:/app
-      - /app/node_modules
+      - ./packages/backend:/app/packages/backend
+      - /app/packages/backend/node_modules
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/atlas_connector
@@ -38,6 +38,7 @@ services:
       - ATLAS_BASE_URL=${ATLAS_BASE_URL:-https://dg-cnect-cybersecurity-atlas.acc.fpfis.tech.ec.europa.eu/jsonapi}
       - ATLAS_API_KEY=${ATLAS_API_KEY:-}
       - ATLAS_USERNAME=${ATLAS_USERNAME:-}
+      - ATLAS_PASSWORD=${ATLAS_PASSWORD:-}
     depends_on:
       db:
         condition: service_healthy

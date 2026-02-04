@@ -1,43 +1,53 @@
-# Development stage
-FROM node:22-alpine AS development
-
+# ---- Base ----
+FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
-
 WORKDIR /app
 
-COPY package.json ./
-RUN pnpm install
-
-COPY . .
-
-EXPOSE 3001
-
+# ---- Development ----
+FROM base AS development
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/backend/package.json ./packages/backend/
+COPY packages/frontend/package.json ./packages/frontend/
+RUN pnpm install --filter @atlas-connector/backend...
+COPY tsconfig.base.json ./
+COPY packages/backend/ ./packages/backend/
+WORKDIR /app/packages/backend
 CMD ["pnpm", "dev"]
 
-# Build stage
-FROM node:22-alpine AS builder
+# ---- Dependencies ----
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/backend/package.json ./packages/backend/
+COPY packages/frontend/package.json ./packages/frontend/
+RUN pnpm install --frozen-lockfile --filter @atlas-connector/backend...
 
-RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
-
-WORKDIR /app
-
-COPY package.json ./
-RUN pnpm install --frozen-lockfile
-
-COPY . .
+# ---- Builder ----
+FROM deps AS builder
+COPY tsconfig.base.json ./
+COPY packages/backend/ ./packages/backend/
+WORKDIR /app/packages/backend
 RUN pnpm build
 
-# Production stage
+# ---- Production dependencies ----
+FROM base AS prod-deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/backend/package.json ./packages/backend/
+COPY packages/frontend/package.json ./packages/frontend/
+RUN pnpm install --frozen-lockfile --filter @atlas-connector/backend... --prod
+
+# ---- Production ----
 FROM node:22-alpine AS production
+WORKDIR /app/packages/backend
+ENV NODE_ENV=production
 
-RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
+COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=prod-deps /app/packages/backend/node_modules ./node_modules
+COPY --from=builder /app/packages/backend/dist ./dist
+COPY --from=builder /app/packages/backend/package.json ./package.json
 
-WORKDIR /app
-
-COPY package.json ./
-RUN pnpm install --prod --frozen-lockfile
-
-COPY --from=builder /app/dist ./dist
+# Include migration files for drizzle-kit migrate
+COPY --from=builder /app/packages/backend/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder /app/packages/backend/src/db/migrations ./src/db/migrations
 
 EXPOSE 3001
 
