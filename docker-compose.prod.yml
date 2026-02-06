@@ -4,12 +4,11 @@ services:
       context: .
       dockerfile: packages/frontend/Dockerfile
       target: production
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     ports:
       - 3000
     environment:
       - NODE_ENV=production
+      - BACKEND_INTERNAL_URL=http://backend:3001
     depends_on:
       backend:
         condition: service_started

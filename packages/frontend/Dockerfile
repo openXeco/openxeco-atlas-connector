@@ -27,10 +27,6 @@ WORKDIR /app/packages/frontend
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# NEXT_PUBLIC_* vars must be available at build time
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-
 RUN pnpm build
 
 # ---- Production ----
