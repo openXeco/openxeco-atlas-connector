@@ -46,34 +46,54 @@ export class OpenXecoClient {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          'User-Agent': 'Mozilla/5.0 (compatible; ATLAS-Connector/1.0)',
         },
         body: JSON.stringify({
           email: credentials.email,
           password: credentials.password,
         }),
         signal: controller.signal,
-        credentials: 'include',
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         const status = response.status;
-        if (status === 401) {
+        let errorBody = '';
+        try {
+          errorBody = await response.text();
+        } catch { /* ignore */ }
+
+        logger.error('OpenXeco: Login failed', {
+          status,
+          statusText: response.statusText,
+          errorBody: errorBody.substring(0, 500)
+        });
+
+        if (status === 401 || status === 500) {
+          // cybersecurity.lu API returns 500 for invalid credentials
           throw new Error('Invalid credentials');
         }
-        throw new Error(`Login failed with status ${status}`);
+        throw new Error(`Login failed with status ${status}: ${errorBody.substring(0, 100)}`);
       }
 
-      // Extract cookies from response
-      const cookies = response.headers.get('set-cookie');
+      // Extract cookies from response - use getSetCookie() for Node.js 18+
       let accessToken = '';
       let refreshToken = '';
 
-      if (cookies) {
-        // Parse access_token_cookie and refresh_token_cookie
-        const accessMatch = cookies.match(/access_token_cookie=([^;]+)/);
-        const refreshMatch = cookies.match(/refresh_token_cookie=([^;]+)/);
+      // Try getSetCookie() first (Node.js 18+), fallback to get('set-cookie')
+      const setCookieHeaders = (response.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.()
+        ?? [response.headers.get('set-cookie')].filter(Boolean) as string[];
+
+      logger.debug('OpenXeco: Login response headers', {
+        setCookieCount: setCookieHeaders.length,
+        setCookieHeaders: setCookieHeaders.map(c => c?.substring(0, 50) + '...')
+      });
+
+      for (const cookie of setCookieHeaders) {
+        if (!cookie) continue;
+        const accessMatch = cookie.match(/access_token_cookie=([^;]+)/);
+        const refreshMatch = cookie.match(/refresh_token_cookie=([^;]+)/);
 
         if (accessMatch) accessToken = accessMatch[1];
         if (refreshMatch) refreshToken = refreshMatch[1];
@@ -82,23 +102,23 @@ export class OpenXecoClient {
       // If no cookies, try to get token from response body
       if (!accessToken) {
         try {
-          const body = await response.json() as Record<string, string>;
-          if (body.access_token) accessToken = body.access_token;
-          if (body.refresh_token) refreshToken = body.refresh_token;
+          const body = await response.json() as Record<string, unknown>;
+          logger.debug('OpenXeco: Login response body', { bodyKeys: Object.keys(body) });
+
+          if (typeof body.access_token === 'string') accessToken = body.access_token;
+          if (typeof body.refresh_token === 'string') refreshToken = body.refresh_token;
         } catch {
           // Response might not be JSON
+          logger.debug('OpenXeco: Login response is not JSON');
         }
       }
 
       if (!accessToken) {
-        // The API might use a different auth mechanism
-        // Try using the response as confirmation and make authenticated requests
-        logger.warn('OpenXeco: No token in response, attempting cookie-based auth');
-        // Use a placeholder to indicate we're using cookie auth
-        accessToken = '__cookie_auth__';
+        logger.warn('OpenXeco: No token found in login response');
+        throw new Error('Login succeeded but no authentication token was returned');
       }
 
-      logger.info('OpenXeco: Login successful');
+      logger.info('OpenXeco: Login successful', { hasRefreshToken: !!refreshToken });
 
       return {
         accessToken,
@@ -120,7 +140,7 @@ export class OpenXecoClient {
     formId: number = ECCC_FORM_ID,
     session: OpenXecoSession
   ): Promise<OpenXecoFormQuestion[]> {
-    const url = `${this.baseUrl}/form/get_form_questions?form_id=${formId}`;
+    const url = `${this.baseUrl}/private/get_my_form_questions?form_id=${formId}`;
 
     logger.info('OpenXeco: Fetching form questions', { formId });
 
@@ -179,21 +199,23 @@ export class OpenXecoClient {
         Accept: 'application/json',
       };
 
-      // Add authorization header if we have a real token
-      if (session.accessToken && session.accessToken !== '__cookie_auth__') {
+      // Send both Authorization header and Cookie for maximum compatibility
+      if (session.accessToken) {
         headers['Authorization'] = `Bearer ${session.accessToken}`;
+        // Also send as cookie
+        const cookies = [`access_token_cookie=${session.accessToken}`];
+        if (session.refreshToken) {
+          cookies.push(`refresh_token_cookie=${session.refreshToken}`);
+        }
+        headers['Cookie'] = cookies.join('; ');
       }
 
-      // Also try cookie-based auth
-      if (session.accessToken && session.accessToken !== '__cookie_auth__') {
-        headers['Cookie'] = `access_token_cookie=${session.accessToken}`;
-      }
+      logger.debug('OpenXeco: Making authenticated request', { url });
 
       const response = await fetch(url, {
         method: 'GET',
         headers,
         signal: controller.signal,
-        credentials: 'include',
       });
 
       clearTimeout(timeoutId);
