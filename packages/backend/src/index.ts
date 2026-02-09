@@ -1,9 +1,12 @@
 import { buildApp } from './app.js';
 import { config } from './config/index.js';
 import { closeDatabase } from './config/database.js';
+import { runMigrations } from './db/migrate.js';
 import { logger } from './utils/logger.js';
 
 async function main(): Promise<void> {
+  await runMigrations();
+
   const app = await buildApp();
 
   const shutdown = async (signal: string) => {

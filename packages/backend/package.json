@@ -17,7 +17,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "seed:admin": "tsx src/scripts/seed-admin.ts"
+    "seed:admin": "tsx src/scripts/seed-admin.ts",
+    "db:migrate:run": "tsx src/scripts/run-migrations.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "e8ccb3ae-ebb5-47f1-bd34-d4bebf7f215b",
+  "id": "4238f696-4490-4d07-a06e-b3117fc4f283",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -27,6 +27,12 @@
     {
       "isRlsEnabled": false,
       "name": "entity_sectors",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "entity_sub_domains",
       "entityType": "tables",
       "schema": "public"
     },
@@ -593,6 +599,71 @@
       "table": "entities"
     },
     {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "other_sectors",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "entities"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "other_technologies",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "entities"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "other_use_cases",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "entities"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "data_protection_consent",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "entities"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "form_completion_confirmed",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "entities"
+    },
+    {
       "type": "uuid",
       "typeSchema": null,
       "notNull": false,
@@ -812,6 +883,71 @@
       "entityType": "columns",
       "schema": "public",
       "table": "entity_sectors"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entity_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "taxonomy_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "parent_domain_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "entity_sub_domains"
     },
     {
       "type": "uuid",
@@ -1609,6 +1745,97 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
+      "name": "entity_sub_domain_unique_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "entity_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "entity_sub_domain_entity_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "taxonomy_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "entity_sub_domain_taxonomy_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "parent_domain_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "entity_sub_domain_parent_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "entity_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "taxonomy_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
       "name": "entity_technology_unique_idx",
       "entityType": "indexes",
       "schema": "public",
@@ -2129,6 +2356,57 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
+      "name": "entity_sub_domains_entity_id_entities_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "taxonomy_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "taxonomies",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "entity_sub_domains_taxonomy_id_taxonomies_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "parent_domain_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "taxonomies",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "entity_sub_domains_parent_domain_id_taxonomies_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "entity_sub_domains"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "entity_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "entities",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
       "name": "entity_technologies_entity_id_entities_id_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -2291,6 +2569,16 @@
       "name": "entity_sectors_pkey",
       "schema": "public",
       "table": "entity_sectors",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "entity_sub_domains_pkey",
+      "schema": "public",
+      "table": "entity_sub_domains",
       "entityType": "pks"
     },
     {
