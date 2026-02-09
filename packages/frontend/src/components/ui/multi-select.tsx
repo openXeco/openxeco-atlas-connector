@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Check, ChevronDown, X } from 'lucide-react';
-import { Button } from './button';
 
 export interface MultiSelectOption {
   id: string;
@@ -88,7 +87,12 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
               ))
             )}
           </div>
-          <ChevronDown className={cn('h-4 w-4 shrink-0 opacity-50 transition-transform', isOpen && 'rotate-180')} />
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 shrink-0 opacity-50 transition-transform',
+              isOpen && 'rotate-180'
+            )}
+          />
         </div>
 
         {isOpen && (

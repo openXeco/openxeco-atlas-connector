@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, RefreshCw, Search, Filter } from 'lucide-react';
+import { Plus, RefreshCw, Search } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -19,7 +19,7 @@ export default function EntitiesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<EntityListParams>({
+  const [filters, _setFilters] = useState<EntityListParams>({
     page: 1,
     limit: 10,
   });
@@ -39,7 +39,7 @@ export default function EntitiesPage() {
         `/api/entities?${params.toString()}`
       );
       setEntities(response.data);
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to load entities');
     } finally {
       setLoading(false);
@@ -72,7 +72,7 @@ export default function EntitiesPage() {
     try {
       await apiClient.delete(`/api/entities/${id}`);
       await loadEntities();
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to delete entity');
     }
   };
@@ -81,8 +81,7 @@ export default function EntitiesPage() {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
-      entity.name.toLowerCase().includes(query) ||
-      entity.description?.toLowerCase().includes(query)
+      entity.name.toLowerCase().includes(query) || entity.description?.toLowerCase().includes(query)
     );
   });
 
@@ -96,17 +95,10 @@ export default function EntitiesPage() {
             <div className="mb-8 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">Entities</h2>
-                <p className="text-muted-foreground">
-                  Manage cluster entities and sync with ATLAS
-                </p>
+                <p className="text-muted-foreground">Manage cluster entities and sync with ATLAS</p>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleRefresh}
-                  disabled={loading}
-                >
+                <Button variant="outline" size="icon" onClick={handleRefresh} disabled={loading}>
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 </Button>
                 <Button onClick={handleCreateNew} className="gap-2">
@@ -127,9 +119,7 @@ export default function EntitiesPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>All Entities</CardTitle>
-                    <CardDescription>
-                      {filteredEntities.length} entities found
-                    </CardDescription>
+                    <CardDescription>{filteredEntities.length} entities found</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="relative">

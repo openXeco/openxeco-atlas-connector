@@ -109,18 +109,16 @@ export class AtlasClient {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({})) as JsonApiDocument;
+        const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument;
         logger.error('ATLAS API error:', {
           status: response.status,
           statusText: response.statusText,
           errors: errorData.errors || [],
         });
-        throw new Error(
-          `ATLAS API error: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`ATLAS API error: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json() as JsonApiDocument<T>;
+      const data = (await response.json()) as JsonApiDocument<T>;
 
       if (data.errors && data.errors.length > 0) {
         logger.error('ATLAS API returned errors:', { errors: data.errors });
@@ -142,10 +140,7 @@ export class AtlasClient {
   async getTaxonomies(type: TaxonomyType): Promise<TaxonomyTerm[]> {
     logger.info(`Fetching taxonomies of type: ${type}`);
 
-    const response = await this.request<JsonApiResource>(
-      'GET',
-      `/taxonomy_term/${type}`
-    );
+    const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}`);
 
     if (!response.data) {
       return [];
@@ -169,10 +164,7 @@ export class AtlasClient {
   async getTaxonomy(type: TaxonomyType, id: string): Promise<TaxonomyTerm> {
     logger.info(`Fetching taxonomy: ${type}/${id}`);
 
-    const response = await this.request<JsonApiResource>(
-      'GET',
-      `/taxonomy_term/${type}/${id}`
-    );
+    const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}/${id}`);
 
     if (!response.data || Array.isArray(response.data)) {
       throw new Error('Taxonomy not found');
@@ -196,11 +188,7 @@ export class AtlasClient {
   async getClusters(params?: QueryParams): Promise<PaginatedResponse<Cluster>> {
     logger.info('Fetching clusters from ATLAS');
 
-    const response = await this.request<JsonApiResource>(
-      'GET',
-      '/node/cluster',
-      { params }
-    );
+    const response = await this.request<JsonApiResource>('GET', '/node/cluster', { params });
 
     if (!response.data) {
       return {
@@ -238,10 +226,7 @@ export class AtlasClient {
   async getCluster(id: string): Promise<Cluster> {
     logger.info(`Fetching cluster: ${id}`);
 
-    const response = await this.request<JsonApiResource>(
-      'GET',
-      `/node/cluster/${id}`
-    );
+    const response = await this.request<JsonApiResource>('GET', `/node/cluster/${id}`);
 
     if (!response.data || Array.isArray(response.data)) {
       throw new Error('Cluster not found');
@@ -275,50 +260,53 @@ export class AtlasClient {
           field_institution_name_in_nation: data.nameNational, // National language name *
           field_entity_department: data.entityDepartment,
           body: data.description,
-          
+
           // Address (structured) *
-          field_address: data.countryCode && data.city && data.streetAddress ? {
-            country_code: data.countryCode,
-            locality: data.city,
-            address_line1: data.streetAddress,
-            postal_code: data.postalCode,
-          } : undefined,
+          field_address:
+            data.countryCode && data.city && data.streetAddress
+              ? {
+                  country_code: data.countryCode,
+                  locality: data.city,
+                  address_line1: data.streetAddress,
+                  postal_code: data.postalCode,
+                }
+              : undefined,
           field_latitude: data.latitude,
           field_longitude: data.longitude,
-          
+
           // Organization details
           field_general_contact_e_mail: data.email, // *
           field_phone_number: data.phone,
           field_url: data.website ? { uri: data.website } : undefined, // *
           field_registration_number: data.registrationNumber,
           field_logo: data.logoUrl,
-          
+
           // Headquarters
           field_question_headquarter: data.isHeadquarter, // *
           field_headquarter: data.headquarterInfo,
-          
+
           // Subsidiaries
           field_question_subsidiaries: data.hasSubsidiaries, // *
           field_subsidiaries_eu: data.subsidiariesDetails,
           field_question_majority: data.hasMajorityShares, // *
           field_majority_shares_noneu: data.majoritySharesDetails,
-          
+
           // Compliance
           field_article_136_compliance: data.article138Compliance, // *
           field_data_sharing_consent: data.dataShareConsent, // *
-          
+
           // Contact person / Representative
           field_first_name: data.contactFirstName, // *
           field_family_name: data.contactLastName, // *
           field_e_mail: data.contactEmail, // *
           field_position: data.contactPosition,
           field_representative_phone_numbe: data.contactPhone,
-          
+
           // Expertise
           field_field_of_activity_descr: data.expertiseDescription, // * (max 800 chars)
           field_goals_to_achieve: data.goalsToAchieve,
           field_goals_to_contribute: data.goalsToContribute,
-          
+
           // Workflow
           moderation_state: data.moderationState || 'draft',
         },
@@ -326,11 +314,7 @@ export class AtlasClient {
       },
     };
 
-    const response = await this.request<JsonApiResource>(
-      'POST',
-      '/node/cluster',
-      { body }
-    );
+    const response = await this.request<JsonApiResource>('POST', '/node/cluster', { body });
 
     if (!response.data || Array.isArray(response.data)) {
       throw new Error('Failed to create cluster');
@@ -356,13 +340,15 @@ export class AtlasClient {
     logger.info(`Updating cluster: ${id}`);
 
     const attributes: Record<string, unknown> = {};
-    
+
     // Basic information
     if (data.name) attributes.title = data.name;
-    if (data.nameNational !== undefined) attributes.field_institution_name_in_nation = data.nameNational;
-    if (data.entityDepartment !== undefined) attributes.field_entity_department = data.entityDepartment;
+    if (data.nameNational !== undefined)
+      attributes.field_institution_name_in_nation = data.nameNational;
+    if (data.entityDepartment !== undefined)
+      attributes.field_entity_department = data.entityDepartment;
     if (data.description !== undefined) attributes.body = data.description;
-    
+
     // Address (structured)
     if (data.countryCode || data.city || data.streetAddress || data.postalCode) {
       attributes.field_address = {
@@ -374,40 +360,51 @@ export class AtlasClient {
     }
     if (data.latitude !== undefined) attributes.field_latitude = data.latitude;
     if (data.longitude !== undefined) attributes.field_longitude = data.longitude;
-    
+
     // Organization details
     if (data.email !== undefined) attributes.field_general_contact_e_mail = data.email;
     if (data.phone !== undefined) attributes.field_phone_number = data.phone;
     if (data.website !== undefined) attributes.field_url = { uri: data.website };
-    if (data.registrationNumber !== undefined) attributes.field_registration_number = data.registrationNumber;
+    if (data.registrationNumber !== undefined)
+      attributes.field_registration_number = data.registrationNumber;
     if (data.logoUrl !== undefined) attributes.field_logo = data.logoUrl;
-    
+
     // Headquarters
-    if (data.isHeadquarter !== undefined) attributes.field_question_headquarter = data.isHeadquarter;
+    if (data.isHeadquarter !== undefined)
+      attributes.field_question_headquarter = data.isHeadquarter;
     if (data.headquarterInfo !== undefined) attributes.field_headquarter = data.headquarterInfo;
-    
+
     // Subsidiaries
-    if (data.hasSubsidiaries !== undefined) attributes.field_question_subsidiaries = data.hasSubsidiaries;
-    if (data.subsidiariesDetails !== undefined) attributes.field_subsidiaries_eu = data.subsidiariesDetails;
-    if (data.hasMajorityShares !== undefined) attributes.field_question_majority = data.hasMajorityShares;
-    if (data.majoritySharesDetails !== undefined) attributes.field_majority_shares_noneu = data.majoritySharesDetails;
-    
+    if (data.hasSubsidiaries !== undefined)
+      attributes.field_question_subsidiaries = data.hasSubsidiaries;
+    if (data.subsidiariesDetails !== undefined)
+      attributes.field_subsidiaries_eu = data.subsidiariesDetails;
+    if (data.hasMajorityShares !== undefined)
+      attributes.field_question_majority = data.hasMajorityShares;
+    if (data.majoritySharesDetails !== undefined)
+      attributes.field_majority_shares_noneu = data.majoritySharesDetails;
+
     // Compliance
-    if (data.article138Compliance !== undefined) attributes.field_article_136_compliance = data.article138Compliance;
-    if (data.dataShareConsent !== undefined) attributes.field_data_sharing_consent = data.dataShareConsent;
-    
+    if (data.article138Compliance !== undefined)
+      attributes.field_article_136_compliance = data.article138Compliance;
+    if (data.dataShareConsent !== undefined)
+      attributes.field_data_sharing_consent = data.dataShareConsent;
+
     // Contact person
     if (data.contactFirstName !== undefined) attributes.field_first_name = data.contactFirstName;
     if (data.contactLastName !== undefined) attributes.field_family_name = data.contactLastName;
     if (data.contactEmail !== undefined) attributes.field_e_mail = data.contactEmail;
     if (data.contactPosition !== undefined) attributes.field_position = data.contactPosition;
-    if (data.contactPhone !== undefined) attributes.field_representative_phone_numbe = data.contactPhone;
-    
+    if (data.contactPhone !== undefined)
+      attributes.field_representative_phone_numbe = data.contactPhone;
+
     // Expertise
-    if (data.expertiseDescription !== undefined) attributes.field_field_of_activity_descr = data.expertiseDescription;
+    if (data.expertiseDescription !== undefined)
+      attributes.field_field_of_activity_descr = data.expertiseDescription;
     if (data.goalsToAchieve !== undefined) attributes.field_goals_to_achieve = data.goalsToAchieve;
-    if (data.goalsToContribute !== undefined) attributes.field_goals_to_contribute = data.goalsToContribute;
-    
+    if (data.goalsToContribute !== undefined)
+      attributes.field_goals_to_contribute = data.goalsToContribute;
+
     // Workflow
     if (data.moderationState !== undefined) attributes.moderation_state = data.moderationState;
 
@@ -420,11 +417,7 @@ export class AtlasClient {
       },
     };
 
-    const response = await this.request<JsonApiResource>(
-      'PATCH',
-      `/node/cluster/${id}`,
-      { body }
-    );
+    const response = await this.request<JsonApiResource>('PATCH', `/node/cluster/${id}`, { body });
 
     if (!response.data || Array.isArray(response.data)) {
       throw new Error('Failed to update cluster');

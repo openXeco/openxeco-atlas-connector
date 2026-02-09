@@ -2,13 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Building2,
-  Tags,
-  RefreshCw,
-  Settings,
-} from 'lucide-react';
+import { LayoutDashboard, Building2, Tags, RefreshCw, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [

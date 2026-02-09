@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle2, AlertCircle, Clock, XCircle, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertCircle, Clock, ArrowUpCircle } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { ProtectedRoute } from '@/components/auth/protected-route';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SyncStatusWidget } from '@/components/sync/sync-status-widget';
@@ -33,7 +33,7 @@ export default function SyncPage() {
     try {
       const response = await apiClient.get<{ data: SyncStatus }>('/api/sync/status');
       setStatus(response.data);
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to load sync status');
     } finally {
       setLoading(false);
@@ -62,12 +62,7 @@ export default function SyncPage() {
                   Monitor and manage synchronization with ATLAS
                 </p>
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleRefresh}
-                disabled={loading}
-              >
+              <Button variant="outline" size="icon" onClick={handleRefresh} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
@@ -99,7 +94,8 @@ export default function SyncPage() {
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">{status.synced}</div>
                     <p className="text-xs text-muted-foreground">
-                      {status.total > 0 ? Math.round((status.synced / status.total) * 100) : 0}% of total
+                      {status.total > 0 ? Math.round((status.synced / status.total) * 100) : 0}% of
+                      total
                     </p>
                   </CardContent>
                 </Card>

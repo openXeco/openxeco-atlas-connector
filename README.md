@@ -85,75 +85,76 @@ openxeco-atlas-connector/
 
 ### Root Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm install` | Install all dependencies |
-| `pnpm lint` | Run ESLint on all packages |
-| `pnpm format` | Format code with Prettier |
+| Command          | Description                  |
+| ---------------- | ---------------------------- |
+| `pnpm install`   | Install all dependencies     |
+| `pnpm lint`      | Run ESLint on all packages   |
+| `pnpm format`    | Format code with Prettier    |
 | `pnpm typecheck` | Run TypeScript type checking |
 
 ### Backend Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm --filter @atlas-connector/backend dev` | Start backend dev server |
-| `pnpm --filter @atlas-connector/backend build` | Build backend for production |
-| `pnpm --filter @atlas-connector/backend db:push` | Push database schema |
-| `pnpm --filter @atlas-connector/backend db:generate` | Generate migrations |
-| `pnpm --filter @atlas-connector/backend db:studio` | Open Drizzle Studio |
-| `pnpm --filter @atlas-connector/backend seed:admin` | Create admin user |
+| Command                                              | Description                  |
+| ---------------------------------------------------- | ---------------------------- |
+| `pnpm --filter @atlas-connector/backend dev`         | Start backend dev server     |
+| `pnpm --filter @atlas-connector/backend build`       | Build backend for production |
+| `pnpm --filter @atlas-connector/backend db:push`     | Push database schema         |
+| `pnpm --filter @atlas-connector/backend db:generate` | Generate migrations          |
+| `pnpm --filter @atlas-connector/backend db:studio`   | Open Drizzle Studio          |
+| `pnpm --filter @atlas-connector/backend seed:admin`  | Create admin user            |
 
 ### Frontend Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm --filter @atlas-connector/frontend dev` | Start frontend dev server |
+| Command                                         | Description                   |
+| ----------------------------------------------- | ----------------------------- |
+| `pnpm --filter @atlas-connector/frontend dev`   | Start frontend dev server     |
 | `pnpm --filter @atlas-connector/frontend build` | Build frontend for production |
 
 ## API Endpoints
 
 ### Authentication
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/api/auth/login` | User login | No |
-| POST | `/api/auth/logout` | User logout | Yes |
-| POST | `/api/auth/refresh` | Refresh access token | No |
-| GET | `/api/auth/me` | Get current user | Yes |
+| Method | Endpoint            | Description          | Auth Required |
+| ------ | ------------------- | -------------------- | ------------- |
+| POST   | `/api/auth/login`   | User login           | No            |
+| POST   | `/api/auth/logout`  | User logout          | Yes           |
+| POST   | `/api/auth/refresh` | Refresh access token | No            |
+| GET    | `/api/auth/me`      | Get current user     | Yes           |
 
 ### Taxonomies
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/api/taxonomies/sync` | Sync all taxonomies from ATLAS | Yes |
-| POST | `/api/taxonomies/sync/:type` | Sync specific taxonomy type | Yes |
-| GET | `/api/taxonomies/:type` | Get taxonomies by type | Yes |
-| GET | `/api/taxonomies/id/:id` | Get taxonomy by ID | Yes |
-| GET | `/api/taxonomies/search` | Search taxonomies | Yes |
+| Method | Endpoint                     | Description                    | Auth Required |
+| ------ | ---------------------------- | ------------------------------ | ------------- |
+| POST   | `/api/taxonomies/sync`       | Sync all taxonomies from ATLAS | Yes           |
+| POST   | `/api/taxonomies/sync/:type` | Sync specific taxonomy type    | Yes           |
+| GET    | `/api/taxonomies/:type`      | Get taxonomies by type         | Yes           |
+| GET    | `/api/taxonomies/id/:id`     | Get taxonomy by ID             | Yes           |
+| GET    | `/api/taxonomies/search`     | Search taxonomies              | Yes           |
 
 ### Entities (Clusters)
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/api/entities` | List all entities | Yes |
-| GET | `/api/entities/:id` | Get entity by ID | Yes |
-| POST | `/api/entities` | Create new entity | Yes |
-| PATCH | `/api/entities/:id` | Update entity | Yes |
-| DELETE | `/api/entities/:id` | Delete entity | Yes |
-| POST | `/api/entities/:id/sync` | Sync entity to ATLAS | Yes |
-| GET | `/api/entities/:id/versions` | Get entity version history | Yes |
+| Method | Endpoint                     | Description                | Auth Required |
+| ------ | ---------------------------- | -------------------------- | ------------- |
+| GET    | `/api/entities`              | List all entities          | Yes           |
+| GET    | `/api/entities/:id`          | Get entity by ID           | Yes           |
+| POST   | `/api/entities`              | Create new entity          | Yes           |
+| PATCH  | `/api/entities/:id`          | Update entity              | Yes           |
+| DELETE | `/api/entities/:id`          | Delete entity              | Yes           |
+| POST   | `/api/entities/:id/sync`     | Sync entity to ATLAS       | Yes           |
+| GET    | `/api/entities/:id/versions` | Get entity version history | Yes           |
 
 ### Health
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/health/live` | Liveness probe |
-| GET | `/health/ready` | Readiness probe |
+| Method | Endpoint        | Description     |
+| ------ | --------------- | --------------- |
+| GET    | `/health`       | Health check    |
+| GET    | `/health/live`  | Liveness probe  |
+| GET    | `/health/ready` | Readiness probe |
 
 ## Features
 
 ### Phase 1: Foundation ✅
+
 - Monorepo with pnpm workspaces
 - Docker development environment (PostgreSQL 17, Redis 7)
 - Backend: Fastify 5.7 with TypeScript
@@ -162,6 +163,7 @@ openxeco-atlas-connector/
 - Code quality: ESLint, Prettier, TypeScript strict mode
 
 ### Phase 2: Authentication ✅
+
 - JWT-based authentication with refresh tokens
 - Argon2 password hashing
 - Protected routes and middleware
@@ -170,6 +172,7 @@ openxeco-atlas-connector/
 - Auto token refresh
 
 ### Phase 3: ATLAS Integration ✅
+
 - JSON:API client for ATLAS API
 - Taxonomy sync service (22 taxonomy types)
 - Entity CRUD operations
@@ -179,6 +182,7 @@ openxeco-atlas-connector/
 - Database indexes for performance
 
 ### Phase 4: Taxonomy Management ✅
+
 - Taxonomy list page with statistics
 - Individual taxonomy type detail pages
 - Search functionality across taxonomy terms
@@ -188,6 +192,7 @@ openxeco-atlas-connector/
 - List and tree view modes
 
 ### Phase 5: Entity Management ✅
+
 - Entity list page with data table (TanStack Table)
 - Column sorting and search functionality
 - Status and sync status badges with color coding
@@ -201,6 +206,7 @@ openxeco-atlas-connector/
 - Row actions (view, edit, delete) with dropdown menu
 
 ### Phase 6: ATLAS Sync ✅
+
 - Entity sync service with push/pull operations
 - Conflict detection and resolution logic
 - Diff comparison between local and ATLAS entities
@@ -214,6 +220,7 @@ openxeco-atlas-connector/
 - Sync status flow management (local → pending_push → synced/conflict/failed)
 
 ### Phase 7: ATLAS-Compliant Registration ✅
+
 - Complete ECCC membership registration form field support
 - Structured address fields (country_code, city, street_address, postal_code)
 - Contact person/representative fields (first_name, last_name, email, position, phone)
@@ -239,31 +246,38 @@ The connector now fully implements the European Cybersecurity Competence Communi
 ### Mandatory Fields
 
 **Basic Information:**
+
 - Organization name (English) - `name`
 - Organization name (national language) - `nameNational`
 
 **Address (Structured):**
+
 - Country code (ISO 3166-1 alpha-2) - `countryCode`
 - City - `city`
 - Street address - `streetAddress`
 
 **Organization Details:**
+
 - General contact email - `email`
 - Website URL - `website`
 
 **Compliance:**
+
 - Article 138 compliance - `article138Compliance`
 - Data sharing consent - `dataShareConsent`
 
 **Contact Person:**
+
 - First name - `contactFirstName`
 - Last name - `contactLastName`
 - Email - `contactEmail`
 
 **Expertise:**
+
 - Expertise description (max 800 chars) - `expertiseDescription`
 
 **Taxonomy:**
+
 - Organization type - `clusterTypeId`
 - Fields of activity (Article 8(3)) - `fieldsOfActivityIds`
 
@@ -307,4 +321,4 @@ This validates all mandatory fields, transforms to ATLAS JSON:API format, and cr
 
 ## License
 
-BSD-2-Clause license 
+BSD-2-Clause license

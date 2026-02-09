@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowUpCircle, ArrowDownCircle, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowUpCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ interface SyncStatusWidgetProps {
   onRefresh?: () => void;
 }
 
-export function SyncStatusWidget({ onRefresh }: SyncStatusWidgetProps) {
+export function SyncStatusWidget({ onRefresh: _onRefresh }: SyncStatusWidgetProps) {
   const router = useRouter();
   const [entities, setEntities] = useState<Entity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,9 +78,7 @@ export function SyncStatusWidget({ onRefresh }: SyncStatusWidgetProps) {
                   <ArrowUpCircle className="h-5 w-5 text-yellow-600" />
                   Local Entities ({localEntities.length})
                 </CardTitle>
-                <CardDescription>
-                  These entities have not been synced to ATLAS yet
-                </CardDescription>
+                <CardDescription>These entities have not been synced to ATLAS yet</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -101,11 +99,7 @@ export function SyncStatusWidget({ onRefresh }: SyncStatusWidgetProps) {
                     <Badge variant="secondary" className={getSyncStatusColor(entity.syncStatus)}>
                       {entity.syncStatus}
                     </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewEntity(entity.id)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleViewEntity(entity.id)}>
                       View
                     </Button>
                   </div>
@@ -153,11 +147,7 @@ export function SyncStatusWidget({ onRefresh }: SyncStatusWidgetProps) {
                     <Badge variant="secondary" className={getSyncStatusColor(entity.syncStatus)}>
                       {entity.syncStatus}
                     </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewEntity(entity.id)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleViewEntity(entity.id)}>
                       Resolve
                     </Button>
                   </div>
@@ -177,9 +167,7 @@ export function SyncStatusWidget({ onRefresh }: SyncStatusWidgetProps) {
                   <AlertTriangle className="h-5 w-5 text-red-600" />
                   Failed Syncs ({failedEntities.length})
                 </CardTitle>
-                <CardDescription>
-                  These entities failed to sync with ATLAS
-                </CardDescription>
+                <CardDescription>These entities failed to sync with ATLAS</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -193,18 +181,17 @@ export function SyncStatusWidget({ onRefresh }: SyncStatusWidgetProps) {
                   <div className="flex-1">
                     <div className="font-medium">{entity.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      Last sync attempt {entity.lastSyncedAt ? new Date(entity.lastSyncedAt).toLocaleDateString() : 'Never'}
+                      Last sync attempt{' '}
+                      {entity.lastSyncedAt
+                        ? new Date(entity.lastSyncedAt).toLocaleDateString()
+                        : 'Never'}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className={getSyncStatusColor(entity.syncStatus)}>
                       {entity.syncStatus}
                     </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewEntity(entity.id)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleViewEntity(entity.id)}>
                       Retry
                     </Button>
                   </div>
@@ -215,17 +202,19 @@ export function SyncStatusWidget({ onRefresh }: SyncStatusWidgetProps) {
         </Card>
       )}
 
-      {localEntities.length === 0 && conflictEntities.length === 0 && failedEntities.length === 0 && (
-        <Card>
-          <CardContent className="flex h-64 flex-col items-center justify-center gap-2">
-            <CheckCircle className="h-12 w-12 text-green-600" />
-            <div className="text-lg font-medium">All entities are synced!</div>
-            <p className="text-sm text-muted-foreground">
-              There are no pending syncs, conflicts, or failures
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {localEntities.length === 0 &&
+        conflictEntities.length === 0 &&
+        failedEntities.length === 0 && (
+          <Card>
+            <CardContent className="flex h-64 flex-col items-center justify-center gap-2">
+              <CheckCircle className="h-12 w-12 text-green-600" />
+              <div className="text-lg font-medium">All entities are synced!</div>
+              <p className="text-sm text-muted-foreground">
+                There are no pending syncs, conflicts, or failures
+              </p>
+            </CardContent>
+          </Card>
+        )}
     </div>
   );
 }

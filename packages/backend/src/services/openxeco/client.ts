@@ -62,12 +62,14 @@ export class OpenXecoClient {
         let errorBody = '';
         try {
           errorBody = await response.text();
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
 
         logger.error('OpenXeco: Login failed', {
           status,
           statusText: response.statusText,
-          errorBody: errorBody.substring(0, 500)
+          errorBody: errorBody.substring(0, 500),
         });
 
         if (status === 401 || status === 500) {
@@ -82,12 +84,13 @@ export class OpenXecoClient {
       let refreshToken = '';
 
       // Try getSetCookie() first (Node.js 18+), fallback to get('set-cookie')
-      const setCookieHeaders = (response.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.()
-        ?? [response.headers.get('set-cookie')].filter(Boolean) as string[];
+      const setCookieHeaders =
+        (response.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.() ??
+        ([response.headers.get('set-cookie')].filter(Boolean) as string[]);
 
       logger.debug('OpenXeco: Login response headers', {
         setCookieCount: setCookieHeaders.length,
-        setCookieHeaders: setCookieHeaders.map(c => c?.substring(0, 50) + '...')
+        setCookieHeaders: setCookieHeaders.map((c) => c?.substring(0, 50) + '...'),
       });
 
       for (const cookie of setCookieHeaders) {
@@ -102,7 +105,7 @@ export class OpenXecoClient {
       // If no cookies, try to get token from response body
       if (!accessToken) {
         try {
-          const body = await response.json() as Record<string, unknown>;
+          const body = (await response.json()) as Record<string, unknown>;
           logger.debug('OpenXeco: Login response body', { bodyKeys: Object.keys(body) });
 
           if (typeof body.access_token === 'string') accessToken = body.access_token;
@@ -187,10 +190,7 @@ export class OpenXecoClient {
   /**
    * Make an authenticated request
    */
-  private async authenticatedRequest(
-    url: string,
-    session: OpenXecoSession
-  ): Promise<Response> {
+  private async authenticatedRequest(url: string, session: OpenXecoSession): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 

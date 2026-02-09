@@ -73,13 +73,7 @@ const getSyncStatusColor = (syncStatus: string) => {
   }
 };
 
-export function EntityDataTable({
-  data,
-  loading,
-  onView,
-  onEdit,
-  onDelete,
-}: EntityDataTableProps) {
+export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: EntityDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const columns = useMemo<ColumnDef<Entity>[]>(
@@ -127,10 +121,7 @@ export function EntityDataTable({
         header: 'Sync Status',
         cell: ({ row }) => {
           return (
-            <Badge
-              variant="secondary"
-              className={getSyncStatusColor(row.original.syncStatus)}
-            >
+            <Badge variant="secondary" className={getSyncStatusColor(row.original.syncStatus)}>
               {row.original.syncStatus.replace('_', ' ')}
             </Badge>
           );
@@ -215,9 +206,7 @@ export function EntityDataTable({
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-2">
         <div className="text-muted-foreground">No entities found</div>
-        <p className="text-sm text-muted-foreground">
-          Create your first entity to get started
-        </p>
+        <p className="text-sm text-muted-foreground">Create your first entity to get started</p>
       </div>
     );
   }
@@ -233,10 +222,7 @@ export function EntityDataTable({
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 );
               })}

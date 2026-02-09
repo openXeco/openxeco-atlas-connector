@@ -15,9 +15,4 @@ export {
   MAPPING_BY_QUESTION_REF,
   MAPPING_BY_ENTITY_FIELD,
 } from './types.js';
-export type {
-  OpenXecoFormQuestion,
-  OpenXecoFormAnswer,
-  FieldMapping,
-  FieldType,
-} from './types.js';
+export type { OpenXecoFormQuestion, OpenXecoFormAnswer, FieldMapping, FieldType } from './types.js';

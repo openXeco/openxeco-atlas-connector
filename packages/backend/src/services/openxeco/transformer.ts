@@ -159,9 +159,7 @@ export class OpenXecoFormTransformer {
   ): boolean | undefined {
     const parsed = this.parseBoolean(value);
     if (parsed === null) {
-      result.warnings.push(
-        `Could not parse boolean value "${value}" for ${mapping.questionRef}`
-      );
+      result.warnings.push(`Could not parse boolean value "${value}" for ${mapping.questionRef}`);
       return undefined;
     }
     return parsed;
@@ -224,7 +222,10 @@ export class OpenXecoFormTransformer {
       }
     } catch {
       // Fall back to comma-separated
-      names = value.split(',').map((v) => v.trim()).filter(Boolean);
+      names = value
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean);
     }
 
     if (names.length === 0) {

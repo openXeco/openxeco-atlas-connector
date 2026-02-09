@@ -38,18 +38,12 @@ export default function NewEntityPage() {
           <Header />
           <main className="flex-1 overflow-auto bg-muted/30 p-6">
             <div className="mb-6 flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push('/entities')}
-              >
+              <Button variant="ghost" size="icon" onClick={() => router.push('/entities')}>
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">Create New Entity</h2>
-                <p className="text-muted-foreground">
-                  Add a new cluster entity to the system
-                </p>
+                <p className="text-muted-foreground">Add a new cluster entity to the system</p>
               </div>
             </div>
 

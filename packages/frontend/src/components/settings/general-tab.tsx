@@ -38,7 +38,7 @@ export function GeneralTab() {
     try {
       const response = await apiClient.get<{ data: GeneralSettings }>('/api/settings/general');
       setSettings(response.data);
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to load settings');
     } finally {
       setLoading(false);
@@ -49,10 +49,7 @@ export function GeneralTab() {
     loadSettings();
   }, []);
 
-  const handleChange = <K extends keyof GeneralSettings>(
-    field: K,
-    value: GeneralSettings[K]
-  ) => {
+  const handleChange = <K extends keyof GeneralSettings>(field: K, value: GeneralSettings[K]) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
     setSuccess(null);
   };
@@ -86,21 +83,15 @@ export function GeneralTab() {
     <Card>
       <CardHeader>
         <CardTitle>General Settings</CardTitle>
-        <CardDescription>
-          Configure general application behavior and preferences
-        </CardDescription>
+        <CardDescription>Configure general application behavior and preferences</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {error && (
-          <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-            {error}
-          </div>
+          <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>
         )}
 
         {success && (
-          <div className="rounded-md bg-green-500/10 p-4 text-sm text-green-600">
-            {success}
-          </div>
+          <div className="rounded-md bg-green-500/10 p-4 text-sm text-green-600">{success}</div>
         )}
 
         <div className="grid gap-6">
@@ -137,7 +128,10 @@ export function GeneralTab() {
             <Select
               value={settings.syncConflictResolution}
               onValueChange={(value) =>
-                handleChange('syncConflictResolution', value as GeneralSettings['syncConflictResolution'])
+                handleChange(
+                  'syncConflictResolution',
+                  value as GeneralSettings['syncConflictResolution']
+                )
               }
             >
               <SelectTrigger id="conflictResolution">

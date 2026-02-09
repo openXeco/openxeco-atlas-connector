@@ -95,9 +95,7 @@ export function UserDialog({ open, onOpenChange, user, onSuccess }: UserDialogPr
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Edit User' : 'Add User'}</DialogTitle>
             <DialogDescription>
-              {isEditing
-                ? 'Update the user email address.'
-                : 'Create a new user account.'}
+              {isEditing ? 'Update the user email address.' : 'Create a new user account.'}
             </DialogDescription>
           </DialogHeader>
 

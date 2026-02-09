@@ -86,9 +86,7 @@ export function ChangePasswordDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
-            <DialogDescription>
-              Set a new password for {user?.email}
-            </DialogDescription>
+            <DialogDescription>Set a new password for {user?.email}</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">

@@ -8,10 +8,7 @@ declare module 'fastify' {
   }
 }
 
-export async function authenticate(
-  request: FastifyRequest,
-  reply: FastifyReply
-): Promise<void> {
+export async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     const authHeader = request.headers.authorization;
 
@@ -33,7 +30,7 @@ export async function authenticate(
     }
 
     request.currentUser = payload;
-  } catch (error) {
+  } catch (_error) {
     return reply.status(401).send({
       error: 'Unauthorized',
       message: 'Authentication failed',
@@ -41,10 +38,7 @@ export async function authenticate(
   }
 }
 
-export async function requireAdmin(
-  request: FastifyRequest,
-  reply: FastifyReply
-): Promise<void> {
+export async function requireAdmin(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   await authenticate(request, reply);
 
   if (request.currentUser?.role !== 'admin') {

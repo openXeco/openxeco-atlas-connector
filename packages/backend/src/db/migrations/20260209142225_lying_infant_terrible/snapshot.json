@@ -2,9 +2,7 @@
   "version": "8",
   "dialect": "postgres",
   "id": "4238f696-4490-4d07-a06e-b3117fc4f283",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "isRlsEnabled": false,
@@ -2193,14 +2191,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "country_id"
-      ],
+      "columns": ["country_id"],
       "schemaTo": "public",
       "tableTo": "taxonomies",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "entities_country_id_taxonomies_id_fkey",
@@ -2210,14 +2204,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "cluster_type_id"
-      ],
+      "columns": ["cluster_type_id"],
       "schemaTo": "public",
       "tableTo": "taxonomies",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "entities_cluster_type_id_taxonomies_id_fkey",
@@ -2227,14 +2217,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "organization_type_id"
-      ],
+      "columns": ["organization_type_id"],
       "schemaTo": "public",
       "tableTo": "taxonomies",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "entities_organization_type_id_taxonomies_id_fkey",
@@ -2244,14 +2230,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "created_by"
-      ],
+      "columns": ["created_by"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "entities_created_by_users_id_fkey",
@@ -2261,14 +2243,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "updated_by"
-      ],
+      "columns": ["updated_by"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "entities_updated_by_users_id_fkey",
@@ -2278,14 +2256,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "entity_id"
-      ],
+      "columns": ["entity_id"],
       "schemaTo": "public",
       "tableTo": "entities",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_fields_of_activity_entity_id_entities_id_fkey",
@@ -2295,14 +2269,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "taxonomy_id"
-      ],
+      "columns": ["taxonomy_id"],
       "schemaTo": "public",
       "tableTo": "taxonomies",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_fields_of_activity_taxonomy_id_taxonomies_id_fkey",
@@ -2312,14 +2282,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "entity_id"
-      ],
+      "columns": ["entity_id"],
       "schemaTo": "public",
       "tableTo": "entities",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_sectors_entity_id_entities_id_fkey",
@@ -2329,14 +2295,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "taxonomy_id"
-      ],
+      "columns": ["taxonomy_id"],
       "schemaTo": "public",
       "tableTo": "taxonomies",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_sectors_taxonomy_id_taxonomies_id_fkey",
@@ -2346,14 +2308,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "entity_id"
-      ],
+      "columns": ["entity_id"],
       "schemaTo": "public",
       "tableTo": "entities",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_sub_domains_entity_id_entities_id_fkey",
@@ -2363,14 +2321,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "taxonomy_id"
-      ],
+      "columns": ["taxonomy_id"],
       "schemaTo": "public",
       "tableTo": "taxonomies",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_sub_domains_taxonomy_id_taxonomies_id_fkey",
@@ -2380,14 +2334,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "parent_domain_id"
-      ],
+      "columns": ["parent_domain_id"],
       "schemaTo": "public",
       "tableTo": "taxonomies",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "entity_sub_domains_parent_domain_id_taxonomies_id_fkey",
@@ -2397,14 +2347,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "entity_id"
-      ],
+      "columns": ["entity_id"],
       "schemaTo": "public",
       "tableTo": "entities",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_technologies_entity_id_entities_id_fkey",
@@ -2414,14 +2360,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "taxonomy_id"
-      ],
+      "columns": ["taxonomy_id"],
       "schemaTo": "public",
       "tableTo": "taxonomies",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_technologies_taxonomy_id_taxonomies_id_fkey",
@@ -2431,14 +2373,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "entity_id"
-      ],
+      "columns": ["entity_id"],
       "schemaTo": "public",
       "tableTo": "entities",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_thematic_areas_entity_id_entities_id_fkey",
@@ -2448,14 +2386,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "taxonomy_id"
-      ],
+      "columns": ["taxonomy_id"],
       "schemaTo": "public",
       "tableTo": "taxonomies",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_thematic_areas_taxonomy_id_taxonomies_id_fkey",
@@ -2465,14 +2399,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "entity_id"
-      ],
+      "columns": ["entity_id"],
       "schemaTo": "public",
       "tableTo": "entities",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_use_cases_entity_id_entities_id_fkey",
@@ -2482,14 +2412,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "taxonomy_id"
-      ],
+      "columns": ["taxonomy_id"],
       "schemaTo": "public",
       "tableTo": "taxonomies",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_use_cases_taxonomy_id_taxonomies_id_fkey",
@@ -2499,14 +2425,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "entity_id"
-      ],
+      "columns": ["entity_id"],
       "schemaTo": "public",
       "tableTo": "entities",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "entity_versions_entity_id_entities_id_fkey",
@@ -2516,14 +2438,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "changed_by"
-      ],
+      "columns": ["changed_by"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "entity_versions_changed_by_users_id_fkey",
@@ -2532,9 +2450,7 @@
       "table": "entity_versions"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "atlas_config_pkey",
       "schema": "public",
@@ -2542,9 +2458,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "entities_pkey",
       "schema": "public",
@@ -2552,9 +2466,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "entity_fields_of_activity_pkey",
       "schema": "public",
@@ -2562,9 +2474,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "entity_sectors_pkey",
       "schema": "public",
@@ -2572,9 +2482,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "entity_sub_domains_pkey",
       "schema": "public",
@@ -2582,9 +2490,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "entity_technologies_pkey",
       "schema": "public",
@@ -2592,9 +2498,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "entity_thematic_areas_pkey",
       "schema": "public",
@@ -2602,9 +2506,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "entity_use_cases_pkey",
       "schema": "public",
@@ -2612,9 +2514,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "entity_versions_pkey",
       "schema": "public",
@@ -2622,9 +2522,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "sync_logs_pkey",
       "schema": "public",
@@ -2632,9 +2530,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "taxonomies_pkey",
       "schema": "public",
@@ -2642,9 +2538,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "users_pkey",
       "schema": "public",
@@ -2653,9 +2547,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "key"
-      ],
+      "columns": ["key"],
       "nullsNotDistinct": false,
       "name": "atlas_config_key_key",
       "schema": "public",
@@ -2664,9 +2556,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "atlas_id"
-      ],
+      "columns": ["atlas_id"],
       "nullsNotDistinct": false,
       "name": "entities_atlas_id_key",
       "schema": "public",
@@ -2675,9 +2565,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "atlas_id"
-      ],
+      "columns": ["atlas_id"],
       "nullsNotDistinct": false,
       "name": "taxonomies_atlas_id_key",
       "schema": "public",
@@ -2686,9 +2574,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "email"
-      ],
+      "columns": ["email"],
       "nullsNotDistinct": false,
       "name": "users_email_key",
       "schema": "public",

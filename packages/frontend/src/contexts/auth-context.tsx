@@ -27,10 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshToken = async () => {
     try {
-      const response = await apiClient.post<{ accessToken: string }>(
-        '/api/auth/refresh',
-        {}
-      );
+      const response = await apiClient.post<{ accessToken: string }>('/api/auth/refresh', {});
       localStorage.setItem('accessToken', response.accessToken);
       await fetchCurrentUser();
     } catch (error) {
@@ -50,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const response = await apiClient.get<{ user: User }>('/api/auth/me');
       setUser(response.user);
-    } catch (error) {
+    } catch (_error) {
       localStorage.removeItem('accessToken');
       setUser(null);
     }

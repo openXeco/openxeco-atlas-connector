@@ -9,12 +9,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api';
-import { TAXONOMY_TYPES, type TaxonomyTypeInfo } from '@/types/taxonomy';
-
-interface TaxonomyStats {
-  type: string;
-  count: number;
-}
+import { TAXONOMY_TYPES } from '@/types/taxonomy';
 
 export default function TaxonomiesPage() {
   const router = useRouter();
@@ -26,23 +21,23 @@ export default function TaxonomiesPage() {
   const loadStats = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const counts: Record<string, number> = {};
-      
+
       for (const taxonomyType of TAXONOMY_TYPES) {
         try {
           const response = await apiClient.get<{ data: unknown[]; meta: { count: number } }>(
             `/api/taxonomies/${taxonomyType.type}`
           );
           counts[taxonomyType.type] = response.meta?.count || response.data?.length || 0;
-        } catch (err) {
+        } catch (_err) {
           counts[taxonomyType.type] = 0;
         }
       }
-      
+
       setStats(counts);
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to load taxonomy statistics');
     } finally {
       setLoading(false);
@@ -52,11 +47,11 @@ export default function TaxonomiesPage() {
   const handleSyncAll = async () => {
     setSyncing(true);
     setError(null);
-    
+
     try {
       await apiClient.post('/api/taxonomies/sync', {});
       await loadStats();
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to sync taxonomies from ATLAS');
     } finally {
       setSyncing(false);
@@ -79,15 +74,9 @@ export default function TaxonomiesPage() {
             <div className="mb-8 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">Taxonomies</h2>
-                <p className="text-muted-foreground">
-                  Manage taxonomy terms from ATLAS API
-                </p>
+                <p className="text-muted-foreground">Manage taxonomy terms from ATLAS API</p>
               </div>
-              <Button
-                onClick={handleSyncAll}
-                disabled={syncing || loading}
-                className="gap-2"
-              >
+              <Button onClick={handleSyncAll} disabled={syncing || loading} className="gap-2">
                 <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? 'Syncing...' : 'Sync All from ATLAS'}
               </Button>

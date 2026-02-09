@@ -20,7 +20,7 @@ interface SyncLog {
   entityId: string | null;
   operation: string;
   status: string;
-  details: any;
+  details: unknown;
   createdAt: Date;
 }
 
@@ -84,9 +84,7 @@ export function SyncLogsTable() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Sync History</CardTitle>
-            <CardDescription>
-              View all synchronization operations and their results
-            </CardDescription>
+            <CardDescription>View all synchronization operations and their results</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Select
@@ -133,9 +131,7 @@ export function SyncLogsTable() {
           <div className="flex h-64 flex-col items-center justify-center gap-2">
             <Calendar className="h-12 w-12 text-muted-foreground" />
             <div className="text-lg font-medium">No sync logs found</div>
-            <p className="text-sm text-muted-foreground">
-              Sync operations will appear here
-            </p>
+            <p className="text-sm text-muted-foreground">Sync operations will appear here</p>
           </div>
         ) : (
           <div className="space-y-2">

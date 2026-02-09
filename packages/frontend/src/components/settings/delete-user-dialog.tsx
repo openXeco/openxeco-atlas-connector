@@ -27,12 +27,7 @@ interface DeleteUserDialogProps {
   onSuccess: () => void;
 }
 
-export function DeleteUserDialog({
-  open,
-  onOpenChange,
-  user,
-  onSuccess,
-}: DeleteUserDialogProps) {
+export function DeleteUserDialog({ open, onOpenChange, user, onSuccess }: DeleteUserDialogProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,15 +54,13 @@ export function DeleteUserDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete User</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete <strong>{user?.email}</strong>? This
-            action cannot be undone.
+            Are you sure you want to delete <strong>{user?.email}</strong>? This action cannot be
+            undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
-          </div>
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
         )}
 
         <AlertDialogFooter>

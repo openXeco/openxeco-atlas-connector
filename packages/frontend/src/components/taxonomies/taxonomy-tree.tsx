@@ -86,9 +86,7 @@ export function TaxonomyTree({ taxonomies }: TaxonomyTreeProps) {
 
   if (tree.length === 0) {
     return (
-      <div className="py-8 text-center text-muted-foreground">
-        No hierarchical data available
-      </div>
+      <div className="py-8 text-center text-muted-foreground">No hierarchical data available</div>
     );
   }
 

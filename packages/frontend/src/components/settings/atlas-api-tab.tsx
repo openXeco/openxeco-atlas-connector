@@ -39,7 +39,7 @@ export function AtlasApiTab() {
     try {
       const response = await apiClient.get<{ data: AtlasSettings }>('/api/settings/atlas');
       setSettings(response.data);
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to load settings');
     } finally {
       setLoading(false);
@@ -112,15 +112,11 @@ export function AtlasApiTab() {
       </CardHeader>
       <CardContent className="space-y-6">
         {error && (
-          <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-            {error}
-          </div>
+          <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>
         )}
 
         {success && (
-          <div className="rounded-md bg-green-500/10 p-4 text-sm text-green-600">
-            {success}
-          </div>
+          <div className="rounded-md bg-green-500/10 p-4 text-sm text-green-600">{success}</div>
         )}
 
         <div className="grid gap-4">

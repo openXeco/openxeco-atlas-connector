@@ -17,11 +17,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const body = loginSchema.parse(request.body);
 
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, body.email))
-        .limit(1);
+      const [user] = await db.select().from(users).where(eq(users.email, body.email)).limit(1);
 
       if (!user) {
         return reply.status(401).send({
@@ -30,10 +26,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         });
       }
 
-      const isValidPassword = await verifyPassword(
-        user.passwordHash,
-        body.password
-      );
+      const isValidPassword = await verifyPassword(user.passwordHash, body.password);
 
       if (!isValidPassword) {
         return reply.status(401).send({
@@ -78,8 +71,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/refresh', async (request, reply) => {
     try {
       const refreshToken =
-        request.cookies.refreshToken ||
-        (request.body as { refreshToken?: string })?.refreshToken;
+        request.cookies.refreshToken || (request.body as { refreshToken?: string })?.refreshToken;
 
       if (!refreshToken) {
         return reply.status(401).send({
@@ -97,11 +89,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         });
       }
 
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, payload.userId))
-        .limit(1);
+      const [user] = await db.select().from(users).where(eq(users.id, payload.userId)).limit(1);
 
       if (!user) {
         return reply.status(401).send({
@@ -127,7 +115,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({
         accessToken: tokens.accessToken,
       });
-    } catch (error) {
+    } catch (_error) {
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Token refresh failed',
@@ -135,48 +123,40 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  fastify.get(
-    '/me',
-    { preHandler: authenticate },
-    async (request, reply) => {
-      if (!request.currentUser) {
-        return reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'User not authenticated',
-        });
-      }
-
-      const [user] = await db
-        .select({
-          id: users.id,
-          email: users.email,
-          role: users.role,
-          createdAt: users.createdAt,
-        })
-        .from(users)
-        .where(eq(users.id, request.currentUser.userId))
-        .limit(1);
-
-      if (!user) {
-        return reply.status(404).send({
-          error: 'Not Found',
-          message: 'User not found',
-        });
-      }
-
-      return reply.send({ user });
-    }
-  );
-
-  fastify.post(
-    '/logout',
-    { preHandler: authenticate },
-    async (_request, reply) => {
-      reply.clearCookie('refreshToken', {
-        path: '/api/auth/refresh',
+  fastify.get('/me', { preHandler: authenticate }, async (request, reply) => {
+    if (!request.currentUser) {
+      return reply.status(401).send({
+        error: 'Unauthorized',
+        message: 'User not authenticated',
       });
-
-      return reply.send({ message: 'Logged out successfully' });
     }
-  );
+
+    const [user] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        role: users.role,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.id, request.currentUser.userId))
+      .limit(1);
+
+    if (!user) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'User not found',
+      });
+    }
+
+    return reply.send({ user });
+  });
+
+  fastify.post('/logout', { preHandler: authenticate }, async (_request, reply) => {
+    reply.clearCookie('refreshToken', {
+      path: '/api/auth/refresh',
+    });
+
+    return reply.send({ message: 'Logged out successfully' });
+  });
 }

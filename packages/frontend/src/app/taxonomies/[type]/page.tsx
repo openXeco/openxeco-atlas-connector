@@ -15,11 +15,7 @@ import { TAXONOMY_TYPES, type Taxonomy } from '@/types/taxonomy';
 
 type ViewMode = 'list' | 'tree';
 
-export default function TaxonomyDetailPage({
-  params,
-}: {
-  params: Promise<{ type: string }>;
-}) {
+export default function TaxonomyDetailPage({ params }: { params: Promise<{ type: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
   const [taxonomies, setTaxonomies] = useState<Taxonomy[]>([]);
@@ -31,8 +27,8 @@ export default function TaxonomyDetailPage({
   const [error, setError] = useState<string | null>(null);
 
   const taxonomyInfo = TAXONOMY_TYPES.find((t) => t.type === resolvedParams.type);
-  const hasHierarchy = resolvedParams.type === 'institution' || 
-                       resolvedParams.type === 'cluster_thematic_area';
+  const hasHierarchy =
+    resolvedParams.type === 'institution' || resolvedParams.type === 'cluster_thematic_area';
 
   const loadTaxonomies = async () => {
     setLoading(true);
@@ -44,7 +40,7 @@ export default function TaxonomyDetailPage({
       );
       setTaxonomies(response.data);
       setFilteredTaxonomies(response.data);
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to load taxonomies');
     } finally {
       setLoading(false);
@@ -58,7 +54,7 @@ export default function TaxonomyDetailPage({
     try {
       await apiClient.post(`/api/taxonomies/sync/${resolvedParams.type}`, {});
       await loadTaxonomies();
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to sync taxonomy from ATLAS');
     } finally {
       setSyncing(false);
@@ -107,17 +103,11 @@ export default function TaxonomyDetailPage({
           <main className="flex-1 overflow-auto bg-muted/30 p-6">
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => router.push('/taxonomies')}
-                >
+                <Button variant="ghost" size="icon" onClick={() => router.push('/taxonomies')}>
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h2 className="text-2xl font-bold tracking-tight">
-                    {taxonomyInfo.label}
-                  </h2>
+                  <h2 className="text-2xl font-bold tracking-tight">{taxonomyInfo.label}</h2>
                   <p className="text-muted-foreground">{taxonomyInfo.description}</p>
                 </div>
               </div>
@@ -142,11 +132,7 @@ export default function TaxonomyDetailPage({
                     </Button>
                   </div>
                 )}
-                <Button
-                  onClick={handleSync}
-                  disabled={syncing || loading}
-                  className="gap-2"
-                >
+                <Button onClick={handleSync} disabled={syncing || loading} className="gap-2">
                   <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
                   {syncing ? 'Syncing...' : 'Sync'}
                 </Button>
@@ -164,7 +150,8 @@ export default function TaxonomyDetailPage({
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>
-                      {filteredTaxonomies.length} {filteredTaxonomies.length === 1 ? 'Term' : 'Terms'}
+                      {filteredTaxonomies.length}{' '}
+                      {filteredTaxonomies.length === 1 ? 'Term' : 'Terms'}
                     </CardTitle>
                     <CardDescription>
                       {searchQuery ? 'Filtered results' : 'All terms in this taxonomy'}
@@ -195,10 +182,7 @@ export default function TaxonomyDetailPage({
                 ) : (
                   <div className="space-y-2">
                     {filteredTaxonomies.map((taxonomy) => (
-                      <div
-                        key={taxonomy.id}
-                        className="rounded-md border p-3 hover:bg-accent"
-                      >
+                      <div key={taxonomy.id} className="rounded-md border p-3 hover:bg-accent">
                         <div className="font-medium">{taxonomy.name}</div>
                         {taxonomy.description && (
                           <div className="text-sm text-muted-foreground">

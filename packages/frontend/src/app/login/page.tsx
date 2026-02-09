@@ -37,7 +37,7 @@ export default function LoginPage() {
 
     try {
       await login(data.email, data.password);
-    } catch (err) {
+    } catch (_err) {
       setError('Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
@@ -52,9 +52,7 @@ export default function LoginPage() {
             <Building2 className="h-6 w-6" />
           </div>
           <CardTitle className="text-2xl">ATLAS Connector</CardTitle>
-          <CardDescription>
-            Sign in to your account to continue
-          </CardDescription>
+          <CardDescription>Sign in to your account to continue</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -74,9 +72,7 @@ export default function LoginPage() {
                 {...register('email')}
                 disabled={isLoading}
               />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">

@@ -43,7 +43,7 @@ export function UsersTab() {
     try {
       const response = await apiClient.get<{ data: User[] }>('/api/users');
       setUsers(response.data);
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to load users');
     } finally {
       setLoading(false);
@@ -94,12 +94,7 @@ export function UsersTab() {
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={loadUsers}
-                disabled={loading}
-              >
+              <Button variant="outline" size="icon" onClick={loadUsers} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
               <Button onClick={handleAddUser} className="gap-2">
@@ -178,7 +173,9 @@ export function UsersTab() {
                           size="icon"
                           onClick={() => handleDeleteUser(user)}
                           disabled={user.id === currentUser?.id}
-                          title={user.id === currentUser?.id ? "Cannot delete yourself" : "Delete user"}
+                          title={
+                            user.id === currentUser?.id ? 'Cannot delete yourself' : 'Delete user'
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

@@ -9,10 +9,7 @@ import type {
 } from './types.js';
 
 export class JsonApiTransformer {
-  toJsonApiCluster(
-    entity: Entity,
-    taxonomies?: Taxonomy[]
-  ): JsonApiDocument {
+  toJsonApiCluster(entity: Entity, taxonomies?: Taxonomy[]): JsonApiDocument {
     const relationships: Record<string, JsonApiRelationship> = {};
 
     if (entity.countryId) {
@@ -118,21 +115,19 @@ export class JsonApiTransformer {
 
     const resources = Array.isArray(document.data) ? document.data : [document.data];
 
-    return resources.map((resource) =>
-      this.fromJsonApiCluster({ data: resource })
-    );
+    return resources.map((resource) => this.fromJsonApiCluster({ data: resource }));
   }
 
   toEntityFromCluster(cluster: Cluster, userId?: string): Partial<Entity> {
     return {
       atlasId: cluster.atlasId,
-      
+
       // Basic information
       name: cluster.name,
       nameNational: cluster.nameNational,
       entityDepartment: cluster.entityDepartment,
       description: cluster.description,
-      
+
       // Address (structured)
       countryCode: cluster.countryCode,
       city: cluster.city,
@@ -140,50 +135,50 @@ export class JsonApiTransformer {
       postalCode: cluster.postalCode,
       latitude: cluster.latitude?.toString(),
       longitude: cluster.longitude?.toString(),
-      
+
       // Organization details
       email: cluster.email,
       phone: cluster.phone,
       website: cluster.website,
       registrationNumber: cluster.registrationNumber,
       logoUrl: cluster.logoUrl,
-      
+
       // Headquarters
       isHeadquarter: cluster.isHeadquarter,
       headquarterInfo: cluster.headquarterInfo,
-      
+
       // Subsidiaries
       hasSubsidiaries: cluster.hasSubsidiaries,
       subsidiariesDetails: cluster.subsidiariesDetails,
       hasMajorityShares: cluster.hasMajorityShares,
       majoritySharesDetails: cluster.majoritySharesDetails,
-      
+
       // Compliance
       article138Compliance: cluster.article138Compliance,
       dataShareConsent: cluster.dataShareConsent,
-      
+
       // Contact person
       contactFirstName: cluster.contactFirstName,
       contactLastName: cluster.contactLastName,
       contactEmail: cluster.contactEmail,
       contactPosition: cluster.contactPosition,
       contactPhone: cluster.contactPhone,
-      
+
       // Expertise
       expertiseDescription: cluster.expertiseDescription,
       goalsToAchieve: cluster.goalsToAchieve,
       goalsToContribute: cluster.goalsToContribute,
-      
+
       // Taxonomy references
       countryId: cluster.countryId,
       clusterTypeId: cluster.clusterTypeId,
       organizationTypeId: cluster.organizationTypeId,
-      
+
       // Workflow
       status: cluster.status || 'draft',
       moderationState: cluster.moderationState || 'draft',
       syncStatus: 'synced',
-      
+
       metadata: cluster.metadata,
       lastSyncedAt: new Date(),
       updatedBy: userId,
@@ -197,7 +192,7 @@ export class JsonApiTransformer {
       nameNational: entity.nameNational || undefined,
       entityDepartment: entity.entityDepartment || undefined,
       description: entity.description || undefined,
-      
+
       // Address (structured)
       countryCode: entity.countryCode || undefined,
       city: entity.city || undefined,
@@ -205,45 +200,45 @@ export class JsonApiTransformer {
       postalCode: entity.postalCode || undefined,
       latitude: entity.latitude ? parseFloat(entity.latitude) : undefined,
       longitude: entity.longitude ? parseFloat(entity.longitude) : undefined,
-      
+
       // Organization details
       email: entity.email || undefined,
       phone: entity.phone || undefined,
       website: entity.website || undefined,
       registrationNumber: entity.registrationNumber || undefined,
       logoUrl: entity.logoUrl || undefined,
-      
+
       // Headquarters
       isHeadquarter: entity.isHeadquarter ?? undefined,
       headquarterInfo: entity.headquarterInfo || undefined,
-      
+
       // Subsidiaries
       hasSubsidiaries: entity.hasSubsidiaries ?? undefined,
       subsidiariesDetails: entity.subsidiariesDetails || undefined,
       hasMajorityShares: entity.hasMajorityShares ?? undefined,
       majoritySharesDetails: entity.majoritySharesDetails || undefined,
-      
+
       // Compliance
       article138Compliance: entity.article138Compliance ?? undefined,
       dataShareConsent: entity.dataShareConsent ?? undefined,
-      
+
       // Contact person
       contactFirstName: entity.contactFirstName || undefined,
       contactLastName: entity.contactLastName || undefined,
       contactEmail: entity.contactEmail || undefined,
       contactPosition: entity.contactPosition || undefined,
       contactPhone: entity.contactPhone || undefined,
-      
+
       // Expertise
       expertiseDescription: entity.expertiseDescription || undefined,
       goalsToAchieve: entity.goalsToAchieve || undefined,
       goalsToContribute: entity.goalsToContribute || undefined,
-      
+
       // Taxonomy references
       countryId: entity.countryId || undefined,
       clusterTypeId: entity.clusterTypeId || undefined,
       organizationTypeId: entity.organizationTypeId || undefined,
-      
+
       // Workflow
       moderationState: entity.moderationState || undefined,
     };
@@ -275,10 +270,7 @@ export class JsonApiTransformer {
     };
   }
 
-  extractIncludedResources(
-    document: JsonApiDocument,
-    type: string
-  ): JsonApiResource[] {
+  extractIncludedResources(document: JsonApiDocument, type: string): JsonApiResource[] {
     if (!document.included) {
       return [];
     }

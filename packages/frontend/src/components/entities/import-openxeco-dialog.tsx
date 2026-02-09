@@ -109,8 +109,8 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
         <DialogHeader>
           <DialogTitle>Import from cybersecurity.lu</DialogTitle>
           <DialogDescription>
-            Enter your cybersecurity.lu credentials to import your ECCC registration form data.
-            Your credentials are only used for this import and are not stored.
+            Enter your cybersecurity.lu credentials to import your ECCC registration form data. Your
+            credentials are only used for this import and are not stored.
           </DialogDescription>
         </DialogHeader>
 
@@ -195,11 +195,7 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
         <DialogFooter>
           {!result ? (
             <>
-              <Button
-                variant="outline"
-                onClick={() => handleOpenChange(false)}
-                disabled={loading}
-              >
+              <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
                 Cancel
               </Button>
               <Button onClick={handleImport} disabled={loading}>
@@ -220,14 +216,10 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
                 Try Again
               </Button>
               {result.warnings.length > 0 && result.errors.length === 0 && (
-                <Button onClick={handleApplyWithWarnings}>
-                  Apply Anyway
-                </Button>
+                <Button onClick={handleApplyWithWarnings}>Apply Anyway</Button>
               )}
               {result.errors.length === 0 && result.warnings.length === 0 && (
-                <Button onClick={() => handleOpenChange(false)}>
-                  Done
-                </Button>
+                <Button onClick={() => handleOpenChange(false)}>Done</Button>
               )}
             </>
           )}

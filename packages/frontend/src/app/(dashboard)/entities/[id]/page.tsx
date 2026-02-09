@@ -2,24 +2,31 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Pencil, Trash2, RefreshCw, ExternalLink, MapPin, Globe, Building2, FileText, Clock, AlertCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Pencil,
+  Trash2,
+  RefreshCw,
+  ExternalLink,
+  MapPin,
+  Globe,
+  Building2,
+  FileText,
+  Clock,
+  AlertCircle,
+} from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiClient } from '@/lib/api';
 import type { Entity, EntityVersion } from '@/types/entity';
 import type { Taxonomy } from '@/types/taxonomy';
 
-export default function EntityDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function EntityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
   const [entity, setEntity] = useState<Entity | null>(null);
@@ -34,9 +41,7 @@ export default function EntityDetailPage({
     setError(null);
 
     try {
-      const response = await apiClient.get<{ data: Entity }>(
-        `/api/entities/${resolvedParams.id}`
-      );
+      const response = await apiClient.get<{ data: Entity }>(`/api/entities/${resolvedParams.id}`);
       setEntity(response.data);
 
       const taxIds = [
@@ -59,7 +64,7 @@ export default function EntityDetailPage({
         }
         setTaxonomies(taxMap);
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to load entity');
     } finally {
       setLoading(false);
@@ -92,7 +97,7 @@ export default function EntityDetailPage({
     try {
       await apiClient.delete(`/api/entities/${resolvedParams.id}`);
       router.push('/entities');
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to delete entity');
     }
   };
@@ -104,7 +109,7 @@ export default function EntityDetailPage({
     try {
       await apiClient.post(`/api/entities/${resolvedParams.id}/sync`, {});
       await loadEntity();
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to sync entity to ATLAS');
     } finally {
       setSyncing(false);
@@ -191,11 +196,7 @@ export default function EntityDetailPage({
           <main className="flex-1 overflow-auto bg-muted/30 p-6">
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => router.push('/entities')}
-                >
+                <Button variant="ghost" size="icon" onClick={() => router.push('/entities')}>
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
@@ -221,12 +222,7 @@ export default function EntityDetailPage({
                     Resolve Conflict
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  onClick={handleSync}
-                  disabled={syncing}
-                  className="gap-2"
-                >
+                <Button variant="outline" onClick={handleSync} disabled={syncing} className="gap-2">
                   <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
                   {syncing ? 'Pushing...' : 'Push to ATLAS'}
                 </Button>
@@ -292,9 +288,7 @@ export default function EntityDetailPage({
                     )}
                     {entity.website && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Website
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Website</h4>
                         <a
                           href={entity.website}
                           target="_blank"
@@ -333,9 +327,7 @@ export default function EntityDetailPage({
                     )}
                     {entity.logoUrl && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Logo
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Logo</h4>
                         <img
                           src={entity.logoUrl}
                           alt={entity.name}
@@ -403,17 +395,16 @@ export default function EntityDetailPage({
                   <CardContent className="space-y-4">
                     {entity.countryId && taxonomies[entity.countryId] && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Country
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Country</h4>
                         <p className="text-sm">{taxonomies[entity.countryId].name}</p>
                       </div>
                     )}
-                    {(entity.streetAddress || entity.city || entity.postalCode || entity.countryCode) && (
+                    {(entity.streetAddress ||
+                      entity.city ||
+                      entity.postalCode ||
+                      entity.countryCode) && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Address
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Address</h4>
                         <p className="text-sm">
                           {[entity.streetAddress, entity.postalCode, entity.city]
                             .filter(Boolean)
@@ -456,9 +447,7 @@ export default function EntityDetailPage({
                         <h4 className="mb-2 text-sm font-medium text-muted-foreground">
                           Organization Type
                         </h4>
-                        <p className="text-sm">
-                          {taxonomies[entity.organizationTypeId].name}
-                        </p>
+                        <p className="text-sm">{taxonomies[entity.organizationTypeId].name}</p>
                       </div>
                     )}
                   </CardContent>
@@ -473,36 +462,26 @@ export default function EntityDetailPage({
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                        Created
-                      </h4>
-                      <p className="text-sm">
-                        {new Date(entity.createdAt).toLocaleString()}
-                      </p>
+                      <h4 className="mb-2 text-sm font-medium text-muted-foreground">Created</h4>
+                      <p className="text-sm">{new Date(entity.createdAt).toLocaleString()}</p>
                     </div>
                     <div>
                       <h4 className="mb-2 text-sm font-medium text-muted-foreground">
                         Last Updated
                       </h4>
-                      <p className="text-sm">
-                        {new Date(entity.updatedAt).toLocaleString()}
-                      </p>
+                      <p className="text-sm">{new Date(entity.updatedAt).toLocaleString()}</p>
                     </div>
                     {entity.lastSyncedAt && (
                       <div>
                         <h4 className="mb-2 text-sm font-medium text-muted-foreground">
                           Last Synced
                         </h4>
-                        <p className="text-sm">
-                          {new Date(entity.lastSyncedAt).toLocaleString()}
-                        </p>
+                        <p className="text-sm">{new Date(entity.lastSyncedAt).toLocaleString()}</p>
                       </div>
                     )}
                     {entity.atlasId && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          ATLAS ID
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">ATLAS ID</h4>
                         <p className="text-sm font-mono">{entity.atlasId}</p>
                       </div>
                     )}
@@ -514,9 +493,7 @@ export default function EntityDetailPage({
                 <Card>
                   <CardHeader>
                     <CardTitle>Version History</CardTitle>
-                    <CardDescription>
-                      {versions.length} versions recorded
-                    </CardDescription>
+                    <CardDescription>{versions.length} versions recorded</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {versions.length === 0 ? (

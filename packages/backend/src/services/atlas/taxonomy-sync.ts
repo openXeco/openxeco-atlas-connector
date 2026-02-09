@@ -146,11 +146,7 @@ export class TaxonomySyncService {
   }
 
   async getTaxonomyById(id: string) {
-    const [taxonomy] = await db
-      .select()
-      .from(taxonomies)
-      .where(eq(taxonomies.id, id))
-      .limit(1);
+    const [taxonomy] = await db.select().from(taxonomies).where(eq(taxonomies.id, id)).limit(1);
 
     return taxonomy;
   }
@@ -169,9 +165,7 @@ export class TaxonomySyncService {
     return db
       .select()
       .from(taxonomies)
-      .where(
-        type ? eq(taxonomies.taxonomyType, type) : undefined
-      )
+      .where(type ? eq(taxonomies.taxonomyType, type) : undefined)
       .orderBy(taxonomies.name)
       .limit(50);
   }

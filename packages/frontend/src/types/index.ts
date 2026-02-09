@@ -25,7 +25,13 @@ export interface Entity {
   entityDepartment: string | null;
   description: string | null;
   status: 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected';
-  moderationState: 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected' | null;
+  moderationState:
+    | 'draft'
+    | 'ready_for_publication'
+    | 'published'
+    | 'to_be_rejected'
+    | 'rejected'
+    | null;
   syncStatus: 'local' | 'synced' | 'pending_push' | 'failed' | 'conflict';
   countryCode: string | null;
   city: string | null;

@@ -12,10 +12,7 @@ export interface TokenPair {
   refreshToken: string;
 }
 
-export function generateTokens(
-  fastify: FastifyInstance,
-  payload: JwtPayload
-): TokenPair {
+export function generateTokens(fastify: FastifyInstance, payload: JwtPayload): TokenPair {
   const accessToken = fastify.jwt.sign(payload, {
     expiresIn: config.JWT_EXPIRES_IN,
   });

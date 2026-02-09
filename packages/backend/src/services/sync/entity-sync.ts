@@ -42,11 +42,7 @@ export class EntitySyncService {
     logger.info(`Pushing entity ${entityId} to ATLAS`);
 
     try {
-      const [entity] = await db
-        .select()
-        .from(entities)
-        .where(eq(entities.id, entityId))
-        .limit(1);
+      const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1);
 
       if (!entity) {
         throw new Error('Entity not found');
@@ -120,17 +116,12 @@ export class EntitySyncService {
         success: true,
         entityId,
         atlasId: cluster.atlasId,
-        message: entity.atlasId
-          ? 'Entity updated in ATLAS'
-          : 'Entity created in ATLAS',
+        message: entity.atlasId ? 'Entity updated in ATLAS' : 'Entity created in ATLAS',
       };
     } catch (error) {
       logger.error(`Failed to push entity ${entityId}:`, error as Error);
 
-      await db
-        .update(entities)
-        .set({ syncStatus: 'failed' })
-        .where(eq(entities.id, entityId));
+      await db.update(entities).set({ syncStatus: 'failed' }).where(eq(entities.id, entityId));
 
       await db.insert(syncLogs).values({
         entityType: 'entity',
@@ -276,9 +267,7 @@ export class EntitySyncService {
         success: true,
         entityId: entity.id,
         atlasId,
-        message: existing
-          ? 'Entity updated from ATLAS'
-          : 'Entity created from ATLAS',
+        message: existing ? 'Entity updated from ATLAS' : 'Entity created from ATLAS',
       };
     } catch (error) {
       logger.error(`Failed to pull entity ${atlasId}:`, error as Error);
@@ -304,11 +293,7 @@ export class EntitySyncService {
   }
 
   async detectConflicts(entityId: string): Promise<ConflictReport> {
-    const [entity] = await db
-      .select()
-      .from(entities)
-      .where(eq(entities.id, entityId))
-      .limit(1);
+    const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1);
 
     if (!entity || !entity.atlasId) {
       return {
@@ -328,9 +313,7 @@ export class EntitySyncService {
       const localUpdatedAt = entity.updatedAt ? new Date(entity.updatedAt) : new Date();
       const remoteUpdatedAt = new Date();
 
-      const lastSynced = entity.lastSyncedAt
-        ? new Date(entity.lastSyncedAt)
-        : new Date(0);
+      const lastSynced = entity.lastSyncedAt ? new Date(entity.lastSyncedAt) : new Date(0);
 
       const localModifiedAfterSync = localUpdatedAt > lastSynced;
       const remoteModifiedAfterSync = remoteUpdatedAt > lastSynced;
@@ -381,11 +364,7 @@ export class EntitySyncService {
   }
 
   async getDiff(entityId: string): Promise<EntityDiff[]> {
-    const [entity] = await db
-      .select()
-      .from(entities)
-      .where(eq(entities.id, entityId))
-      .limit(1);
+    const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1);
 
     if (!entity || !entity.atlasId) {
       return [];
@@ -439,11 +418,7 @@ export class EntitySyncService {
       if (resolution === 'local') {
         return await this.pushEntity(entityId, userId);
       } else {
-        const [entity] = await db
-          .select()
-          .from(entities)
-          .where(eq(entities.id, entityId))
-          .limit(1);
+        const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1);
 
         if (!entity || !entity.atlasId) {
           throw new Error('Entity or ATLAS ID not found');

@@ -11,11 +11,7 @@ import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api';
 import type { Entity, EntityFormData } from '@/types/entity';
 
-export default function EditEntityPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
   const [entity, setEntity] = useState<Entity | null>(null);
@@ -29,7 +25,7 @@ export default function EditEntityPage({
           `/api/entities/${resolvedParams.id}`
         );
         setEntity(response.data);
-      } catch (err) {
+      } catch (_err) {
         setError('Failed to load entity');
       } finally {
         setLoading(false);
