@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
   Pencil,
@@ -14,107 +14,101 @@ import {
   FileText,
   Clock,
   AlertCircle,
-} from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { apiClient } from '@/lib/api';
-import type { Entity, EntityVersion } from '@/types/entity';
-import type { Taxonomy } from '@/types/taxonomy';
+} from 'lucide-react'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
+import { ProtectedRoute } from '@/components/auth/protected-route'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { apiClient } from '@/lib/api'
+import type { Entity, EntityVersion } from '@/types/entity'
+import type { Taxonomy } from '@/types/taxonomy'
 
 export default function EntityDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const router = useRouter();
-  const [entity, setEntity] = useState<Entity | null>(null);
-  const [versions, setVersions] = useState<EntityVersion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [taxonomies, setTaxonomies] = useState<Record<string, Taxonomy>>({});
+  const resolvedParams = use(params)
+  const router = useRouter()
+  const [entity, setEntity] = useState<Entity | null>(null)
+  const [versions, setVersions] = useState<EntityVersion[]>([])
+  const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [taxonomies, setTaxonomies] = useState<Record<string, Taxonomy>>({})
 
   const loadEntity = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
     try {
-      const response = await apiClient.get<{ data: Entity }>(`/api/entities/${resolvedParams.id}`);
-      setEntity(response.data);
+      const response = await apiClient.get<{ data: Entity }>(`/api/entities/${resolvedParams.id}`)
+      setEntity(response.data)
 
-      const taxIds = [
-        response.data.countryId,
-        response.data.clusterTypeId,
-        response.data.organizationTypeId,
-      ].filter(Boolean) as string[];
+      const taxIds = [response.data.countryId, response.data.clusterTypeId, response.data.organizationTypeId].filter(
+        Boolean
+      ) as string[]
 
       if (taxIds.length > 0) {
-        const taxMap: Record<string, Taxonomy> = {};
+        const taxMap: Record<string, Taxonomy> = {}
         for (const taxId of taxIds) {
           try {
-            const taxResponse = await apiClient.get<{ data: Taxonomy }>(
-              `/api/taxonomies/id/${taxId}`
-            );
-            taxMap[taxId] = taxResponse.data;
+            const taxResponse = await apiClient.get<{ data: Taxonomy }>(`/api/taxonomies/id/${taxId}`)
+            taxMap[taxId] = taxResponse.data
           } catch (err) {
-            console.error(`Failed to load taxonomy ${taxId}:`, err);
+            console.error(`Failed to load taxonomy ${taxId}:`, err)
           }
         }
-        setTaxonomies(taxMap);
+        setTaxonomies(taxMap)
       }
     } catch (_err) {
-      setError('Failed to load entity');
+      setError('Failed to load entity')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const loadVersions = async () => {
     try {
-      const response = await apiClient.get<{ data: EntityVersion[] }>(
-        `/api/entities/${resolvedParams.id}/versions`
-      );
-      setVersions(response.data);
+      const response = await apiClient.get<{ data: EntityVersion[] }>(`/api/entities/${resolvedParams.id}/versions`)
+      setVersions(response.data)
     } catch (err) {
-      console.error('Failed to load versions:', err);
+      console.error('Failed to load versions:', err)
     }
-  };
+  }
 
   useEffect(() => {
-    loadEntity();
-    loadVersions();
-  }, [resolvedParams.id]);
+    loadEntity()
+    loadVersions()
+  }, [resolvedParams.id])
 
   const handleEdit = () => {
-    router.push(`/entities/${resolvedParams.id}/edit`);
-  };
+    router.push(`/entities/${resolvedParams.id}/edit`)
+  }
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this entity?')) return;
+    if (!confirm('Are you sure you want to delete this entity?')) return
 
     try {
-      await apiClient.delete(`/api/entities/${resolvedParams.id}`);
-      router.push('/entities');
+      await apiClient.delete(`/api/entities/${resolvedParams.id}`)
+      router.push('/entities')
     } catch (_err) {
-      setError('Failed to delete entity');
+      setError('Failed to delete entity')
     }
-  };
+  }
 
   const handleSync = async () => {
-    setSyncing(true);
-    setError(null);
+    setSyncing(true)
+    setError(null)
 
     try {
-      await apiClient.post(`/api/entities/${resolvedParams.id}/sync`, {});
-      await loadEntity();
+      await apiClient.post(`/api/entities/${resolvedParams.id}/sync`, {})
+      await loadEntity()
     } catch (_err) {
-      setError('Failed to sync entity to ATLAS');
+      setError('Failed to sync entity to ATLAS')
     } finally {
-      setSyncing(false);
+      setSyncing(false)
     }
-  };
+  }
 
   if (loading) {
     return (
@@ -129,7 +123,7 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
       </ProtectedRoute>
-    );
+    )
   }
 
   if (!entity) {
@@ -150,42 +144,42 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
       </ProtectedRoute>
-    );
+    )
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'published':
-        return 'bg-green-500/10 text-green-700';
+        return 'bg-green-500/10 text-green-700'
       case 'ready_for_publication':
-        return 'bg-yellow-500/10 text-yellow-700';
+        return 'bg-yellow-500/10 text-yellow-700'
       case 'to_be_rejected':
-        return 'bg-orange-500/10 text-orange-700';
+        return 'bg-orange-500/10 text-orange-700'
       case 'draft':
-        return 'bg-gray-500/10 text-gray-700';
+        return 'bg-gray-500/10 text-gray-700'
       case 'rejected':
-        return 'bg-red-500/10 text-red-700';
+        return 'bg-red-500/10 text-red-700'
       default:
-        return 'bg-gray-500/10 text-gray-700';
+        return 'bg-gray-500/10 text-gray-700'
     }
-  };
+  }
 
   const getSyncStatusColor = (syncStatus: string) => {
     switch (syncStatus) {
       case 'synced':
-        return 'bg-green-500/10 text-green-700';
+        return 'bg-green-500/10 text-green-700'
       case 'pending_push':
-        return 'bg-blue-500/10 text-blue-700';
+        return 'bg-blue-500/10 text-blue-700'
       case 'local':
-        return 'bg-gray-500/10 text-gray-700';
+        return 'bg-gray-500/10 text-gray-700'
       case 'failed':
-        return 'bg-red-500/10 text-red-700';
+        return 'bg-red-500/10 text-red-700'
       case 'conflict':
-        return 'bg-orange-500/10 text-orange-700';
+        return 'bg-orange-500/10 text-orange-700'
       default:
-        return 'bg-gray-500/10 text-gray-700';
+        return 'bg-gray-500/10 text-gray-700'
     }
-  };
+  }
 
   return (
     <ProtectedRoute>
@@ -241,11 +235,7 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
               </div>
             </div>
 
-            {error && (
-              <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-                {error}
-              </div>
-            )}
+            {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
             <Tabs defaultValue="details" className="space-y-6">
               <TabsList>
@@ -264,25 +254,19 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                   <CardContent className="space-y-4">
                     {entity.nameNational && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Name (National Language)
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Name (National Language)</h4>
                         <p className="text-sm">{entity.nameNational}</p>
                       </div>
                     )}
                     {entity.entityDepartment && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Department
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Department</h4>
                         <p className="text-sm">{entity.entityDepartment}</p>
                       </div>
                     )}
                     {entity.description && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Description
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Description</h4>
                         <p className="text-sm">{entity.description}</p>
                       </div>
                     )}
@@ -303,25 +287,19 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                     )}
                     {entity.email && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Organization Email
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Organization Email</h4>
                         <p className="text-sm">{entity.email}</p>
                       </div>
                     )}
                     {entity.phone && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Organization Phone
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Organization Phone</h4>
                         <p className="text-sm">{entity.phone}</p>
                       </div>
                     )}
                     {entity.registrationNumber && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Registration Number
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Registration Number</h4>
                         <p className="text-sm">{entity.registrationNumber}</p>
                       </div>
                     )}
@@ -348,37 +326,23 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                   <CardContent className="space-y-4">
                     {(entity.contactFirstName || entity.contactLastName) && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Contact Person
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Contact Person</h4>
                         <p className="text-sm">
-                          {[entity.contactFirstName, entity.contactLastName]
-                            .filter(Boolean)
-                            .join(' ')}
+                          {[entity.contactFirstName, entity.contactLastName].filter(Boolean).join(' ')}
                         </p>
-                        {entity.contactEmail && (
-                          <p className="text-sm text-muted-foreground">{entity.contactEmail}</p>
-                        )}
+                        {entity.contactEmail && <p className="text-sm text-muted-foreground">{entity.contactEmail}</p>}
                       </div>
                     )}
                     {(entity.article138Compliance !== null || entity.dataShareConsent !== null) && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Compliance
-                        </h4>
-                        <p className="text-sm">
-                          Article 138 Compliance: {entity.article138Compliance ? 'Yes' : 'No'}
-                        </p>
-                        <p className="text-sm">
-                          Data Sharing Consent: {entity.dataShareConsent ? 'Yes' : 'No'}
-                        </p>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Compliance</h4>
+                        <p className="text-sm">Article 138 Compliance: {entity.article138Compliance ? 'Yes' : 'No'}</p>
+                        <p className="text-sm">Data Sharing Consent: {entity.dataShareConsent ? 'Yes' : 'No'}</p>
                       </div>
                     )}
                     {entity.expertiseDescription && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Expertise Description
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Expertise Description</h4>
                         <p className="text-sm">{entity.expertiseDescription}</p>
                       </div>
                     )}
@@ -399,25 +363,18 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                         <p className="text-sm">{taxonomies[entity.countryId].name}</p>
                       </div>
                     )}
-                    {(entity.streetAddress ||
-                      entity.city ||
-                      entity.postalCode ||
-                      entity.countryCode) && (
+                    {(entity.streetAddress || entity.city || entity.postalCode || entity.countryCode) && (
                       <div>
                         <h4 className="mb-2 text-sm font-medium text-muted-foreground">Address</h4>
                         <p className="text-sm">
-                          {[entity.streetAddress, entity.postalCode, entity.city]
-                            .filter(Boolean)
-                            .join(', ')}
+                          {[entity.streetAddress, entity.postalCode, entity.city].filter(Boolean).join(', ')}
                           {entity.countryCode ? ` (${entity.countryCode})` : ''}
                         </p>
                       </div>
                     )}
                     {entity.latitude && entity.longitude && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Coordinates
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Coordinates</h4>
                         <p className="text-sm">
                           {entity.latitude}, {entity.longitude}
                         </p>
@@ -436,17 +393,13 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                   <CardContent className="space-y-4">
                     {entity.clusterTypeId && taxonomies[entity.clusterTypeId] && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Cluster Type
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Cluster Type</h4>
                         <p className="text-sm">{taxonomies[entity.clusterTypeId].name}</p>
                       </div>
                     )}
                     {entity.organizationTypeId && taxonomies[entity.organizationTypeId] && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Organization Type
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Organization Type</h4>
                         <p className="text-sm">{taxonomies[entity.organizationTypeId].name}</p>
                       </div>
                     )}
@@ -466,16 +419,12 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                       <p className="text-sm">{new Date(entity.createdAt).toLocaleString()}</p>
                     </div>
                     <div>
-                      <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                        Last Updated
-                      </h4>
+                      <h4 className="mb-2 text-sm font-medium text-muted-foreground">Last Updated</h4>
                       <p className="text-sm">{new Date(entity.updatedAt).toLocaleString()}</p>
                     </div>
                     {entity.lastSyncedAt && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                          Last Synced
-                        </h4>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Last Synced</h4>
                         <p className="text-sm">{new Date(entity.lastSyncedAt).toLocaleString()}</p>
                       </div>
                     )}
@@ -497,16 +446,11 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                   </CardHeader>
                   <CardContent>
                     {versions.length === 0 ? (
-                      <div className="py-8 text-center text-muted-foreground">
-                        No version history available
-                      </div>
+                      <div className="py-8 text-center text-muted-foreground">No version history available</div>
                     ) : (
                       <div className="space-y-4">
                         {versions.map((version) => (
-                          <div
-                            key={version.id}
-                            className="flex items-start gap-4 rounded-lg border p-4"
-                          >
+                          <div key={version.id} className="flex items-start gap-4 rounded-lg border p-4">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
                               v{version.version}
                             </div>
@@ -517,9 +461,7 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                                   {new Date(version.createdAt).toLocaleString()}
                                 </div>
                               </div>
-                              <div className="mt-1 text-sm text-muted-foreground">
-                                Changes recorded
-                              </div>
+                              <div className="mt-1 text-sm text-muted-foreground">Changes recorded</div>
                             </div>
                           </div>
                         ))}
@@ -533,5 +475,5 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
     </ProtectedRoute>
-  );
+  )
 }

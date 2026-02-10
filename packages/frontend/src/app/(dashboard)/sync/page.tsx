@@ -1,52 +1,52 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle2, AlertCircle, Clock, ArrowUpCircle } from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SyncStatusWidget } from '@/components/sync/sync-status-widget';
-import { SyncLogsTable } from '@/components/sync/sync-logs-table';
-import { apiClient } from '@/lib/api';
+import { useState, useEffect } from 'react'
+import { RefreshCw, CheckCircle2, AlertCircle, Clock, ArrowUpCircle } from 'lucide-react'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
+import { ProtectedRoute } from '@/components/auth/protected-route'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { SyncStatusWidget } from '@/components/sync/sync-status-widget'
+import { SyncLogsTable } from '@/components/sync/sync-logs-table'
+import { apiClient } from '@/lib/api'
 
 interface SyncStatus {
-  total: number;
-  local: number;
-  synced: number;
-  conflict: number;
-  failed: number;
-  pendingPush: number;
+  total: number
+  local: number
+  synced: number
+  conflict: number
+  failed: number
+  pendingPush: number
 }
 
 export default function SyncPage() {
-  const [status, setStatus] = useState<SyncStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<SyncStatus | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const loadStatus = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
     try {
-      const response = await apiClient.get<{ data: SyncStatus }>('/api/sync/status');
-      setStatus(response.data);
+      const response = await apiClient.get<{ data: SyncStatus }>('/api/sync/status')
+      setStatus(response.data)
     } catch (_err) {
-      setError('Failed to load sync status');
+      setError('Failed to load sync status')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadStatus();
-  }, []);
+    loadStatus()
+  }, [])
 
   const handleRefresh = () => {
-    loadStatus();
-  };
+    loadStatus()
+  }
 
   return (
     <ProtectedRoute>
@@ -58,20 +58,14 @@ export default function SyncPage() {
             <div className="mb-8 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">Sync Management</h2>
-                <p className="text-muted-foreground">
-                  Monitor and manage synchronization with ATLAS
-                </p>
+                <p className="text-muted-foreground">Monitor and manage synchronization with ATLAS</p>
               </div>
               <Button variant="outline" size="icon" onClick={handleRefresh} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
 
-            {error && (
-              <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-                {error}
-              </div>
-            )}
+            {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
             {status && (
               <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -94,8 +88,7 @@ export default function SyncPage() {
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">{status.synced}</div>
                     <p className="text-xs text-muted-foreground">
-                      {status.total > 0 ? Math.round((status.synced / status.total) * 100) : 0}% of
-                      total
+                      {status.total > 0 ? Math.round((status.synced / status.total) * 100) : 0}% of total
                     </p>
                   </CardContent>
                 </Card>
@@ -117,9 +110,7 @@ export default function SyncPage() {
                     <AlertCircle className="h-4 w-4 text-red-600" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-red-600">
-                      {status.conflict + status.failed}
-                    </div>
+                    <div className="text-2xl font-bold text-red-600">{status.conflict + status.failed}</div>
                     <p className="text-xs text-muted-foreground">
                       {status.conflict} conflicts, {status.failed} failed
                     </p>
@@ -146,5 +137,5 @@ export default function SyncPage() {
         </div>
       </div>
     </ProtectedRoute>
-  );
+  )
 }

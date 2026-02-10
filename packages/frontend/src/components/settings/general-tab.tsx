@@ -1,24 +1,18 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { apiClient } from '@/lib/api';
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { apiClient } from '@/lib/api'
 
 interface GeneralSettings {
-  appName: string;
-  autoSyncOnPublish: boolean;
-  syncConflictResolution: 'manual' | 'local_wins' | 'remote_wins';
+  appName: string
+  autoSyncOnPublish: boolean
+  syncConflictResolution: 'manual' | 'local_wins' | 'remote_wins'
 }
 
 export function GeneralTab() {
@@ -26,57 +20,55 @@ export function GeneralTab() {
     appName: 'ATLAS Connector',
     autoSyncOnPublish: false,
     syncConflictResolution: 'manual',
-  });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const loadSettings = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const response = await apiClient.get<{ data: GeneralSettings }>('/api/settings/general');
-      setSettings(response.data);
+      const response = await apiClient.get<{ data: GeneralSettings }>('/api/settings/general')
+      setSettings(response.data)
     } catch (_err) {
-      setError('Failed to load settings');
+      setError('Failed to load settings')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    loadSettings()
+  }, [])
 
   const handleChange = <K extends keyof GeneralSettings>(field: K, value: GeneralSettings[K]) => {
-    setSettings((prev) => ({ ...prev, [field]: value }));
-    setSuccess(null);
-  };
+    setSettings((prev) => ({ ...prev, [field]: value }))
+    setSuccess(null)
+  }
 
   const handleSave = async () => {
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
 
     try {
-      await apiClient.patch('/api/settings/general', settings);
-      setSuccess('Settings saved successfully');
+      await apiClient.patch('/api/settings/general', settings)
+      setSuccess('Settings saved successfully')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save settings');
+      setError(err instanceof Error ? err.message : 'Failed to save settings')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   if (loading) {
     return (
       <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
-          Loading settings...
-        </CardContent>
+        <CardContent className="py-8 text-center text-muted-foreground">Loading settings...</CardContent>
       </Card>
-    );
+    )
   }
 
   return (
@@ -86,13 +78,9 @@ export function GeneralTab() {
         <CardDescription>Configure general application behavior and preferences</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {error && (
-          <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>
-        )}
+        {error && <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
-        {success && (
-          <div className="rounded-md bg-green-500/10 p-4 text-sm text-green-600">{success}</div>
-        )}
+        {success && <div className="rounded-md bg-green-500/10 p-4 text-sm text-green-600">{success}</div>}
 
         <div className="grid gap-6">
           <div className="grid gap-2">
@@ -104,9 +92,7 @@ export function GeneralTab() {
               onChange={(e) => handleChange('appName', e.target.value)}
               placeholder="ATLAS Connector"
             />
-            <p className="text-sm text-muted-foreground">
-              Displayed in the header and browser title
-            </p>
+            <p className="text-sm text-muted-foreground">Displayed in the header and browser title</p>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-4">
@@ -128,10 +114,7 @@ export function GeneralTab() {
             <Select
               value={settings.syncConflictResolution}
               onValueChange={(value) =>
-                handleChange(
-                  'syncConflictResolution',
-                  value as GeneralSettings['syncConflictResolution']
-                )
+                handleChange('syncConflictResolution', value as GeneralSettings['syncConflictResolution'])
               }
             >
               <SelectTrigger id="conflictResolution">
@@ -154,5 +137,5 @@ export function GeneralTab() {
         </Button>
       </CardContent>
     </Card>
-  );
+  )
 }

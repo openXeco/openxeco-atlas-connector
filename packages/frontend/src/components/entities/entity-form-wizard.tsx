@@ -1,28 +1,22 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { MultiSelect } from '@/components/ui/multi-select';
-import { ConsentCheckbox } from '@/components/entities/consent-checkbox';
-import { ImportOpenXecoDialog } from '@/components/entities/import-openxeco-dialog';
-import { apiClient } from '@/lib/api';
-import type { EntityFormData } from '@/types/entity';
-import type { Taxonomy } from '@/types/taxonomy';
+import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { ChevronRight, ChevronLeft, Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MultiSelect } from '@/components/ui/multi-select'
+import { ConsentCheckbox } from '@/components/entities/consent-checkbox'
+import { ImportOpenXecoDialog } from '@/components/entities/import-openxeco-dialog'
+import { apiClient } from '@/lib/api'
+import type { EntityFormData } from '@/types/entity'
+import type { Taxonomy } from '@/types/taxonomy'
 
 const entitySchema = z.object({
   // Step 1: Organisation
@@ -80,22 +74,22 @@ const entitySchema = z.object({
   dataShareConsent: z.boolean().optional(),
   moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
   subDomainIds: z.record(z.string(), z.array(z.string().uuid())).optional(),
-});
+})
 
 interface EntityFormWizardProps {
-  initialData?: Partial<EntityFormData>;
-  onSubmit: (data: EntityFormData) => Promise<void>;
-  onCancel: () => void;
+  initialData?: Partial<EntityFormData>
+  onSubmit: (data: EntityFormData) => Promise<void>
+  onCancel: () => void
 }
 
-type Step = 'organisation' | 'contact' | 'expertise' | 'confirmation';
+type Step = 'organisation' | 'contact' | 'expertise' | 'confirmation'
 
 const steps: { id: Step; title: string; description: string }[] = [
   { id: 'organisation', title: 'Organisation', description: 'Organization details and address' },
   { id: 'contact', title: 'Contact Person', description: 'Representative information' },
   { id: 'expertise', title: 'Expertise/Taxonomy', description: 'Fields of activity and expertise' },
   { id: 'confirmation', title: 'Disclaimer & Confirmation', description: 'Review and consent' },
-];
+]
 
 const GDPR_DISCLAIMER = `<p>The NCC, to which the application will be submitted, will process personal data in accordance with the Regulation (EU) 2016/679 (GDPR) and the ECCC will process personal data in accordance with the Regulation (EU) 2018/1725 (EUDPR). The legal basis for the processing operation is art. 6(1)(e) GDPR and art. 5(1)(a) EUDPR on the basis of articles 7 and 8 of Regulation (EU) 2021/887.</p>
 <p>Additional information on the personal data processed, possible processors and retention periods will be specified in the relevant Data Protection Notices.</p>
@@ -108,18 +102,18 @@ const GDPR_DISCLAIMER = `<p>The NCC, to which the application will be submitted,
 <li>website</li>
 <li>type of organization as foreseen in art. 8 para 2 of the Regulation</li>
 <li>fields of activity/expertise</li>
-</ul>`;
+</ul>`
 
 export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityFormWizardProps) {
-  const [currentStep, setCurrentStep] = useState<Step>('organisation');
-  const [submitting, setSubmitting] = useState(false);
-  const [countries, setCountries] = useState<Taxonomy[]>([]);
-  const [organizationTypes, setOrganizationTypes] = useState<Taxonomy[]>([]);
-  const [fieldsOfActivity, setFieldsOfActivity] = useState<Taxonomy[]>([]);
-  const [thematicAreas, setThematicAreas] = useState<Taxonomy[]>([]);
-  const [sectors, setSectors] = useState<Taxonomy[]>([]);
-  const [technologies, setTechnologies] = useState<Taxonomy[]>([]);
-  const [useCases, setUseCases] = useState<Taxonomy[]>([]);
+  const [currentStep, setCurrentStep] = useState<Step>('organisation')
+  const [submitting, setSubmitting] = useState(false)
+  const [countries, setCountries] = useState<Taxonomy[]>([])
+  const [organizationTypes, setOrganizationTypes] = useState<Taxonomy[]>([])
+  const [fieldsOfActivity, setFieldsOfActivity] = useState<Taxonomy[]>([])
+  const [thematicAreas, setThematicAreas] = useState<Taxonomy[]>([])
+  const [sectors, setSectors] = useState<Taxonomy[]>([])
+  const [technologies, setTechnologies] = useState<Taxonomy[]>([])
+  const [useCases, setUseCases] = useState<Taxonomy[]>([])
 
   const {
     register,
@@ -139,71 +133,70 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
       formCompletionConfirmed: false,
       ...initialData,
     },
-  });
+  })
 
   useEffect(() => {
     const loadTaxonomies = async () => {
       try {
-        const [countriesRes, orgRes, fieldsRes, thematicRes, sectorsRes, techRes, useCasesRes] =
-          await Promise.all([
-            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/country'),
-            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/organization_type'),
-            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/fields_of_activity'),
-            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_thematic_area'),
-            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/sectors'),
-            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/technologies'),
-            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/use_cases'),
-          ]);
-        setCountries(countriesRes.data);
-        setOrganizationTypes(orgRes.data);
-        setFieldsOfActivity(fieldsRes.data);
-        setThematicAreas(thematicRes.data);
-        setSectors(sectorsRes.data);
-        setTechnologies(techRes.data);
-        setUseCases(useCasesRes.data);
+        const [countriesRes, orgRes, fieldsRes, thematicRes, sectorsRes, techRes, useCasesRes] = await Promise.all([
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/country'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/organization_type'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/fields_of_activity'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_thematic_area'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/sectors'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/technologies'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/use_cases'),
+        ])
+        setCountries(countriesRes.data)
+        setOrganizationTypes(orgRes.data)
+        setFieldsOfActivity(fieldsRes.data)
+        setThematicAreas(thematicRes.data)
+        setSectors(sectorsRes.data)
+        setTechnologies(techRes.data)
+        setUseCases(useCasesRes.data)
       } catch (error) {
-        console.error('Failed to load taxonomies:', error);
+        console.error('Failed to load taxonomies:', error)
       }
-    };
-    loadTaxonomies();
-  }, []);
+    }
+    loadTaxonomies()
+  }, [])
 
-  const formData = watch();
-  const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
+  const formData = watch()
+  const currentStepIndex = steps.findIndex((s) => s.id === currentStep)
 
   const handleNext = () => {
     if (currentStepIndex < steps.length - 1) {
-      setCurrentStep(steps[currentStepIndex + 1].id);
+      setCurrentStep(steps[currentStepIndex + 1].id)
     }
-  };
+  }
 
   const handlePrevious = () => {
     if (currentStepIndex > 0) {
-      setCurrentStep(steps[currentStepIndex - 1].id);
+      setCurrentStep(steps[currentStepIndex - 1].id)
     }
-  };
+  }
 
   const onFormSubmit = async (data: EntityFormData) => {
-    setSubmitting(true);
+    setSubmitting(true)
     try {
-      await onSubmit(data);
+      await onSubmit(data)
     } catch (error) {
-      console.error('Form submission error:', error);
+      console.error('Form submission error:', error)
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
   const handleImportData = (importedData: Partial<EntityFormData>) => {
     // Apply imported data to form fields
     Object.entries(importedData).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        setValue(key as keyof EntityFormData, value as EntityFormData[keyof EntityFormData]);
+        setValue(key as keyof EntityFormData, value as EntityFormData[keyof EntityFormData])
       }
-    });
+    })
     // Reset to first step after import
-    setCurrentStep('organisation');
-  };
+    setCurrentStep('organisation')
+  }
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -225,11 +218,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     : 'border-muted bg-background text-muted-foreground'
                 }`}
               >
-                {index < currentStepIndex ? (
-                  <Check className="h-5 w-5" />
-                ) : (
-                  <span>{index + 1}</span>
-                )}
+                {index < currentStepIndex ? <Check className="h-5 w-5" /> : <span>{index + 1}</span>}
               </div>
               <div className="mt-2 text-center">
                 <div className="text-sm font-medium">{step.title}</div>
@@ -237,11 +226,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
               </div>
             </div>
             {index < steps.length - 1 && (
-              <div
-                className={`mx-4 h-0.5 flex-1 ${
-                  index < currentStepIndex ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
+              <div className={`mx-4 h-0.5 flex-1 ${index < currentStepIndex ? 'bg-primary' : 'bg-muted'}`} />
             )}
           </div>
         ))}
@@ -264,28 +249,18 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     {...register('nameNational')}
                     placeholder="Enter name in national language"
                   />
-                  {errors.nameNational && (
-                    <p className="text-sm text-destructive">{errors.nameNational.message}</p>
-                  )}
+                  {errors.nameNational && <p className="text-sm text-destructive">{errors.nameNational.message}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="FORM-ECCC-001-Q101b">Name in English *</Label>
-                  <Input
-                    id="FORM-ECCC-001-Q101b"
-                    {...register('name')}
-                    placeholder="Enter name in English"
-                  />
+                  <Input id="FORM-ECCC-001-Q101b" {...register('name')} placeholder="Enter name in English" />
                   {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="FORM-ECCC-001-Q101c">Entity / Department (if applicable)</Label>
-                  <Input
-                    id="FORM-ECCC-001-Q101c"
-                    {...register('entityDepartment')}
-                    placeholder="Department or unit"
-                  />
+                  <Input id="FORM-ECCC-001-Q101c" {...register('entityDepartment')} placeholder="Department or unit" />
                 </div>
 
                 <div className="space-y-2">
@@ -293,12 +268,12 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                   <Select
                     value={formData.countryId}
                     onValueChange={(value: string) => {
-                      setValue('countryId', value);
+                      setValue('countryId', value)
                       // Extract 2-letter country code from country name for countryCode field
-                      const selectedCountry = countries.find((c) => c.id === value);
+                      const selectedCountry = countries.find((c) => c.id === value)
                       if (selectedCountry) {
                         // Use first 2 letters of name as fallback (will need proper mapping in production)
-                        setValue('countryCode', selectedCountry.name.substring(0, 2).toUpperCase());
+                        setValue('countryCode', selectedCountry.name.substring(0, 2).toUpperCase())
                       }
                     }}
                   >
@@ -313,21 +288,13 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.countryId && (
-                    <p className="text-sm text-destructive">{errors.countryId.message}</p>
-                  )}
+                  {errors.countryId && <p className="text-sm text-destructive">{errors.countryId.message}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="FORM-ECCC-001-Q103">Street Address *</Label>
-                  <Input
-                    id="FORM-ECCC-001-Q103"
-                    {...register('streetAddress')}
-                    placeholder="Street address"
-                  />
-                  {errors.streetAddress && (
-                    <p className="text-sm text-destructive">{errors.streetAddress.message}</p>
-                  )}
+                  <Input id="FORM-ECCC-001-Q103" {...register('streetAddress')} placeholder="Street address" />
+                  {errors.streetAddress && <p className="text-sm text-destructive">{errors.streetAddress.message}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -337,9 +304,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="FORM-ECCC-001-Q105">
-                    Company/organization registration number
-                  </Label>
+                  <Label htmlFor="FORM-ECCC-001-Q105">Company/organization registration number</Label>
                   <Input
                     id="FORM-ECCC-001-Q105"
                     {...register('registrationNumber')}
@@ -349,17 +314,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="FORM-ECCC-001-Q106">
-                      Is this your main seat / headquarter? *
-                    </Label>
+                    <Label htmlFor="FORM-ECCC-001-Q106">Is this your main seat / headquarter? *</Label>
                     <Select
-                      value={
-                        formData.isHeadquarter === true
-                          ? 'true'
-                          : formData.isHeadquarter === false
-                            ? 'false'
-                            : ''
-                      }
+                      value={formData.isHeadquarter === true ? 'true' : formData.isHeadquarter === false ? 'false' : ''}
                       onValueChange={(value: string) => setValue('isHeadquarter', value === 'true')}
                     >
                       <SelectTrigger id="FORM-ECCC-001-Q106">
@@ -391,18 +348,12 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     placeholder="https://example.com"
                     type="url"
                   />
-                  {errors.website && (
-                    <p className="text-sm text-destructive">{errors.website.message}</p>
-                  )}
+                  {errors.website && <p className="text-sm text-destructive">{errors.website.message}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="FORM-ECCC-001-Q108">Phone number</Label>
-                  <Input
-                    id="FORM-ECCC-001-Q108"
-                    {...register('phone')}
-                    placeholder="+49 30 123456"
-                  />
+                  <Input id="FORM-ECCC-001-Q108" {...register('phone')} placeholder="+49 30 123456" />
                 </div>
 
                 <div className="space-y-2">
@@ -413,9 +364,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     placeholder="contact@example.org"
                     type="email"
                   />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email.message}</p>
-                  )}
+                  {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -439,20 +388,12 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="FORM-ECCC-001-Q111">
-                      Has subsidiaries in EU Member States? *
-                    </Label>
+                    <Label htmlFor="FORM-ECCC-001-Q111">Has subsidiaries in EU Member States? *</Label>
                     <Select
                       value={
-                        formData.hasSubsidiaries === true
-                          ? 'true'
-                          : formData.hasSubsidiaries === false
-                            ? 'false'
-                            : ''
+                        formData.hasSubsidiaries === true ? 'true' : formData.hasSubsidiaries === false ? 'false' : ''
                       }
-                      onValueChange={(value: string) =>
-                        setValue('hasSubsidiaries', value === 'true')
-                      }
+                      onValueChange={(value: string) => setValue('hasSubsidiaries', value === 'true')}
                     >
                       <SelectTrigger id="FORM-ECCC-001-Q111">
                         <SelectValue placeholder="Select" />
@@ -477,9 +418,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="FORM-ECCC-001-Q112">
-                      Holds majority shares outside Member States? *
-                    </Label>
+                    <Label htmlFor="FORM-ECCC-001-Q112">Holds majority shares outside Member States? *</Label>
                     <Select
                       value={
                         formData.hasMajorityShares === true
@@ -488,9 +427,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                             ? 'false'
                             : ''
                       }
-                      onValueChange={(value: string) =>
-                        setValue('hasMajorityShares', value === 'true')
-                      }
+                      onValueChange={(value: string) => setValue('hasMajorityShares', value === 'true')}
                     >
                       <SelectTrigger id="FORM-ECCC-001-Q112">
                         <SelectValue placeholder="Select" />
@@ -516,8 +453,8 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 <div className="space-y-2">
                   <Label htmlFor="FORM-ECCC-001-Q113">Article 136 Compliance *</Label>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Does your organization comply with the requirements described in Article 136 of
-                    the EU Financial Regulation?
+                    Does your organization comply with the requirements described in Article 136 of the EU Financial
+                    Regulation?
                   </p>
                   <Select
                     value={
@@ -527,9 +464,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                           ? 'false'
                           : ''
                     }
-                    onValueChange={(value: string) =>
-                      setValue('article138Compliance', value === 'true')
-                    }
+                    onValueChange={(value: string) => setValue('article138Compliance', value === 'true')}
                   >
                     <SelectTrigger id="FORM-ECCC-001-Q113">
                       <SelectValue placeholder="Select" />
@@ -540,9 +475,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     </SelectContent>
                   </Select>
                   {errors.article138Compliance && (
-                    <p className="text-sm text-destructive">
-                      {errors.article138Compliance.message}
-                    </p>
+                    <p className="text-sm text-destructive">{errors.article138Compliance.message}</p>
                   )}
                 </div>
               </>
@@ -553,11 +486,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
               <>
                 <div className="space-y-2">
                   <Label htmlFor="FORM-ECCC-001-Q201">Name (First Name) *</Label>
-                  <Input
-                    id="FORM-ECCC-001-Q201"
-                    {...register('contactFirstName')}
-                    placeholder="First name"
-                  />
+                  <Input id="FORM-ECCC-001-Q201" {...register('contactFirstName')} placeholder="First name" />
                   {errors.contactFirstName && (
                     <p className="text-sm text-destructive">{errors.contactFirstName.message}</p>
                   )}
@@ -565,11 +494,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
 
                 <div className="space-y-2">
                   <Label htmlFor="FORM-ECCC-001-Q202">Surname *</Label>
-                  <Input
-                    id="FORM-ECCC-001-Q202"
-                    {...register('contactLastName')}
-                    placeholder="Last name"
-                  />
+                  <Input id="FORM-ECCC-001-Q202" {...register('contactLastName')} placeholder="Last name" />
                   {errors.contactLastName && (
                     <p className="text-sm text-destructive">{errors.contactLastName.message}</p>
                   )}
@@ -577,11 +502,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
 
                 <div className="space-y-2">
                   <Label htmlFor="FORM-ECCC-001-Q203">Position</Label>
-                  <Input
-                    id="FORM-ECCC-001-Q203"
-                    {...register('contactPosition')}
-                    placeholder="Position"
-                  />
+                  <Input id="FORM-ECCC-001-Q203" {...register('contactPosition')} placeholder="Position" />
                 </div>
 
                 <div className="space-y-2">
@@ -592,18 +513,12 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     placeholder="contact@example.org"
                     type="email"
                   />
-                  {errors.contactEmail && (
-                    <p className="text-sm text-destructive">{errors.contactEmail.message}</p>
-                  )}
+                  {errors.contactEmail && <p className="text-sm text-destructive">{errors.contactEmail.message}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="FORM-ECCC-001-Q206">Phone number (direct)</Label>
-                  <Input
-                    id="FORM-ECCC-001-Q206"
-                    {...register('contactPhone')}
-                    placeholder="Phone number"
-                  />
+                  <Input id="FORM-ECCC-001-Q206" {...register('contactPhone')} placeholder="Phone number" />
                 </div>
               </>
             )}
@@ -614,8 +529,8 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 <div className="space-y-2" id="FORM-ECCC-001-Q301-container">
                   <Label htmlFor="FORM-ECCC-001-Q301">Fields of Activity (Article 8(3)) *</Label>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Your organization&apos;s expertise in the field of cybersecurity according to
-                    Article 8(3) of Regulation (EU) 2021/887.
+                    Your organization&apos;s expertise in the field of cybersecurity according to Article 8(3) of
+                    Regulation (EU) 2021/887.
                   </p>
                   <MultiSelect
                     options={fieldsOfActivity.map((f) => ({ id: f.id, name: f.name }))}
@@ -641,9 +556,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     {formData.expertiseDescription?.length || 0}/800 characters
                   </p>
                   {errors.expertiseDescription && (
-                    <p className="text-sm text-destructive">
-                      {errors.expertiseDescription.message}
-                    </p>
+                    <p className="text-sm text-destructive">{errors.expertiseDescription.message}</p>
                   )}
                 </div>
 
@@ -660,9 +573,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2" id="FORM-ECCC-001-Q303-3-container">
-                  <Label htmlFor="FORM-ECCC-001-Q303-3">
-                    Sectors according to the Cybersecurity Taxonomy
-                  </Label>
+                  <Label htmlFor="FORM-ECCC-001-Q303-3">Sectors according to the Cybersecurity Taxonomy</Label>
                   <MultiSelect
                     options={sectors.map((s) => ({ id: s.id, name: s.name }))}
                     value={formData.sectorIds || []}
@@ -682,9 +593,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2" id="FORM-ECCC-001-Q303-5-container">
-                  <Label htmlFor="FORM-ECCC-001-Q303-5">
-                    Technologies according to the Cybersecurity Taxonomy
-                  </Label>
+                  <Label htmlFor="FORM-ECCC-001-Q303-5">Technologies according to the Cybersecurity Taxonomy</Label>
                   <MultiSelect
                     options={technologies.map((t) => ({ id: t.id, name: t.name }))}
                     value={formData.technologyIds || []}
@@ -704,9 +613,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2" id="FORM-ECCC-001-Q303-7-container">
-                  <Label htmlFor="FORM-ECCC-001-Q303-7">
-                    Use cases according to the Cybersecurity Taxonomy
-                  </Label>
+                  <Label htmlFor="FORM-ECCC-001-Q303-7">Use cases according to the Cybersecurity Taxonomy</Label>
                   <MultiSelect
                     options={useCases.map((u) => ({ id: u.id, name: u.name }))}
                     value={formData.useCaseIds || []}
@@ -726,9 +633,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="FORM-ECCC-001-Q303-2">
-                    What do you seek to achieve by joining the community?
-                  </Label>
+                  <Label htmlFor="FORM-ECCC-001-Q303-2">What do you seek to achieve by joining the community?</Label>
                   <Textarea
                     id="FORM-ECCC-001-Q303-2"
                     {...register('goalsToAchieve')}
@@ -766,8 +671,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                       </div>
                       <div>
                         <span className="font-medium">Country:</span>{' '}
-                        {countries.find((c) => c.id === formData.countryId)?.name ||
-                          formData.countryCode}
+                        {countries.find((c) => c.id === formData.countryId)?.name || formData.countryCode}
                       </div>
                       <div>
                         <span className="font-medium">City:</span> {formData.city}
@@ -827,9 +731,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="draft">Draft (Save for later)</SelectItem>
-                        <SelectItem value="ready_for_publication">
-                          Ready for Publication (Submit for review)
-                        </SelectItem>
+                        <SelectItem value="ready_for_publication">Ready for Publication (Submit for review)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -866,5 +768,5 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
         </div>
       </form>
     </div>
-  );
+  )
 }

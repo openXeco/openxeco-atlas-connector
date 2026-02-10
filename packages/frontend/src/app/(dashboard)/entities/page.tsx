@@ -1,89 +1,85 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Plus, RefreshCw, Search } from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { EntityDataTable } from '@/components/entities/entity-data-table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { apiClient } from '@/lib/api';
-import type { Entity, EntityListParams } from '@/types/entity';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Plus, RefreshCw, Search } from 'lucide-react'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
+import { ProtectedRoute } from '@/components/auth/protected-route'
+import { EntityDataTable } from '@/components/entities/entity-data-table'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { apiClient } from '@/lib/api'
+import type { Entity, EntityListParams } from '@/types/entity'
 
 export default function EntitiesPage() {
-  const router = useRouter();
-  const [entities, setEntities] = useState<Entity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter()
+  const [entities, setEntities] = useState<Entity[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [filters, _setFilters] = useState<EntityListParams>({
     page: 1,
     limit: 10,
-  });
+  })
 
   const loadEntities = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
     try {
-      const params = new URLSearchParams();
-      if (filters.page) params.append('page', filters.page.toString());
-      if (filters.limit) params.append('limit', filters.limit.toString());
-      if (filters.status) params.append('status', filters.status);
-      if (filters.syncStatus) params.append('syncStatus', filters.syncStatus);
+      const params = new URLSearchParams()
+      if (filters.page) params.append('page', filters.page.toString())
+      if (filters.limit) params.append('limit', filters.limit.toString())
+      if (filters.status) params.append('status', filters.status)
+      if (filters.syncStatus) params.append('syncStatus', filters.syncStatus)
 
-      const response = await apiClient.get<{ data: Entity[] }>(
-        `/api/entities?${params.toString()}`
-      );
-      setEntities(response.data);
+      const response = await apiClient.get<{ data: Entity[] }>(`/api/entities?${params.toString()}`)
+      setEntities(response.data)
     } catch (_err) {
-      setError('Failed to load entities');
+      setError('Failed to load entities')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadEntities();
-  }, [filters]);
+    loadEntities()
+  }, [filters])
 
   const handleCreateNew = () => {
-    router.push('/entities/new');
-  };
+    router.push('/entities/new')
+  }
 
   const handleRefresh = () => {
-    loadEntities();
-  };
+    loadEntities()
+  }
 
   const handleViewEntity = (id: string) => {
-    router.push(`/entities/${id}`);
-  };
+    router.push(`/entities/${id}`)
+  }
 
   const handleEditEntity = (id: string) => {
-    router.push(`/entities/${id}/edit`);
-  };
+    router.push(`/entities/${id}/edit`)
+  }
 
   const handleDeleteEntity = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this entity?')) return;
+    if (!confirm('Are you sure you want to delete this entity?')) return
 
     try {
-      await apiClient.delete(`/api/entities/${id}`);
-      await loadEntities();
+      await apiClient.delete(`/api/entities/${id}`)
+      await loadEntities()
     } catch (_err) {
-      setError('Failed to delete entity');
+      setError('Failed to delete entity')
     }
-  };
+  }
 
   const filteredEntities = entities.filter((entity) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      entity.name.toLowerCase().includes(query) || entity.description?.toLowerCase().includes(query)
-    );
-  });
+    if (!searchQuery) return true
+    const query = searchQuery.toLowerCase()
+    return entity.name.toLowerCase().includes(query) || entity.description?.toLowerCase().includes(query)
+  })
 
   return (
     <ProtectedRoute>
@@ -108,11 +104,7 @@ export default function EntitiesPage() {
               </div>
             </div>
 
-            {error && (
-              <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-                {error}
-              </div>
-            )}
+            {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
             <Card>
               <CardHeader>
@@ -148,5 +140,5 @@ export default function EntitiesPage() {
         </div>
       </div>
     </ProtectedRoute>
-  );
+  )
 }

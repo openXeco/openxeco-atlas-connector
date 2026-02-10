@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
-import localFont from 'next/font/local';
-import './globals.css';
-import { AuthProvider } from '@/contexts/auth-context';
+import type { Metadata } from 'next'
+import localFont from 'next/font/local'
+import './globals.css'
+import { AuthProvider } from '@/contexts/auth-context'
 
 const inter = localFont({
   src: [
@@ -16,12 +16,12 @@ const inter = localFont({
   ],
   variable: '--font-inter',
   display: 'swap',
-});
+})
 
 export const metadata: Metadata = {
   title: 'ATLAS Connector',
   description: 'OpenXeco ATLAS Connector - Manage clusters with the ATLAS API',
-};
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -30,5 +30,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
-  );
+  )
 }

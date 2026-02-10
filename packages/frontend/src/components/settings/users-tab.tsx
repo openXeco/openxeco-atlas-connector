@@ -1,86 +1,79 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Plus, Pencil, Key, Trash2, RefreshCw } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { UserDialog } from './user-dialog';
-import { ChangePasswordDialog } from './change-password-dialog';
-import { DeleteUserDialog } from './delete-user-dialog';
-import { apiClient } from '@/lib/api';
-import { useAuth } from '@/contexts/auth-context';
+import { useState, useEffect } from 'react'
+import { Plus, Pencil, Key, Trash2, RefreshCw } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { UserDialog } from './user-dialog'
+import { ChangePasswordDialog } from './change-password-dialog'
+import { DeleteUserDialog } from './delete-user-dialog'
+import { apiClient } from '@/lib/api'
+import { useAuth } from '@/contexts/auth-context'
 
 interface User {
-  id: string;
-  email: string;
-  role: string;
-  createdAt: string;
+  id: string
+  email: string
+  role: string
+  createdAt: string
 }
 
 export function UsersTab() {
-  const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user: currentUser } = useAuth()
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Dialog states
-  const [userDialogOpen, setUserDialogOpen] = useState(false);
-  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userDialogOpen, setUserDialogOpen] = useState(false)
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
   const loadUsers = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const response = await apiClient.get<{ data: User[] }>('/api/users');
-      setUsers(response.data);
+      const response = await apiClient.get<{ data: User[] }>('/api/users')
+      setUsers(response.data)
     } catch (_err) {
-      setError('Failed to load users');
+      setError('Failed to load users')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    loadUsers()
+  }, [])
 
   const handleAddUser = () => {
-    setSelectedUser(null);
-    setUserDialogOpen(true);
-  };
+    setSelectedUser(null)
+    setUserDialogOpen(true)
+  }
 
   const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setUserDialogOpen(true);
-  };
+    setSelectedUser(user)
+    setUserDialogOpen(true)
+  }
 
   const handleChangePassword = (user: User) => {
-    setSelectedUser(user);
-    setPasswordDialogOpen(true);
-  };
+    setSelectedUser(user)
+    setPasswordDialogOpen(true)
+  }
 
   const handleDeleteUser = (user: User) => {
-    setSelectedUser(user);
-    setDeleteDialogOpen(true);
-  };
+    setSelectedUser(user)
+    setDeleteDialogOpen(true)
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    });
-  };
+    })
+  }
 
   return (
     <>
@@ -89,9 +82,7 @@ export function UsersTab() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Add, edit, or remove users who can access this application
-              </CardDescription>
+              <CardDescription>Add, edit, or remove users who can access this application</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" onClick={loadUsers} disabled={loading}>
@@ -105,11 +96,7 @@ export function UsersTab() {
           </div>
         </CardHeader>
         <CardContent>
-          {error && (
-            <div className="mb-4 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-              {error}
-            </div>
-          )}
+          {error && <div className="mb-4 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
           <Table>
             <TableHeader>
@@ -138,26 +125,17 @@ export function UsersTab() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       {user.email}
-                      {user.id === currentUser?.id && (
-                        <span className="ml-2 text-xs text-muted-foreground">(you)</span>
-                      )}
+                      {user.id === currentUser?.id && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
                     </TableCell>
                     <TableCell>
                       <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
                         {user.role}
                       </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(user.createdAt)}
-                    </TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(user.createdAt)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditUser(user)}
-                          title="Edit user"
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)} title="Edit user">
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
@@ -173,9 +151,7 @@ export function UsersTab() {
                           size="icon"
                           onClick={() => handleDeleteUser(user)}
                           disabled={user.id === currentUser?.id}
-                          title={
-                            user.id === currentUser?.id ? 'Cannot delete yourself' : 'Delete user'
-                          }
+                          title={user.id === currentUser?.id ? 'Cannot delete yourself' : 'Delete user'}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -189,12 +165,7 @@ export function UsersTab() {
         </CardContent>
       </Card>
 
-      <UserDialog
-        open={userDialogOpen}
-        onOpenChange={setUserDialogOpen}
-        user={selectedUser}
-        onSuccess={loadUsers}
-      />
+      <UserDialog open={userDialogOpen} onOpenChange={setUserDialogOpen} user={selectedUser} onSuccess={loadUsers} />
 
       <ChangePasswordDialog
         open={passwordDialogOpen}
@@ -210,5 +181,5 @@ export function UsersTab() {
         onSuccess={loadUsers}
       />
     </>
-  );
+  )
 }
