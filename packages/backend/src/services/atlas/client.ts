@@ -1,3 +1,4 @@
+import { ProxyAgent } from 'undici'
 import { config } from '@/config/index.js'
 import { logger } from '@/utils/logger.js'
 import type {
@@ -16,6 +17,7 @@ export class AtlasClient {
   private config: AtlasConfig
   private authToken?: string
   private tokenExpiry?: Date
+  private proxyDispatcher?: ProxyAgent
 
   constructor(atlasConfig?: Partial<AtlasConfig>) {
     this.config = {
@@ -25,6 +27,11 @@ export class AtlasClient {
       password: config.ATLAS_PASSWORD,
       timeout: 30000,
       ...atlasConfig,
+    }
+
+    if (config.HTTPS_PROXY) {
+      this.proxyDispatcher = new ProxyAgent(config.HTTPS_PROXY)
+      logger.info(`ATLAS API requests will use proxy: ${config.HTTPS_PROXY}`)
     }
   }
 
@@ -99,12 +106,19 @@ export class AtlasClient {
     logger.info(`ATLAS API request: ${method} ${url.toString()}`)
 
     try {
-      const response = await fetch(url.toString(), {
+      const fetchOptions: RequestInit = {
         method,
         headers,
         body: options?.body ? JSON.stringify(options.body) : undefined,
         signal: AbortSignal.timeout(this.config.timeout || 30000),
-      })
+      }
+
+      if (this.proxyDispatcher) {
+        // undici ProxyAgent as dispatcher for proxy support
+        ;(fetchOptions as Record<string, unknown>).dispatcher = this.proxyDispatcher
+      }
+
+      const response = await fetch(url.toString(), fetchOptions)
 
       if (!response.ok) {
         const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument

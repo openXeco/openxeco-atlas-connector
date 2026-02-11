@@ -37,6 +37,8 @@ const envSchema = z.object({
   ATLAS_API_KEY: z.string().optional(),
   ATLAS_USERNAME: z.string().optional(),
   ATLAS_PASSWORD: z.string().optional(),
+
+  HTTPS_PROXY: z.string().url().optional(),
 })
 
 export type Env = z.infer<typeof envSchema>
