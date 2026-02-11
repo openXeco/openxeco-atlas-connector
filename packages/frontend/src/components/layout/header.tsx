@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import { User, LogOut } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
+import { User, LogOut } from 'lucide-react'
+import { useAuth } from '@/contexts/auth-context'
 
 export function Header() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth()
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-card px-6">
@@ -25,5 +25,5 @@ export function Header() {
         </button>
       </div>
     </header>
-  );
+  )
 }

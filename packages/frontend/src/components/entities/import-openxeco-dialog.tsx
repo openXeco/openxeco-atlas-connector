@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { Download, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { useState } from 'react'
+import { Download, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -10,92 +10,92 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { apiClient } from '@/lib/api';
-import type { EntityFormData } from '@/types/entity';
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { apiClient } from '@/lib/api'
+import type { EntityFormData } from '@/types/entity'
 
 interface ImportResult {
   data: {
-    entity: Partial<EntityFormData>;
-    questionsCount: number;
-    answersCount: number;
-  };
-  warnings: string[];
-  errors: string[];
-  unmappedAnswers: string[];
-  message: string;
+    entity: Partial<EntityFormData>
+    questionsCount: number
+    answersCount: number
+  }
+  warnings: string[]
+  errors: string[]
+  unmappedAnswers: string[]
+  message: string
 }
 
 interface ImportOpenXecoDialogProps {
-  onImport: (data: Partial<EntityFormData>) => void;
+  onImport: (data: Partial<EntityFormData>) => void
 }
 
 export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<ImportResult | null>(null);
+  const [open, setOpen] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [result, setResult] = useState<ImportResult | null>(null)
 
   const handleImport = async () => {
     if (!email || !password) {
-      setError('Please enter your email and password');
-      return;
+      setError('Please enter your email and password')
+      return
     }
 
-    setLoading(true);
-    setError(null);
-    setResult(null);
+    setLoading(true)
+    setError(null)
+    setResult(null)
 
     try {
       const response = await apiClient.post<ImportResult>('/api/import/openxeco', {
         email,
         password,
-      });
+      })
 
-      setResult(response);
+      setResult(response)
 
       // If successful with no errors, apply the data
       if (response.errors.length === 0 && response.data.entity) {
-        onImport(response.data.entity);
+        onImport(response.data.entity)
         // Keep dialog open to show warnings if any
         if (response.warnings.length === 0) {
-          setOpen(false);
-          resetForm();
+          setOpen(false)
+          resetForm()
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to import data');
+      setError(err instanceof Error ? err.message : 'Failed to import data')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleApplyWithWarnings = () => {
     if (result?.data.entity) {
-      onImport(result.data.entity);
-      setOpen(false);
-      resetForm();
+      onImport(result.data.entity)
+      setOpen(false)
+      resetForm()
     }
-  };
+  }
 
   const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setError(null);
-    setResult(null);
-  };
+    setEmail('')
+    setPassword('')
+    setError(null)
+    setResult(null)
+  }
 
   const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
+    setOpen(newOpen)
     if (!newOpen) {
-      resetForm();
+      resetForm()
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -109,8 +109,8 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
         <DialogHeader>
           <DialogTitle>Import from cybersecurity.lu</DialogTitle>
           <DialogDescription>
-            Enter your cybersecurity.lu credentials to import your ECCC registration form data. Your
-            credentials are only used for this import and are not stored.
+            Enter your cybersecurity.lu credentials to import your ECCC registration form data. Your credentials are
+            only used for this import and are not stored.
           </DialogDescription>
         </DialogHeader>
 
@@ -152,8 +152,7 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
               <div className="flex items-center gap-2 text-sm text-green-600">
                 <CheckCircle className="h-4 w-4" />
                 <span>
-                  Successfully imported {result.data.answersCount} answers from{' '}
-                  {result.data.questionsCount} questions
+                  Successfully imported {result.data.answersCount} answers from {result.data.questionsCount} questions
                 </span>
               </div>
             ) : (
@@ -208,9 +207,9 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setResult(null);
-                  setEmail('');
-                  setPassword('');
+                  setResult(null)
+                  setEmail('')
+                  setPassword('')
                 }}
               >
                 Try Again
@@ -226,5 +225,5 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

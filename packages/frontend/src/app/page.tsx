@@ -1,17 +1,17 @@
-'use client';
+'use client'
 
-import { Building2, Tags, RefreshCw, AlertCircle } from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ProtectedRoute } from '@/components/auth/protected-route';
+import { Building2, Tags, RefreshCw, AlertCircle } from 'lucide-react'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ProtectedRoute } from '@/components/auth/protected-route'
 
 const stats = [
   { name: 'Total Entities', value: '0', icon: Building2, color: 'text-blue-600' },
   { name: 'Taxonomies', value: '0', icon: Tags, color: 'text-green-600' },
   { name: 'Pending Sync', value: '0', icon: RefreshCw, color: 'text-orange-600' },
   { name: 'Conflicts', value: '0', icon: AlertCircle, color: 'text-red-600' },
-];
+]
 
 export default function DashboardPage() {
   return (
@@ -55,9 +55,7 @@ export default function DashboardPage() {
                   <CardTitle>Sync Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Connect to ATLAS to view sync status.
-                  </p>
+                  <p className="text-sm text-muted-foreground">Connect to ATLAS to view sync status.</p>
                 </CardContent>
               </Card>
             </div>
@@ -65,5 +63,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </ProtectedRoute>
-  );
+  )
 }

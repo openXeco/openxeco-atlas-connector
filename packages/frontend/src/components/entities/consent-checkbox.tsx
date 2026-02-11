@@ -1,20 +1,20 @@
-'use client';
+'use client'
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
-import { Label } from '@/components/ui/label';
+import * as React from 'react'
+import { cn } from '@/lib/utils'
+import { Check } from 'lucide-react'
+import { Label } from '@/components/ui/label'
 
 export interface ConsentCheckboxProps {
-  id: string;
-  label: string;
-  description?: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-  required?: boolean;
-  disabled?: boolean;
-  error?: string;
-  className?: string;
+  id: string
+  label: string
+  description?: string
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+  required?: boolean
+  disabled?: boolean
+  error?: string
+  className?: string
 }
 
 export function ConsentCheckbox({
@@ -30,9 +30,9 @@ export function ConsentCheckbox({
 }: ConsentCheckboxProps) {
   const handleClick = () => {
     if (!disabled) {
-      onCheckedChange(!checked);
+      onCheckedChange(!checked)
     }
-  };
+  }
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -77,5 +77,5 @@ export function ConsentCheckbox({
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
-  );
+  )
 }

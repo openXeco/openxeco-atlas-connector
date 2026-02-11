@@ -1,82 +1,74 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Calendar, Filter } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { apiClient } from '@/lib/api';
+import { useState, useEffect } from 'react'
+import { Calendar, Filter } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { apiClient } from '@/lib/api'
 
 interface SyncLog {
-  id: string;
-  entityType: string;
-  entityId: string | null;
-  operation: string;
-  status: string;
-  details: unknown;
-  createdAt: Date;
+  id: string
+  entityType: string
+  entityId: string | null
+  operation: string
+  status: string
+  details: unknown
+  createdAt: Date
 }
 
 export function SyncLogsTable() {
-  const [logs, setLogs] = useState<SyncLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<SyncLog[]>([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
     operation: 'all',
     status: 'all',
-  });
+  })
 
   const loadLogs = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const params = new URLSearchParams();
-      if (filters.operation !== 'all') params.append('operation', filters.operation);
-      if (filters.status !== 'all') params.append('status', filters.status);
+      const params = new URLSearchParams()
+      if (filters.operation !== 'all') params.append('operation', filters.operation)
+      if (filters.status !== 'all') params.append('status', filters.status)
 
-      const response = await apiClient.get<{ data: SyncLog[] }>(
-        `/api/sync/logs?${params.toString()}`
-      );
-      setLogs(response.data);
+      const response = await apiClient.get<{ data: SyncLog[] }>(`/api/sync/logs?${params.toString()}`)
+      setLogs(response.data)
     } catch (err) {
-      console.error('Failed to load sync logs:', err);
+      console.error('Failed to load sync logs:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadLogs();
-  }, [filters]);
+    loadLogs()
+  }, [filters])
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'success':
-        return 'bg-green-500/10 text-green-700';
+        return 'bg-green-500/10 text-green-700'
       case 'failed':
-        return 'bg-red-500/10 text-red-700';
+        return 'bg-red-500/10 text-red-700'
       default:
-        return 'bg-gray-500/10 text-gray-700';
+        return 'bg-gray-500/10 text-gray-700'
     }
-  };
+  }
 
   const getOperationIcon = (operation: string) => {
     switch (operation) {
       case 'push':
-        return '↑';
+        return '↑'
       case 'pull':
-        return '↓';
+        return '↓'
       case 'sync':
-        return '⟳';
+        return '⟳'
       default:
-        return '•';
+        return '•'
     }
-  };
+  }
 
   return (
     <Card>
@@ -87,10 +79,7 @@ export function SyncLogsTable() {
             <CardDescription>View all synchronization operations and their results</CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Select
-              value={filters.operation}
-              onValueChange={(value) => setFilters({ ...filters, operation: value })}
-            >
+            <Select value={filters.operation} onValueChange={(value) => setFilters({ ...filters, operation: value })}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Operation" />
               </SelectTrigger>
@@ -102,10 +91,7 @@ export function SyncLogsTable() {
               </SelectContent>
             </Select>
 
-            <Select
-              value={filters.status}
-              onValueChange={(value) => setFilters({ ...filters, status: value })}
-            >
+            <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -136,10 +122,7 @@ export function SyncLogsTable() {
         ) : (
           <div className="space-y-2">
             {logs.map((log) => (
-              <div
-                key={log.id}
-                className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent"
-              >
+              <div key={log.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent">
                 <div className="flex items-center gap-4">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-lg">
                     {getOperationIcon(log.operation)}
@@ -156,14 +139,12 @@ export function SyncLogsTable() {
                     </div>
                   </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {new Date(log.createdAt).toLocaleString()}
-                </div>
+                <div className="text-sm text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</div>
               </div>
             ))}
           </div>
         )}
       </CardContent>
     </Card>
-  );
+  )
 }

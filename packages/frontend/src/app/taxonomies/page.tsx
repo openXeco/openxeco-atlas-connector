@@ -1,68 +1,68 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { RefreshCw, Database, Clock, ChevronRight } from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { apiClient } from '@/lib/api';
-import { TAXONOMY_TYPES } from '@/types/taxonomy';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { RefreshCw, Database, Clock, ChevronRight } from 'lucide-react'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
+import { ProtectedRoute } from '@/components/auth/protected-route'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { apiClient } from '@/lib/api'
+import { TAXONOMY_TYPES } from '@/types/taxonomy'
 
 export default function TaxonomiesPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [stats, setStats] = useState<Record<string, number>>({});
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [stats, setStats] = useState<Record<string, number>>({})
+  const [error, setError] = useState<string | null>(null)
 
   const loadStats = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
     try {
-      const counts: Record<string, number> = {};
+      const counts: Record<string, number> = {}
 
       for (const taxonomyType of TAXONOMY_TYPES) {
         try {
           const response = await apiClient.get<{ data: unknown[]; meta: { count: number } }>(
             `/api/taxonomies/${taxonomyType.type}`
-          );
-          counts[taxonomyType.type] = response.meta?.count || response.data?.length || 0;
+          )
+          counts[taxonomyType.type] = response.meta?.count || response.data?.length || 0
         } catch (_err) {
-          counts[taxonomyType.type] = 0;
+          counts[taxonomyType.type] = 0
         }
       }
 
-      setStats(counts);
+      setStats(counts)
     } catch (_err) {
-      setError('Failed to load taxonomy statistics');
+      setError('Failed to load taxonomy statistics')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSyncAll = async () => {
-    setSyncing(true);
-    setError(null);
+    setSyncing(true)
+    setError(null)
 
     try {
-      await apiClient.post('/api/taxonomies/sync', {});
-      await loadStats();
+      await apiClient.post('/api/taxonomies/sync', {})
+      await loadStats()
     } catch (_err) {
-      setError('Failed to sync taxonomies from ATLAS');
+      setError('Failed to sync taxonomies from ATLAS')
     } finally {
-      setSyncing(false);
+      setSyncing(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadStats();
-  }, []);
+    loadStats()
+  }, [])
 
-  const totalTerms = Object.values(stats).reduce((sum, count) => sum + count, 0);
+  const totalTerms = Object.values(stats).reduce((sum, count) => sum + count, 0)
 
   return (
     <ProtectedRoute>
@@ -82,11 +82,7 @@ export default function TaxonomiesPage() {
               </Button>
             </div>
 
-            {error && (
-              <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-                {error}
-              </div>
-            )}
+            {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
             <div className="mb-6 grid gap-4 md:grid-cols-3">
               <Card>
@@ -106,9 +102,7 @@ export default function TaxonomiesPage() {
                   <Database className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {loading ? '...' : totalTerms.toLocaleString()}
-                  </div>
+                  <div className="text-2xl font-bold">{loading ? '...' : totalTerms.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">Across all types</p>
                 </CardContent>
               </Card>
@@ -137,9 +131,7 @@ export default function TaxonomiesPage() {
                       <CardTitle className="text-base">{taxonomyType.label}</CardTitle>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <CardDescription className="text-sm">
-                      {taxonomyType.description}
-                    </CardDescription>
+                    <CardDescription className="text-sm">{taxonomyType.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between">
@@ -156,5 +148,5 @@ export default function TaxonomiesPage() {
         </div>
       </div>
     </ProtectedRoute>
-  );
+  )
 }

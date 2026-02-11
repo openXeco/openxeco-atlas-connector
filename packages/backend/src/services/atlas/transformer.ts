@@ -1,4 +1,4 @@
-import type { Entity, Taxonomy } from '../../db/schema.js';
+import type { Entity, Taxonomy } from '../../db/schema.js'
 import type {
   JsonApiDocument,
   JsonApiResource,
@@ -6,11 +6,11 @@ import type {
   Cluster,
   ClusterInput,
   TaxonomyTerm,
-} from './types.js';
+} from './types.js'
 
 export class JsonApiTransformer {
   toJsonApiCluster(entity: Entity, taxonomies?: Taxonomy[]): JsonApiDocument {
-    const relationships: Record<string, JsonApiRelationship> = {};
+    const relationships: Record<string, JsonApiRelationship> = {}
 
     if (entity.countryId) {
       relationships.field_country = {
@@ -18,7 +18,7 @@ export class JsonApiTransformer {
           type: 'taxonomy_term--country',
           id: entity.countryId,
         },
-      };
+      }
     }
 
     if (entity.clusterTypeId) {
@@ -27,7 +27,7 @@ export class JsonApiTransformer {
           type: 'taxonomy_term--cluster_type',
           id: entity.clusterTypeId,
         },
-      };
+      }
     }
 
     if (entity.organizationTypeId) {
@@ -36,7 +36,7 @@ export class JsonApiTransformer {
           type: 'taxonomy_term--organization_type',
           id: entity.organizationTypeId,
         },
-      };
+      }
     }
 
     if (taxonomies && taxonomies.length > 0) {
@@ -45,7 +45,7 @@ export class JsonApiTransformer {
           type: `taxonomy_term--${tax.taxonomyType}`,
           id: tax.atlasId || tax.id,
         })),
-      };
+      }
     }
 
     const resource: JsonApiResource = {
@@ -61,20 +61,20 @@ export class JsonApiTransformer {
         status: entity.status,
       },
       relationships,
-    };
+    }
 
     return {
       data: resource,
-    };
+    }
   }
 
   fromJsonApiCluster(document: JsonApiDocument): Cluster {
     if (!document.data || Array.isArray(document.data)) {
-      throw new Error('Invalid JSON:API document for cluster');
+      throw new Error('Invalid JSON:API document for cluster')
     }
 
-    const resource = document.data;
-    const attrs = resource.attributes;
+    const resource = document.data
+    const attrs = resource.attributes
 
     const cluster: Cluster = {
       id: resource.id,
@@ -87,35 +87,35 @@ export class JsonApiTransformer {
       longitude: attrs.field_longitude as number | undefined,
       status: attrs.status as string | undefined,
       metadata: attrs,
-    };
+    }
 
     if (resource.relationships) {
-      const rels = resource.relationships;
+      const rels = resource.relationships
 
       if (rels.field_country?.data && !Array.isArray(rels.field_country.data)) {
-        cluster.countryId = rels.field_country.data.id;
+        cluster.countryId = rels.field_country.data.id
       }
 
       if (rels.field_cluster_type?.data && !Array.isArray(rels.field_cluster_type.data)) {
-        cluster.clusterTypeId = rels.field_cluster_type.data.id;
+        cluster.clusterTypeId = rels.field_cluster_type.data.id
       }
 
       if (rels.field_organization_type?.data && !Array.isArray(rels.field_organization_type.data)) {
-        cluster.organizationTypeId = rels.field_organization_type.data.id;
+        cluster.organizationTypeId = rels.field_organization_type.data.id
       }
     }
 
-    return cluster;
+    return cluster
   }
 
   fromJsonApiClusters(document: JsonApiDocument): Cluster[] {
     if (!document.data) {
-      return [];
+      return []
     }
 
-    const resources = Array.isArray(document.data) ? document.data : [document.data];
+    const resources = Array.isArray(document.data) ? document.data : [document.data]
 
-    return resources.map((resource) => this.fromJsonApiCluster({ data: resource }));
+    return resources.map((resource) => this.fromJsonApiCluster({ data: resource }))
   }
 
   toEntityFromCluster(cluster: Cluster, userId?: string): Partial<Entity> {
@@ -182,7 +182,7 @@ export class JsonApiTransformer {
       metadata: cluster.metadata,
       lastSyncedAt: new Date(),
       updatedBy: userId,
-    };
+    }
   }
 
   toClusterInputFromEntity(entity: Entity): ClusterInput {
@@ -241,7 +241,7 @@ export class JsonApiTransformer {
 
       // Workflow
       moderationState: entity.moderationState || undefined,
-    };
+    }
   }
 
   fromJsonApiTaxonomy(resource: JsonApiResource, type: string): TaxonomyTerm {
@@ -255,7 +255,7 @@ export class JsonApiTransformer {
         ? (resource.relationships.parent.data as { id: string }).id
         : undefined,
       metadata: resource.attributes,
-    };
+    }
   }
 
   toTaxonomyFromTerm(term: TaxonomyTerm): Partial<Taxonomy> {
@@ -267,21 +267,19 @@ export class JsonApiTransformer {
       parentId: term.parentId,
       metadata: term.metadata,
       lastSyncedAt: new Date(),
-    };
+    }
   }
 
   extractIncludedResources(document: JsonApiDocument, type: string): JsonApiResource[] {
     if (!document.included) {
-      return [];
+      return []
     }
 
-    return document.included.filter((resource) => resource.type === type);
+    return document.included.filter((resource) => resource.type === type)
   }
 
-  buildRelationshipData(
-    taxonomyIds: Record<string, string[]>
-  ): Record<string, JsonApiRelationship> {
-    const relationships: Record<string, JsonApiRelationship> = {};
+  buildRelationshipData(taxonomyIds: Record<string, string[]>): Record<string, JsonApiRelationship> {
+    const relationships: Record<string, JsonApiRelationship> = {}
 
     Object.entries(taxonomyIds).forEach(([field, ids]) => {
       if (ids.length === 1) {
@@ -290,19 +288,19 @@ export class JsonApiTransformer {
             type: `taxonomy_term--${field.replace('field_', '')}`,
             id: ids[0],
           },
-        };
+        }
       } else if (ids.length > 1) {
         relationships[field] = {
           data: ids.map((id) => ({
             type: `taxonomy_term--${field.replace('field_', '')}`,
             id,
           })),
-        };
+        }
       }
-    });
+    })
 
-    return relationships;
+    return relationships
   }
 }
 
-export const jsonApiTransformer = new JsonApiTransformer();
+export const jsonApiTransformer = new JsonApiTransformer()

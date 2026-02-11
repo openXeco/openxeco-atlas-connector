@@ -1,53 +1,51 @@
-'use client';
+'use client'
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { EntityFormWizard } from '@/components/entities/entity-form-wizard';
-import { Button } from '@/components/ui/button';
-import { apiClient } from '@/lib/api';
-import type { Entity, EntityFormData } from '@/types/entity';
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
+import { ProtectedRoute } from '@/components/auth/protected-route'
+import { EntityFormWizard } from '@/components/entities/entity-form-wizard'
+import { Button } from '@/components/ui/button'
+import { apiClient } from '@/lib/api'
+import type { Entity, EntityFormData } from '@/types/entity'
 
 export default function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const router = useRouter();
-  const [entity, setEntity] = useState<Entity | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const resolvedParams = use(params)
+  const router = useRouter()
+  const [entity, setEntity] = useState<Entity | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadEntity = async () => {
       try {
-        const response = await apiClient.get<{ data: Entity }>(
-          `/api/entities/${resolvedParams.id}`
-        );
-        setEntity(response.data);
+        const response = await apiClient.get<{ data: Entity }>(`/api/entities/${resolvedParams.id}`)
+        setEntity(response.data)
       } catch (_err) {
-        setError('Failed to load entity');
+        setError('Failed to load entity')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    loadEntity();
-  }, [resolvedParams.id]);
+    }
+    loadEntity()
+  }, [resolvedParams.id])
 
   const handleSubmit = async (data: EntityFormData) => {
-    setError(null);
+    setError(null)
     try {
-      await apiClient.patch(`/api/entities/${resolvedParams.id}`, data);
-      router.push(`/entities/${resolvedParams.id}`);
+      await apiClient.patch(`/api/entities/${resolvedParams.id}`, data)
+      router.push(`/entities/${resolvedParams.id}`)
     } catch (err) {
-      setError('Failed to update entity');
-      throw err;
+      setError('Failed to update entity')
+      throw err
     }
-  };
+  }
 
   const handleCancel = () => {
-    router.push(`/entities/${resolvedParams.id}`);
-  };
+    router.push(`/entities/${resolvedParams.id}`)
+  }
 
   if (loading) {
     return (
@@ -62,7 +60,7 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
       </ProtectedRoute>
-    );
+    )
   }
 
   if (!entity) {
@@ -83,7 +81,7 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
       </ProtectedRoute>
-    );
+    )
   }
 
   const initialData: Partial<EntityFormData> = {
@@ -122,7 +120,7 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
     clusterTypeId: entity.clusterTypeId || undefined,
     organizationTypeId: entity.organizationTypeId || undefined,
     moderationState: entity.moderationState || undefined,
-  };
+  }
 
   return (
     <ProtectedRoute>
@@ -132,11 +130,7 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
           <Header />
           <main className="flex-1 overflow-auto bg-muted/30 p-6">
             <div className="mb-6 flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push(`/entities/${resolvedParams.id}`)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => router.push(`/entities/${resolvedParams.id}`)}>
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
@@ -145,20 +139,12 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {error && (
-              <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-                {error}
-              </div>
-            )}
+            {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
-            <EntityFormWizard
-              initialData={initialData}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-            />
+            <EntityFormWizard initialData={initialData} onSubmit={handleSubmit} onCancel={handleCancel} />
           </main>
         </div>
       </div>
     </ProtectedRoute>
-  );
+  )
 }

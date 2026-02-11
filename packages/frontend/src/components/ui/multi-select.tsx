@@ -1,54 +1,54 @@
-'use client';
+'use client'
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { Check, ChevronDown, X } from 'lucide-react';
+import * as React from 'react'
+import { cn } from '@/lib/utils'
+import { Check, ChevronDown, X } from 'lucide-react'
 
 export interface MultiSelectOption {
-  id: string;
-  name: string;
+  id: string
+  name: string
 }
 
 export interface MultiSelectProps {
-  options: MultiSelectOption[];
-  value: string[];
-  onChange: (values: string[]) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  className?: string;
+  options: MultiSelectOption[]
+  value: string[]
+  onChange: (values: string[]) => void
+  placeholder?: string
+  disabled?: boolean
+  className?: string
 }
 
 const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
   ({ options, value, onChange, placeholder = 'Select options...', disabled, className }, ref) => {
-    const [isOpen, setIsOpen] = React.useState(false);
-    const containerRef = React.useRef<HTMLDivElement>(null);
+    const [isOpen, setIsOpen] = React.useState(false)
+    const containerRef = React.useRef<HTMLDivElement>(null)
 
     // Close dropdown when clicking outside
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-          setIsOpen(false);
+          setIsOpen(false)
         }
-      };
+      }
 
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
-    const selectedOptions = options.filter((opt) => value.includes(opt.id));
+    const selectedOptions = options.filter((opt) => value.includes(opt.id))
 
     const toggleOption = (optionId: string) => {
       if (value.includes(optionId)) {
-        onChange(value.filter((id) => id !== optionId));
+        onChange(value.filter((id) => id !== optionId))
       } else {
-        onChange([...value, optionId]);
+        onChange([...value, optionId])
       }
-    };
+    }
 
     const removeOption = (optionId: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      onChange(value.filter((id) => id !== optionId));
-    };
+      e.stopPropagation()
+      onChange(value.filter((id) => id !== optionId))
+    }
 
     return (
       <div ref={containerRef} className={cn('relative', className)}>
@@ -87,12 +87,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
               ))
             )}
           </div>
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 shrink-0 opacity-50 transition-transform',
-              isOpen && 'rotate-180'
-            )}
-          />
+          <ChevronDown className={cn('h-4 w-4 shrink-0 opacity-50 transition-transform', isOpen && 'rotate-180')} />
         </div>
 
         {isOpen && (
@@ -101,7 +96,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
               <div className="py-2 px-3 text-sm text-muted-foreground">No options available</div>
             ) : (
               options.map((option) => {
-                const isSelected = value.includes(option.id);
+                const isSelected = value.includes(option.id)
                 return (
                   <div
                     key={option.id}
@@ -119,15 +114,15 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     </span>
                     {option.name}
                   </div>
-                );
+                )
               })
             )}
           </div>
         )}
       </div>
-    );
+    )
   }
-);
-MultiSelect.displayName = 'MultiSelect';
+)
+MultiSelect.displayName = 'MultiSelect'
 
-export { MultiSelect };
+export { MultiSelect }

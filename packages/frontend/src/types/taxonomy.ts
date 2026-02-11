@@ -18,25 +18,25 @@ export type TaxonomyType =
   | 'sectors'
   | 'technologies'
   | 'use_cases'
-  | 'citations_source';
+  | 'citations_source'
 
 export interface Taxonomy {
-  id: string;
-  atlasId: string | null;
-  taxonomyType: string;
-  name: string;
-  description: string | null;
-  parentId: string | null;
-  metadata: unknown;
-  lastSyncedAt: Date | null;
+  id: string
+  atlasId: string | null
+  taxonomyType: string
+  name: string
+  description: string | null
+  parentId: string | null
+  metadata: unknown
+  lastSyncedAt: Date | null
 }
 
 export interface TaxonomyTypeInfo {
-  type: TaxonomyType;
-  label: string;
-  description: string;
-  count?: number;
-  lastSynced?: Date;
+  type: TaxonomyType
+  label: string
+  description: string
+  count?: number
+  lastSynced?: Date
 }
 
 export const TAXONOMY_TYPES: TaxonomyTypeInfo[] = [
@@ -80,4 +80,4 @@ export const TAXONOMY_TYPES: TaxonomyTypeInfo[] = [
   { type: 'position_category', label: 'Position Categories', description: 'Job position types' },
   { type: 'use_cases', label: 'Use Cases', description: 'Application use cases' },
   { type: 'citations_source', label: 'Citation Sources', description: 'Reference sources' },
-];
+]

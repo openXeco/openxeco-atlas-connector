@@ -1,34 +1,34 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { EntityFormWizard } from '@/components/entities/entity-form-wizard';
-import { Button } from '@/components/ui/button';
-import { apiClient } from '@/lib/api';
-import type { EntityFormData } from '@/types/entity';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
+import { ProtectedRoute } from '@/components/auth/protected-route'
+import { EntityFormWizard } from '@/components/entities/entity-form-wizard'
+import { Button } from '@/components/ui/button'
+import { apiClient } from '@/lib/api'
+import type { EntityFormData } from '@/types/entity'
 
 export default function NewEntityPage() {
-  const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (data: EntityFormData) => {
-    setError(null);
+    setError(null)
     try {
-      const response = await apiClient.post<{ data: { id: string } }>('/api/entities', data);
-      router.push(`/entities/${response.data.id}`);
+      const response = await apiClient.post<{ data: { id: string } }>('/api/entities', data)
+      router.push(`/entities/${response.data.id}`)
     } catch (err) {
-      setError('Failed to create entity');
-      throw err;
+      setError('Failed to create entity')
+      throw err
     }
-  };
+  }
 
   const handleCancel = () => {
-    router.push('/entities');
-  };
+    router.push('/entities')
+  }
 
   return (
     <ProtectedRoute>
@@ -47,16 +47,12 @@ export default function NewEntityPage() {
               </div>
             </div>
 
-            {error && (
-              <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-                {error}
-              </div>
-            )}
+            {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
             <EntityFormWizard onSubmit={handleSubmit} onCancel={handleCancel} />
           </main>
         </div>
       </div>
     </ProtectedRoute>
-  );
+  )
 }

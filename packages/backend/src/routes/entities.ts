@@ -1,7 +1,7 @@
-import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
-import { eq, desc } from 'drizzle-orm';
-import { db } from '../config/database.js';
+import { FastifyInstance } from 'fastify'
+import { z } from 'zod'
+import { eq, desc } from 'drizzle-orm'
+import { db } from '../config/database.js'
 import {
   entities,
   entityVersions,
@@ -11,10 +11,10 @@ import {
   entityUseCases,
   entityFieldsOfActivity,
   entitySubDomains,
-} from '../db/schema.js';
-import { authenticate } from '../middleware/auth.js';
-import { atlasClient } from '../services/atlas/client.js';
-import { jsonApiTransformer } from '../services/atlas/transformer.js';
+} from '../db/schema.js'
+import { authenticate } from '../middleware/auth.js'
+import { atlasClient } from '../services/atlas/client.js'
+import { jsonApiTransformer } from '../services/atlas/transformer.js'
 
 // Base validation schema for ATLAS-compliant entity registration
 const baseEntitySchema = z.object({
@@ -91,7 +91,7 @@ const baseEntitySchema = z.object({
 
   // Workflow
   moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
-});
+})
 
 // Create schema with conditional validation
 const createEntitySchema = baseEntitySchema
@@ -99,9 +99,9 @@ const createEntitySchema = baseEntitySchema
     (data) => {
       // If isHeadquarter is false, headquarterInfo is required
       if (data.isHeadquarter === false && !data.headquarterInfo) {
-        return false;
+        return false
       }
-      return true;
+      return true
     },
     {
       message: 'Headquarter information is required when organization is not the main headquarter',
@@ -112,9 +112,9 @@ const createEntitySchema = baseEntitySchema
     (data) => {
       // If hasSubsidiaries is true, subsidiariesDetails is required
       if (data.hasSubsidiaries === true && !data.subsidiariesDetails) {
-        return false;
+        return false
       }
-      return true;
+      return true
     },
     {
       message: 'Subsidiaries details are required when organization has subsidiaries',
@@ -125,9 +125,9 @@ const createEntitySchema = baseEntitySchema
     (data) => {
       // If hasMajorityShares is true, majoritySharesDetails is required
       if (data.hasMajorityShares === true && !data.majoritySharesDetails) {
-        return false;
+        return false
       }
-      return true;
+      return true
     },
     {
       message: 'Majority shares details are required when organization holds majority shares',
@@ -138,9 +138,9 @@ const createEntitySchema = baseEntitySchema
     (data) => {
       // dataProtectionConsent must be true for publication
       if (data.moderationState === 'ready_for_publication' && !data.dataProtectionConsent) {
-        return false;
+        return false
       }
-      return true;
+      return true
     },
     {
       message: 'Data protection consent is required for publication',
@@ -151,18 +151,18 @@ const createEntitySchema = baseEntitySchema
     (data) => {
       // formCompletionConfirmed must be true for publication
       if (data.moderationState === 'ready_for_publication' && !data.formCompletionConfirmed) {
-        return false;
+        return false
       }
-      return true;
+      return true
     },
     {
       message: 'Form completion confirmation is required for publication',
       path: ['formCompletionConfirmed'],
     }
-  );
+  )
 
 // Update schema (partial of base schema, refinements applied at validation time if needed)
-const updateEntitySchema = baseEntitySchema.partial();
+const updateEntitySchema = baseEntitySchema.partial()
 
 export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/', { preHandler: authenticate }, async (request, reply) => {
@@ -173,28 +173,25 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         status,
         syncStatus,
       } = request.query as {
-        page?: number;
-        limit?: number;
-        status?: string;
-        syncStatus?: string;
-      };
+        page?: number
+        limit?: number
+        status?: string
+        syncStatus?: string
+      }
 
-      const offset = (Number(page) - 1) * Number(limit);
+      const offset = (Number(page) - 1) * Number(limit)
 
-      let query = db.select().from(entities);
+      let query = db.select().from(entities)
 
       if (status) {
-        query = query.where(eq(entities.status, status)) as any;
+        query = query.where(eq(entities.status, status)) as any
       }
 
       if (syncStatus) {
-        query = query.where(eq(entities.syncStatus, syncStatus)) as any;
+        query = query.where(eq(entities.syncStatus, syncStatus)) as any
       }
 
-      const results = await query
-        .limit(Number(limit))
-        .offset(offset)
-        .orderBy(desc(entities.createdAt));
+      const results = await query.limit(Number(limit)).offset(offset).orderBy(desc(entities.createdAt))
 
       return reply.send({
         data: results,
@@ -203,40 +200,40 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           limit: Number(limit),
           count: results.length,
         },
-      });
+      })
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Failed to fetch entities',
-      });
+      })
     }
-  });
+  })
 
   fastify.get('/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string }
 
-      const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1);
+      const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
       if (!entity) {
         return reply.status(404).send({
           error: 'Not Found',
           message: 'Entity not found',
-        });
+        })
       }
 
-      return reply.send({ data: entity });
+      return reply.send({ data: entity })
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Failed to fetch entity',
-      });
+      })
     }
-  });
+  })
 
   fastify.post('/', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const body = createEntitySchema.parse(request.body);
+      const body = createEntitySchema.parse(request.body)
 
       const [entity] = await db
         .insert(entities)
@@ -309,7 +306,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           createdBy: request.currentUser?.userId,
           updatedBy: request.currentUser?.userId,
         })
-        .returning();
+        .returning()
 
       // Insert JRC Taxonomy relationships
       if (body.thematicAreaIds && body.thematicAreaIds.length > 0) {
@@ -318,7 +315,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             entityId: entity.id,
             taxonomyId,
           }))
-        );
+        )
       }
 
       if (body.sectorIds && body.sectorIds.length > 0) {
@@ -327,7 +324,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             entityId: entity.id,
             taxonomyId,
           }))
-        );
+        )
       }
 
       if (body.technologyIds && body.technologyIds.length > 0) {
@@ -336,7 +333,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             entityId: entity.id,
             taxonomyId,
           }))
-        );
+        )
       }
 
       if (body.useCaseIds && body.useCaseIds.length > 0) {
@@ -345,7 +342,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             entityId: entity.id,
             taxonomyId,
           }))
-        );
+        )
       }
 
       if (body.fieldsOfActivityIds && body.fieldsOfActivityIds.length > 0) {
@@ -354,24 +351,23 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             entityId: entity.id,
             taxonomyId,
           }))
-        );
+        )
       }
 
       // Handle sub-domain taxonomy relationships (hierarchical)
       if (body.subDomainIds) {
-        const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] =
-          [];
+        const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = []
         for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
           for (const taxonomyId of subDomainIdList) {
             subDomainInserts.push({
               entityId: entity.id,
               taxonomyId,
               parentDomainId,
-            });
+            })
           }
         }
         if (subDomainInserts.length > 0) {
-          await db.insert(entitySubDomains).values(subDomainInserts);
+          await db.insert(entitySubDomains).values(subDomainInserts)
         }
       }
 
@@ -380,38 +376,38 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         version: '1.0',
         data: entity as any,
         changedBy: request.currentUser?.userId,
-      });
+      })
 
       return reply.status(201).send({
         data: entity,
         message: 'Entity created successfully',
-      });
+      })
     } catch (error) {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({
           error: 'Validation Error',
           message: error.errors,
-        });
+        })
       }
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Failed to create entity',
-      });
+      })
     }
-  });
+  })
 
   fastify.patch('/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string };
-      const body = updateEntitySchema.parse(request.body);
+      const { id } = request.params as { id: string }
+      const body = updateEntitySchema.parse(request.body)
 
-      const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1);
+      const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
       if (!existing) {
         return reply.status(404).send({
           error: 'Not Found',
           message: 'Entity not found',
-        });
+        })
       }
 
       const [updated] = await db
@@ -507,84 +503,83 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           updatedBy: request.currentUser?.userId,
         })
         .where(eq(entities.id, id))
-        .returning();
+        .returning()
 
       if (body.thematicAreaIds) {
-        await db.delete(entityThematicAreas).where(eq(entityThematicAreas.entityId, id));
+        await db.delete(entityThematicAreas).where(eq(entityThematicAreas.entityId, id))
         if (body.thematicAreaIds.length > 0) {
           await db.insert(entityThematicAreas).values(
             body.thematicAreaIds.map((taxonomyId) => ({
               entityId: id,
               taxonomyId,
             }))
-          );
+          )
         }
       }
 
       if (body.sectorIds) {
-        await db.delete(entitySectors).where(eq(entitySectors.entityId, id));
+        await db.delete(entitySectors).where(eq(entitySectors.entityId, id))
         if (body.sectorIds.length > 0) {
           await db.insert(entitySectors).values(
             body.sectorIds.map((taxonomyId) => ({
               entityId: id,
               taxonomyId,
             }))
-          );
+          )
         }
       }
 
       if (body.technologyIds) {
-        await db.delete(entityTechnologies).where(eq(entityTechnologies.entityId, id));
+        await db.delete(entityTechnologies).where(eq(entityTechnologies.entityId, id))
         if (body.technologyIds.length > 0) {
           await db.insert(entityTechnologies).values(
             body.technologyIds.map((taxonomyId) => ({
               entityId: id,
               taxonomyId,
             }))
-          );
+          )
         }
       }
 
       if (body.useCaseIds) {
-        await db.delete(entityUseCases).where(eq(entityUseCases.entityId, id));
+        await db.delete(entityUseCases).where(eq(entityUseCases.entityId, id))
         if (body.useCaseIds.length > 0) {
           await db.insert(entityUseCases).values(
             body.useCaseIds.map((taxonomyId) => ({
               entityId: id,
               taxonomyId,
             }))
-          );
+          )
         }
       }
 
       if (body.fieldsOfActivityIds) {
-        await db.delete(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, id));
+        await db.delete(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, id))
         if (body.fieldsOfActivityIds.length > 0) {
           await db.insert(entityFieldsOfActivity).values(
             body.fieldsOfActivityIds.map((taxonomyId) => ({
               entityId: id,
               taxonomyId,
             }))
-          );
+          )
         }
       }
 
       // Handle sub-domain taxonomy relationships (hierarchical)
       if (body.subDomainIds) {
-        await db.delete(entitySubDomains).where(eq(entitySubDomains.entityId, id));
-        const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] =
-          [];
+        await db.delete(entitySubDomains).where(eq(entitySubDomains.entityId, id))
+        const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = []
         for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
           for (const taxonomyId of subDomainIdList) {
             subDomainInserts.push({
               entityId: id,
               taxonomyId,
               parentDomainId,
-            });
+            })
           }
         }
         if (subDomainInserts.length > 0) {
-          await db.insert(entitySubDomains).values(subDomainInserts);
+          await db.insert(entitySubDomains).values(subDomainInserts)
         }
       }
 
@@ -593,84 +588,82 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         .from(entityVersions)
         .where(eq(entityVersions.entityId, id))
         .orderBy(desc(entityVersions.createdAt))
-        .limit(1);
+        .limit(1)
 
-      const lastVersion = versions[0];
-      const newVersion = lastVersion
-        ? `${parseInt(lastVersion.version.split('.')[0]) + 1}.0`
-        : '1.0';
+      const lastVersion = versions[0]
+      const newVersion = lastVersion ? `${parseInt(lastVersion.version.split('.')[0]) + 1}.0` : '1.0'
 
       await db.insert(entityVersions).values({
         entityId: id,
         version: newVersion,
         data: updated as any,
         changedBy: request.currentUser?.userId,
-      });
+      })
 
       return reply.send({
         data: updated,
         message: 'Entity updated successfully',
-      });
+      })
     } catch (error) {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({
           error: 'Validation Error',
           message: error.errors,
-        });
+        })
       }
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Failed to update entity',
-      });
+      })
     }
-  });
+  })
 
   fastify.delete('/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string }
 
-      const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1);
+      const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
       if (!existing) {
         return reply.status(404).send({
           error: 'Not Found',
           message: 'Entity not found',
-        });
+        })
       }
 
-      await db.delete(entities).where(eq(entities.id, id));
+      await db.delete(entities).where(eq(entities.id, id))
 
       return reply.send({
         message: 'Entity deleted successfully',
-      });
+      })
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Failed to delete entity',
-      });
+      })
     }
-  });
+  })
 
   fastify.post('/:id/sync', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string }
 
-      const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1);
+      const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
       if (!entity) {
         return reply.status(404).send({
           error: 'Not Found',
           message: 'Entity not found',
-        });
+        })
       }
 
-      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity);
+      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity)
 
-      let cluster;
+      let cluster
       if (entity.atlasId) {
-        cluster = await atlasClient.updateCluster(entity.atlasId, clusterInput);
+        cluster = await atlasClient.updateCluster(entity.atlasId, clusterInput)
       } else {
-        cluster = await atlasClient.createCluster(clusterInput);
+        cluster = await atlasClient.createCluster(clusterInput)
       }
 
       const [updated] = await db
@@ -681,50 +674,50 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           lastSyncedAt: new Date(),
         })
         .where(eq(entities.id, id))
-        .returning();
+        .returning()
 
       return reply.send({
         data: updated,
         message: 'Entity synced to ATLAS successfully',
-      });
+      })
     } catch (error) {
-      const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string }
 
       await db
         .update(entities)
         .set({
           syncStatus: 'failed',
         })
-        .where(eq(entities.id, id));
+        .where(eq(entities.id, id))
 
       return reply.status(500).send({
         error: 'Sync Failed',
         message: error instanceof Error ? error.message : 'Failed to sync entity to ATLAS',
-      });
+      })
     }
-  });
+  })
 
   fastify.get('/:id/versions', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string };
+      const { id } = request.params as { id: string }
 
       const versions = await db
         .select()
         .from(entityVersions)
         .where(eq(entityVersions.entityId, id))
-        .orderBy(desc(entityVersions.createdAt));
+        .orderBy(desc(entityVersions.createdAt))
 
       return reply.send({
         data: versions,
         meta: {
           count: versions.length,
         },
-      });
+      })
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Failed to fetch entity versions',
-      });
+      })
     }
-  });
+  })
 }
