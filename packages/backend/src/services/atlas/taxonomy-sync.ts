@@ -1,4 +1,4 @@
-import { eq, and, ilike } from 'drizzle-orm'
+import { eq, and, ilike, sql } from 'drizzle-orm'
 import { db } from '../../config/database.js'
 import { taxonomies, syncLogs } from '../../db/schema.js'
 import { logger } from '../../utils/logger.js'
@@ -80,43 +80,35 @@ export class TaxonomySyncService {
       return 0
     }
 
-    let synced = 0
-
-    for (const term of terms) {
-      try {
-        const taxonomyData = jsonApiTransformer.toTaxonomyFromTerm(term)
-
-        const [existing] = await db.select().from(taxonomies).where(eq(taxonomies.atlasId, term.atlasId)).limit(1)
-
-        if (existing) {
-          await db
-            .update(taxonomies)
-            .set({
-              name: taxonomyData.name!,
-              taxonomyType: taxonomyData.taxonomyType!,
-              description: taxonomyData.description,
-              parentId: taxonomyData.parentId,
-              metadata: taxonomyData.metadata,
-              lastSyncedAt: new Date(),
-            })
-            .where(eq(taxonomies.id, existing.id))
-        } else {
-          await db.insert(taxonomies).values({
-            atlasId: taxonomyData.atlasId!,
-            taxonomyType: taxonomyData.taxonomyType!,
-            name: taxonomyData.name!,
-            description: taxonomyData.description,
-            parentId: taxonomyData.parentId,
-            metadata: taxonomyData.metadata,
-            lastSyncedAt: taxonomyData.lastSyncedAt,
-          })
-        }
-
-        synced++
-      } catch (error) {
-        logger.error(`Failed to sync taxonomy term: ${term.name}`, error as Error)
+    const rows = terms.map((term) => {
+      const data = jsonApiTransformer.toTaxonomyFromTerm(term)
+      return {
+        atlasId: data.atlasId!,
+        taxonomyType: data.taxonomyType!,
+        name: data.name!,
+        description: data.description,
+        parentId: data.parentId,
+        metadata: data.metadata,
+        lastSyncedAt: new Date(),
       }
-    }
+    })
+
+    await db
+      .insert(taxonomies)
+      .values(rows)
+      .onConflictDoUpdate({
+        target: taxonomies.atlasId,
+        set: {
+          name: sql`excluded.name`,
+          taxonomyType: sql`excluded.taxonomy_type`,
+          description: sql`excluded.description`,
+          parentId: sql`excluded.parent_id`,
+          metadata: sql`excluded.metadata`,
+          lastSyncedAt: sql`excluded.last_synced_at`,
+        },
+      })
+
+    const synced = rows.length
 
     await db.insert(syncLogs).values({
       entityType: 'taxonomy',

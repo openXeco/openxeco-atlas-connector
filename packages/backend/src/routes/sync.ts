@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { eq, desc, and, gte, lte, count, sql } from 'drizzle-orm'
+import { eq, desc, and, gte, lte, count } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { syncLogs, entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
