@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { eq, desc, and, gte, lte } from 'drizzle-orm'
+import { eq, desc, and, gte, lte, count, sql } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { syncLogs, entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
@@ -214,41 +214,32 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.get('/status', { preHandler: authenticate }, async (_request, reply) => {
     try {
-      const [totalEntities, localEntities, syncedEntities, conflictEntities, failedEntities] = await Promise.all([
-        db
-          .select()
-          .from(entities)
-          .then((r) => r.length),
-        db
-          .select()
-          .from(entities)
-          .where(eq(entities.syncStatus, 'local'))
-          .then((r) => r.length),
-        db
-          .select()
-          .from(entities)
-          .where(eq(entities.syncStatus, 'synced'))
-          .then((r) => r.length),
-        db
-          .select()
-          .from(entities)
-          .where(eq(entities.syncStatus, 'conflict'))
-          .then((r) => r.length),
-        db
-          .select()
-          .from(entities)
-          .where(eq(entities.syncStatus, 'failed'))
-          .then((r) => r.length),
-      ])
+      const rows = await db
+        .select({
+          syncStatus: entities.syncStatus,
+          count: count(),
+        })
+        .from(entities)
+        .groupBy(entities.syncStatus)
+
+      const counts: Record<string, number> = {}
+      let total = 0
+      for (const row of rows) {
+        counts[row.syncStatus || 'local'] = row.count
+        total += row.count
+      }
+
+      const local = counts['local'] || 0
+      const conflict = counts['conflict'] || 0
 
       return reply.send({
         data: {
-          total: totalEntities,
-          local: localEntities,
-          synced: syncedEntities,
-          conflict: conflictEntities,
-          failed: failedEntities,
-          pendingPush: localEntities + conflictEntities,
+          total,
+          local,
+          synced: counts['synced'] || 0,
+          conflict,
+          failed: counts['failed'] || 0,
+          pendingPush: local + conflict,
         },
       })
     } catch (error) {
