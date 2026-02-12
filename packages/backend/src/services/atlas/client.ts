@@ -157,25 +157,39 @@ export class AtlasClient {
   async getTaxonomies(type: TaxonomyType): Promise<TaxonomyTerm[]> {
     logger.info(`Fetching taxonomies of type: ${type}`)
 
-    const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}`)
+    const allTerms: TaxonomyTerm[] = []
+    let page = 1
+    const pageSize = 50
 
-    if (!response.data) {
-      return []
+    while (true) {
+      const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}`, {
+        params: { page, pageSize },
+      })
+
+      if (!response.data) break
+
+      const resources = Array.isArray(response.data) ? response.data : [response.data]
+
+      for (const resource of resources) {
+        allTerms.push({
+          id: resource.id,
+          atlasId: resource.id,
+          type,
+          name: (resource.attributes.name as string) || '',
+          description: resource.attributes.description as string | undefined,
+          parentId: resource.relationships?.parent?.data
+            ? (resource.relationships.parent.data as { id: string }).id
+            : undefined,
+          metadata: resource.attributes,
+        })
+      }
+
+      // Stop if we got fewer results than page size (last page) or no next link
+      if (resources.length < pageSize || !response.links?.next) break
+      page++
     }
 
-    const resources = Array.isArray(response.data) ? response.data : [response.data]
-
-    return resources.map((resource) => ({
-      id: resource.id,
-      atlasId: resource.id,
-      type,
-      name: (resource.attributes.name as string) || '',
-      description: resource.attributes.description as string | undefined,
-      parentId: resource.relationships?.parent?.data
-        ? (resource.relationships.parent.data as { id: string }).id
-        : undefined,
-      metadata: resource.attributes,
-    }))
+    return allTerms
   }
 
   async getTaxonomy(type: TaxonomyType, id: string): Promise<TaxonomyTerm> {
