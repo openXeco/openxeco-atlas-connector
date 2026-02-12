@@ -1,19 +1,58 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Building2, Tags, RefreshCw, AlertCircle } from 'lucide-react'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProtectedRoute } from '@/components/auth/protected-route'
+import { apiClient } from '@/lib/api'
 
-const stats = [
-  { name: 'Total Entities', value: '0', icon: Building2, color: 'text-blue-600' },
-  { name: 'Taxonomies', value: '0', icon: Tags, color: 'text-green-600' },
-  { name: 'Pending Sync', value: '0', icon: RefreshCw, color: 'text-orange-600' },
-  { name: 'Conflicts', value: '0', icon: AlertCircle, color: 'text-red-600' },
-]
+interface SyncStatus {
+  total: number
+  local: number
+  synced: number
+  conflict: number
+  failed: number
+  pendingPush: number
+}
 
 export default function DashboardPage() {
+  const [loading, setLoading] = useState(true)
+  const [entityTotal, setEntityTotal] = useState(0)
+  const [taxonomyTotal, setTaxonomyTotal] = useState(0)
+  const [pendingSync, setPendingSync] = useState(0)
+  const [conflicts, setConflicts] = useState(0)
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [syncRes, taxRes] = await Promise.all([
+          apiClient.get<{ data: SyncStatus }>('/api/sync/status'),
+          apiClient.get<{ data: { total: number } }>('/api/taxonomies/count'),
+        ])
+
+        setEntityTotal(syncRes.data.total)
+        setPendingSync(syncRes.data.pendingPush)
+        setConflicts(syncRes.data.conflict)
+        setTaxonomyTotal(taxRes.data.total)
+      } catch (_error) {
+        // stats stay at 0 on failure
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadStats()
+  }, [])
+
+  const stats = [
+    { name: 'Total Entities', value: entityTotal, icon: Building2, color: 'text-blue-600' },
+    { name: 'Taxonomies', value: taxonomyTotal, icon: Tags, color: 'text-green-600' },
+    { name: 'Pending Sync', value: pendingSync, icon: RefreshCw, color: 'text-orange-600' },
+    { name: 'Conflicts', value: conflicts, icon: AlertCircle, color: 'text-red-600' },
+  ]
+
   return (
     <ProtectedRoute>
       <div className="flex h-screen">
@@ -34,7 +73,9 @@ export default function DashboardPage() {
                     <stat.icon className={`h-5 w-5 ${stat.color}`} />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{stat.value}</div>
+                    <div className="text-3xl font-bold">
+                      {loading ? '...' : stat.value.toLocaleString()}
+                    </div>
                   </CardContent>
                 </Card>
               ))}

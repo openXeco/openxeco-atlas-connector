@@ -1,5 +1,8 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { count } from 'drizzle-orm'
+import { db } from '../config/database.js'
+import { taxonomies } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { taxonomySyncService } from '../services/atlas/taxonomy-sync.js'
 import type { TaxonomyType } from '../services/atlas/types.js'
@@ -28,6 +31,18 @@ const taxonomyTypeSchema = z.enum([
 ])
 
 export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
+  fastify.get('/count', { preHandler: authenticate }, async (_request, reply) => {
+    try {
+      const [result] = await db.select({ total: count() }).from(taxonomies)
+      return reply.send({ data: { total: result.total } })
+    } catch (_error) {
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to count taxonomies',
+      })
+    }
+  })
+
   fastify.post('/sync', { preHandler: authenticate }, async (_request, reply) => {
     try {
       const result = await taxonomySyncService.syncAllTaxonomies()
