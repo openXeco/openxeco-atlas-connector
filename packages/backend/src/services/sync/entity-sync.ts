@@ -1,4 +1,4 @@
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, lt } from 'drizzle-orm'
 import { db } from '../../config/database.js'
 import { entities, entityVersions, syncLogs } from '../../db/schema.js'
 import { logger } from '../../utils/logger.js'
@@ -484,6 +484,16 @@ export class EntitySyncService {
   async pullBatch(atlasIds: string[], userId?: string): Promise<BatchSyncResult> {
     logger.info(`Pulling batch of ${atlasIds.length} entities from ATLAS`)
     return this.processBatch(atlasIds, (id) => this.pullEntity(id, userId))
+  }
+
+  async cleanupSyncLogs(retentionDays: number = 90): Promise<number> {
+    const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
+    logger.info(`Cleaning up sync logs older than ${cutoff.toISOString()}`)
+
+    const deleted = await db.delete(syncLogs).where(lt(syncLogs.createdAt, cutoff)).returning({ id: syncLogs.id })
+
+    logger.info(`Deleted ${deleted.length} old sync log entries`)
+    return deleted.length
   }
 }
 

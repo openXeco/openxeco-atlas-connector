@@ -312,4 +312,23 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       })
     }
   })
+
+  fastify.delete('/logs/cleanup', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { retentionDays = 90 } = request.query as { retentionDays?: number }
+      const days = Math.max(1, Math.min(Number(retentionDays), 365))
+
+      const deleted = await entitySyncService.cleanupSyncLogs(days)
+
+      return reply.send({
+        message: `Deleted ${deleted} sync log entries older than ${days} days`,
+        deleted,
+      })
+    } catch (error) {
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to cleanup sync logs',
+      })
+    }
+  })
 }
