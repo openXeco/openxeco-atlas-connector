@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, and, ilike } from 'drizzle-orm'
 import { db } from '../../config/database.js'
 import { taxonomies, syncLogs } from '../../db/schema.js'
 import { logger } from '../../utils/logger.js'
@@ -149,11 +149,19 @@ export class TaxonomySyncService {
     return taxonomy
   }
 
-  async searchTaxonomies(_query: string, type?: TaxonomyType) {
+  async searchTaxonomies(query: string, type?: TaxonomyType) {
+    const conditions = []
+    if (query) {
+      conditions.push(ilike(taxonomies.name, `%${query}%`))
+    }
+    if (type) {
+      conditions.push(eq(taxonomies.taxonomyType, type))
+    }
+
     return db
       .select()
       .from(taxonomies)
-      .where(type ? eq(taxonomies.taxonomyType, type) : undefined)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(taxonomies.name)
       .limit(50)
   }
