@@ -182,6 +182,7 @@ export class EntitySyncService {
             ...entityData,
             syncStatus: 'synced',
             lastSyncedAt: new Date(),
+            updatedAt: new Date(),
             updatedBy: userId,
           })
           .where(eq(entities.id, existing.id))
@@ -208,21 +209,9 @@ export class EntitySyncService {
         ;[entity] = await db
           .insert(entities)
           .values({
+            ...entityData,
             name: entityData.name || '',
-            atlasId: entityData.atlasId,
-            description: entityData.description,
-            logoUrl: entityData.logoUrl,
-            website: entityData.website,
-            streetAddress: entityData.streetAddress,
-            city: entityData.city,
-            countryCode: entityData.countryCode,
-            postalCode: entityData.postalCode,
-            latitude: entityData.latitude,
-            longitude: entityData.longitude,
-            countryId: entityData.countryId,
-            clusterTypeId: entityData.clusterTypeId,
-            organizationTypeId: entityData.organizationTypeId,
-            status: 'draft',
+            status: entityData.status || 'draft',
             syncStatus: 'synced',
             lastSyncedAt: new Date(),
             createdBy: userId,
