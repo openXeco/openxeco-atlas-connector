@@ -597,7 +597,8 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           .limit(1)
 
         const lastVersion = versions[0]
-        const newVersion = lastVersion ? `${parseInt(lastVersion.version.split('.')[0]) + 1}.0` : '1.0'
+        const lastMajor = lastVersion ? parseInt(lastVersion.version) || 0 : 0
+        const newVersion = `${lastMajor + 1}.0`
 
         await tx.insert(entityVersions).values({
           entityId: id,
