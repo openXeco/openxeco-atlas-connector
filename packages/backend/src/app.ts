@@ -1,5 +1,7 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import helmet from '@fastify/helmet'
+import rateLimit from '@fastify/rate-limit'
 import jwt from '@fastify/jwt'
 import cookie from '@fastify/cookie'
 import { config } from './config/index.js'
@@ -12,9 +14,15 @@ export async function buildApp() {
     logger: config.NODE_ENV === 'development',
   })
 
+  await fastify.register(helmet)
+
   await fastify.register(cors, {
     origin: config.NODE_ENV === 'development' ? true : ['http://localhost:3000'],
     credentials: true,
+  })
+
+  await fastify.register(rateLimit, {
+    global: false,
   })
 
   await fastify.register(jwt, {

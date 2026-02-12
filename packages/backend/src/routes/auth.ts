@@ -13,7 +13,7 @@ const loginSchema = z.object({
 })
 
 export async function authRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.post('/login', async (request, reply) => {
+  fastify.post('/login', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
     try {
       const body = loginSchema.parse(request.body)
 
@@ -68,7 +68,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     }
   })
 
-  fastify.post('/refresh', async (request, reply) => {
+  fastify.post('/refresh', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (request, reply) => {
     try {
       const refreshToken = request.cookies.refreshToken || (request.body as { refreshToken?: string })?.refreshToken
 
