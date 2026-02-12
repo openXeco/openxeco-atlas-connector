@@ -82,7 +82,7 @@ export const entities = pgTable(
     majoritySharesDetails: text('majority_shares_details'), // field_majority_shares_noneu
 
     // Compliance (mandatory)
-    article138Compliance: boolean('article_138_compliance'), // field_article_136_compliance *
+    article138Compliance: boolean('article_138_compliance'), // ATLAS: field_article_136_compliance (ATLAS uses "136", local uses "138") *
     dataShareConsent: boolean('data_share_consent'), // field_data_sharing_consent *
 
     // Contact person / Representative (mandatory)
