@@ -35,7 +35,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Taxonomy sync completed',
         result,
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to sync taxonomies',
@@ -112,7 +112,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       return reply.send({ data: taxonomy })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch taxonomy',

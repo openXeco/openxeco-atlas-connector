@@ -34,7 +34,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         data: result,
         message: result.message,
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to push entity',
@@ -69,7 +69,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         data: result,
         message: result.message,
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to pull entity',
@@ -90,7 +90,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
           differentFields: diffs.filter((d) => d.isDifferent).length,
         },
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to get diff',
@@ -107,7 +107,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({
         data: conflict,
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to detect conflicts',
@@ -242,7 +242,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
           pendingPush: local + conflict,
         },
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to get sync status',
@@ -305,7 +305,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
           count: logs.length,
         },
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch sync logs',
@@ -324,7 +324,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Deleted ${deleted} sync log entries older than ${days} days`,
         deleted,
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to cleanup sync logs',

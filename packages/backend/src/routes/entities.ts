@@ -202,7 +202,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           total,
         },
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch entities',
@@ -224,7 +224,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       return reply.send({ data: entity })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch entity',
@@ -610,11 +610,23 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
         // Capture current taxonomy relationships for the version snapshot
         const [currentThematic, currentSectors, currentTech, currentUseCases, currentFields] = await Promise.all([
-          tx.select({ taxonomyId: entityThematicAreas.taxonomyId }).from(entityThematicAreas).where(eq(entityThematicAreas.entityId, id)),
+          tx
+            .select({ taxonomyId: entityThematicAreas.taxonomyId })
+            .from(entityThematicAreas)
+            .where(eq(entityThematicAreas.entityId, id)),
           tx.select({ taxonomyId: entitySectors.taxonomyId }).from(entitySectors).where(eq(entitySectors.entityId, id)),
-          tx.select({ taxonomyId: entityTechnologies.taxonomyId }).from(entityTechnologies).where(eq(entityTechnologies.entityId, id)),
-          tx.select({ taxonomyId: entityUseCases.taxonomyId }).from(entityUseCases).where(eq(entityUseCases.entityId, id)),
-          tx.select({ taxonomyId: entityFieldsOfActivity.taxonomyId }).from(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, id)),
+          tx
+            .select({ taxonomyId: entityTechnologies.taxonomyId })
+            .from(entityTechnologies)
+            .where(eq(entityTechnologies.entityId, id)),
+          tx
+            .select({ taxonomyId: entityUseCases.taxonomyId })
+            .from(entityUseCases)
+            .where(eq(entityUseCases.entityId, id)),
+          tx
+            .select({ taxonomyId: entityFieldsOfActivity.taxonomyId })
+            .from(entityFieldsOfActivity)
+            .where(eq(entityFieldsOfActivity.entityId, id)),
         ])
 
         await tx.insert(entityVersions).values({
@@ -670,7 +682,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({
         message: 'Entity deleted successfully',
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to delete entity',
@@ -714,7 +726,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         data: updated,
         message: 'Entity synced to ATLAS successfully',
       })
-    } catch (error) {
+    } catch (_error) {
       const { id } = request.params as { id: string }
 
       await db
@@ -747,7 +759,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           count: versions.length,
         },
       })
-    } catch (error) {
+    } catch (_error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch entity versions',
