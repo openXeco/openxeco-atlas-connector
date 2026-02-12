@@ -35,13 +35,13 @@ async function getSetting(key: string): Promise<string | null> {
 }
 
 async function setSetting(key: string, value: string | null): Promise<void> {
-  const [existing] = await db.select({ id: atlasConfig.id }).from(atlasConfig).where(eq(atlasConfig.key, key)).limit(1)
-
-  if (existing) {
-    await db.update(atlasConfig).set({ value, updatedAt: new Date() }).where(eq(atlasConfig.key, key))
-  } else {
-    await db.insert(atlasConfig).values({ key, value })
-  }
+  await db
+    .insert(atlasConfig)
+    .values({ key, value })
+    .onConflictDoUpdate({
+      target: atlasConfig.key,
+      set: { value, updatedAt: new Date() },
+    })
 }
 
 export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
