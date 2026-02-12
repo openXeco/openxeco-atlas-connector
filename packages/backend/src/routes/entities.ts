@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, and, count as countFn } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import {
   entities,
@@ -164,41 +164,42 @@ const createEntitySchema = baseEntitySchema
 // Update schema (partial of base schema, refinements applied at validation time if needed)
 const updateEntitySchema = baseEntitySchema.partial()
 
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  status: z.enum(['draft', 'ready_for_publication', 'published', 'to_be_rejected', 'rejected']).optional(),
+  syncStatus: z.enum(['local', 'pending_push', 'synced', 'conflict', 'failed']).optional(),
+})
+
 export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const {
-        page = 1,
-        limit = 10,
-        status,
-        syncStatus,
-      } = request.query as {
-        page?: number
-        limit?: number
-        status?: string
-        syncStatus?: string
-      }
+      const { page, limit, status, syncStatus } = listQuerySchema.parse(request.query)
 
-      const offset = (Number(page) - 1) * Number(limit)
+      const offset = (page - 1) * limit
 
-      let query = db.select().from(entities)
-
+      const conditions = []
       if (status) {
-        query = query.where(eq(entities.status, status)) as any
+        conditions.push(eq(entities.status, status))
       }
-
       if (syncStatus) {
-        query = query.where(eq(entities.syncStatus, syncStatus)) as any
+        conditions.push(eq(entities.syncStatus, syncStatus))
       }
 
-      const results = await query.limit(Number(limit)).offset(offset).orderBy(desc(entities.createdAt))
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+
+      const [results, [{ total }]] = await Promise.all([
+        db.select().from(entities).where(whereClause).limit(limit).offset(offset).orderBy(desc(entities.createdAt)),
+        db.select({ total: countFn() }).from(entities).where(whereClause),
+      ])
 
       return reply.send({
         data: results,
         meta: {
-          page: Number(page),
-          limit: Number(limit),
+          page,
+          limit,
           count: results.length,
+          total,
         },
       })
     } catch (error) {
