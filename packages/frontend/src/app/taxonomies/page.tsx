@@ -23,20 +23,20 @@ export default function TaxonomiesPage() {
     setError(null)
 
     try {
-      const counts: Record<string, number> = {}
+      const results = await Promise.all(
+        TAXONOMY_TYPES.map(async (taxonomyType) => {
+          try {
+            const response = await apiClient.get<{ data: unknown[]; meta: { count: number } }>(
+              `/api/taxonomies/${taxonomyType.type}`
+            )
+            return [taxonomyType.type, response.meta?.count || response.data?.length || 0] as const
+          } catch (_err) {
+            return [taxonomyType.type, 0] as const
+          }
+        })
+      )
 
-      for (const taxonomyType of TAXONOMY_TYPES) {
-        try {
-          const response = await apiClient.get<{ data: unknown[]; meta: { count: number } }>(
-            `/api/taxonomies/${taxonomyType.type}`
-          )
-          counts[taxonomyType.type] = response.meta?.count || response.data?.length || 0
-        } catch (_err) {
-          counts[taxonomyType.type] = 0
-        }
-      }
-
-      setStats(counts)
+      setStats(Object.fromEntries(results))
     } catch (_err) {
       setError('Failed to load taxonomy statistics')
     } finally {

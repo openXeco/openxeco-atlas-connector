@@ -49,14 +49,19 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
       ) as string[]
 
       if (taxIds.length > 0) {
+        const results = await Promise.all(
+          taxIds.map(async (taxId) => {
+            try {
+              const taxResponse = await apiClient.get<{ data: Taxonomy }>(`/api/taxonomies/id/${taxId}`)
+              return [taxId, taxResponse.data] as const
+            } catch (_err) {
+              return null
+            }
+          })
+        )
         const taxMap: Record<string, Taxonomy> = {}
-        for (const taxId of taxIds) {
-          try {
-            const taxResponse = await apiClient.get<{ data: Taxonomy }>(`/api/taxonomies/id/${taxId}`)
-            taxMap[taxId] = taxResponse.data
-          } catch (err) {
-            console.error(`Failed to load taxonomy ${taxId}:`, err)
-          }
+        for (const result of results) {
+          if (result) taxMap[result[0]] = result[1]
         }
         setTaxonomies(taxMap)
       }
