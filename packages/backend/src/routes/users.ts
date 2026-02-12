@@ -4,7 +4,7 @@ import { eq, count } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { users } from '../db/schema.js'
 import { hashPassword } from '../services/password.js'
-import { authenticate } from '../middleware/auth.js'
+import { requireAdmin } from '../middleware/auth.js'
 
 const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -21,7 +21,7 @@ const changePasswordSchema = z.object({
 
 export async function userRoutes(fastify: FastifyInstance): Promise<void> {
   // List all users
-  fastify.get('/', { preHandler: authenticate }, async (_request, reply) => {
+  fastify.get('/', { preHandler: requireAdmin }, async (_request, reply) => {
     const userList = await db
       .select({
         id: users.id,
@@ -36,7 +36,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   // Create user
-  fastify.post('/', { preHandler: authenticate }, async (request, reply) => {
+  fastify.post('/', { preHandler: requireAdmin }, async (request, reply) => {
     try {
       const body = createUserSchema.parse(request.body)
 
@@ -80,7 +80,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   // Update user email
-  fastify.patch('/:id', { preHandler: authenticate }, async (request, reply) => {
+  fastify.patch('/:id', { preHandler: requireAdmin }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string }
       const body = updateUserSchema.parse(request.body)
@@ -133,7 +133,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   // Change user password
-  fastify.patch('/:id/password', { preHandler: authenticate }, async (request, reply) => {
+  fastify.patch('/:id/password', { preHandler: requireAdmin }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string }
       const body = changePasswordSchema.parse(request.body)
@@ -172,7 +172,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   // Delete user
-  fastify.delete('/:id', { preHandler: authenticate }, async (request, reply) => {
+  fastify.delete('/:id', { preHandler: requireAdmin }, async (request, reply) => {
     const { id } = request.params as { id: string }
 
     // Check if user exists

@@ -41,6 +41,9 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
 export async function requireAdmin(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   await authenticate(request, reply)
 
+  // If authenticate already sent a response, stop here
+  if (reply.sent) return
+
   if (request.currentUser?.role !== 'admin') {
     return reply.status(403).send({
       error: 'Forbidden',
