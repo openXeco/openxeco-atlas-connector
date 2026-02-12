@@ -104,54 +104,75 @@ export class AtlasClient {
       headers.Authorization = `${authScheme} ${this.authToken}`
     }
 
-    logger.info(`ATLAS API request: ${method} ${url.toString()}`)
+    const maxRetries = 3
+    const retryableStatuses = [408, 429, 502, 503, 504]
 
-    try {
-      const fetchOptions: RequestInit = {
-        method,
-        headers,
-        body: options?.body ? JSON.stringify(options.body) : undefined,
-        signal: AbortSignal.timeout(this.config.timeout || 30000),
-      }
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      logger.info(`ATLAS API request: ${method} ${url.toString()} (attempt ${attempt})`)
 
-      if (this.proxyDispatcher) {
-        // undici ProxyAgent as dispatcher for proxy support
-        ;(fetchOptions as Record<string, unknown>).dispatcher = this.proxyDispatcher
-      }
-
-      const response = await fetch(url.toString(), fetchOptions)
-
-      if (!response.ok) {
-        const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument
-        logger.error('ATLAS API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          errors: errorData.errors || [],
-        })
-        throw new Error(`ATLAS API error: ${response.status} ${response.statusText}`)
-      }
-
-      const data = (await response.json()) as JsonApiDocument<T>
-
-      if (data.errors && data.errors.length > 0) {
-        logger.error('ATLAS API returned errors:', { errors: data.errors })
-        throw new Error(`ATLAS API error: ${data.errors[0].title || 'Unknown error'}`)
-      }
-
-      return data
-    } catch (error) {
-      if (error instanceof TypeError) {
-        throw new Error(`ATLAS API returned error: ${error.cause}`)
-      }
-
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error('ATLAS API request timeout')
+      try {
+        const fetchOptions: RequestInit = {
+          method,
+          headers,
+          body: options?.body ? JSON.stringify(options.body) : undefined,
+          signal: AbortSignal.timeout(this.config.timeout || 30000),
         }
-        throw error
+
+        if (this.proxyDispatcher) {
+          // undici ProxyAgent as dispatcher for proxy support
+          ;(fetchOptions as Record<string, unknown>).dispatcher = this.proxyDispatcher
+        }
+
+        const response = await fetch(url.toString(), fetchOptions)
+
+        if (!response.ok) {
+          if (retryableStatuses.includes(response.status) && attempt < maxRetries) {
+            const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
+            logger.warn(`ATLAS API returned ${response.status}, retrying in ${delay}ms...`)
+            await new Promise((resolve) => setTimeout(resolve, delay))
+            continue
+          }
+
+          const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument
+          logger.error('ATLAS API error:', {
+            status: response.status,
+            statusText: response.statusText,
+            errors: errorData.errors || [],
+          })
+          throw new Error(`ATLAS API error: ${response.status} ${response.statusText}`)
+        }
+
+        const data = (await response.json()) as JsonApiDocument<T>
+
+        if (data.errors && data.errors.length > 0) {
+          logger.error('ATLAS API returned errors:', { errors: data.errors })
+          throw new Error(`ATLAS API error: ${data.errors[0].title || 'Unknown error'}`)
+        }
+
+        return data
+      } catch (error) {
+        if (error instanceof TypeError && attempt < maxRetries) {
+          const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
+          logger.warn(`ATLAS API network error, retrying in ${delay}ms...`)
+          await new Promise((resolve) => setTimeout(resolve, delay))
+          continue
+        }
+
+        if (error instanceof TypeError) {
+          throw new Error(`ATLAS API returned error: ${error.cause}`)
+        }
+
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            throw new Error('ATLAS API request timeout')
+          }
+          throw error
+        }
+        throw new Error('Unknown error occurred during ATLAS API request')
       }
-      throw new Error('Unknown error occurred during ATLAS API request')
     }
+
+    throw new Error('ATLAS API request failed after retries')
   }
 
   async getTaxonomies(type: TaxonomyType): Promise<TaxonomyTerm[]> {
