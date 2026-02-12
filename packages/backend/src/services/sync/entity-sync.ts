@@ -465,54 +465,36 @@ export class EntitySyncService {
     }
   }
 
-  async pushBatch(entityIds: string[], userId?: string): Promise<BatchSyncResult> {
-    logger.info(`Pushing batch of ${entityIds.length} entities to ATLAS`)
-
+  private async processBatch<T>(
+    items: T[],
+    fn: (item: T) => Promise<SyncResult>,
+    concurrency: number = 5
+  ): Promise<BatchSyncResult> {
     const results: SyncResult[] = []
     let success = 0
     let failed = 0
 
-    for (const entityId of entityIds) {
-      const result = await this.pushEntity(entityId, userId)
-      results.push(result)
-      if (result.success) {
-        success++
-      } else {
-        failed++
+    for (let i = 0; i < items.length; i += concurrency) {
+      const chunk = items.slice(i, i + concurrency)
+      const chunkResults = await Promise.all(chunk.map(fn))
+      for (const result of chunkResults) {
+        results.push(result)
+        if (result.success) success++
+        else failed++
       }
     }
 
-    return {
-      total: entityIds.length,
-      success,
-      failed,
-      results,
-    }
+    return { total: items.length, success, failed, results }
+  }
+
+  async pushBatch(entityIds: string[], userId?: string): Promise<BatchSyncResult> {
+    logger.info(`Pushing batch of ${entityIds.length} entities to ATLAS`)
+    return this.processBatch(entityIds, (id) => this.pushEntity(id, userId))
   }
 
   async pullBatch(atlasIds: string[], userId?: string): Promise<BatchSyncResult> {
     logger.info(`Pulling batch of ${atlasIds.length} entities from ATLAS`)
-
-    const results: SyncResult[] = []
-    let success = 0
-    let failed = 0
-
-    for (const atlasId of atlasIds) {
-      const result = await this.pullEntity(atlasId, userId)
-      results.push(result)
-      if (result.success) {
-        success++
-      } else {
-        failed++
-      }
-    }
-
-    return {
-      total: atlasIds.length,
-      success,
-      failed,
-      results,
-    }
+    return this.processBatch(atlasIds, (id) => this.pullEntity(id, userId))
   }
 }
 
