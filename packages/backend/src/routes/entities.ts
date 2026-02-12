@@ -376,7 +376,15 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         await tx.insert(entityVersions).values({
           entityId: entity.id,
           version: '1.0',
-          data: entity as any,
+          data: {
+            ...entity,
+            thematicAreaIds: body.thematicAreaIds || [],
+            sectorIds: body.sectorIds || [],
+            technologyIds: body.technologyIds || [],
+            useCaseIds: body.useCaseIds || [],
+            fieldsOfActivityIds: body.fieldsOfActivityIds || [],
+            subDomainIds: body.subDomainIds || {},
+          } as any,
           changedBy: request.currentUser?.userId,
         })
 
@@ -600,10 +608,26 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         const lastMajor = lastVersion ? parseInt(lastVersion.version) || 0 : 0
         const newVersion = `${lastMajor + 1}.0`
 
+        // Capture current taxonomy relationships for the version snapshot
+        const [currentThematic, currentSectors, currentTech, currentUseCases, currentFields] = await Promise.all([
+          tx.select({ taxonomyId: entityThematicAreas.taxonomyId }).from(entityThematicAreas).where(eq(entityThematicAreas.entityId, id)),
+          tx.select({ taxonomyId: entitySectors.taxonomyId }).from(entitySectors).where(eq(entitySectors.entityId, id)),
+          tx.select({ taxonomyId: entityTechnologies.taxonomyId }).from(entityTechnologies).where(eq(entityTechnologies.entityId, id)),
+          tx.select({ taxonomyId: entityUseCases.taxonomyId }).from(entityUseCases).where(eq(entityUseCases.entityId, id)),
+          tx.select({ taxonomyId: entityFieldsOfActivity.taxonomyId }).from(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, id)),
+        ])
+
         await tx.insert(entityVersions).values({
           entityId: id,
           version: newVersion,
-          data: updated as any,
+          data: {
+            ...updated,
+            thematicAreaIds: currentThematic.map((r) => r.taxonomyId),
+            sectorIds: currentSectors.map((r) => r.taxonomyId),
+            technologyIds: currentTech.map((r) => r.taxonomyId),
+            useCaseIds: currentUseCases.map((r) => r.taxonomyId),
+            fieldsOfActivityIds: currentFields.map((r) => r.taxonomyId),
+          } as any,
           changedBy: request.currentUser?.userId,
         })
 
