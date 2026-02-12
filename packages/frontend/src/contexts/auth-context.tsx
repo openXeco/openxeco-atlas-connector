@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { apiClient } from '@/lib/api'
+import { apiClient, setAccessToken, getAccessToken } from '@/lib/api'
 
 interface User {
   id: string
@@ -28,10 +28,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshToken = async () => {
     try {
       const response = await apiClient.post<{ accessToken: string }>('/api/auth/refresh', {})
-      localStorage.setItem('accessToken', response.accessToken)
+      setAccessToken(response.accessToken)
       await fetchCurrentUser()
     } catch (error) {
-      localStorage.removeItem('accessToken')
+      setAccessToken(null)
       setUser(null)
       throw error
     }
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCurrentUser = async () => {
     try {
-      const token = localStorage.getItem('accessToken')
+      const token = getAccessToken()
       if (!token) {
         setUser(null)
         return
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await apiClient.get<{ user: User }>('/api/auth/me')
       setUser(response.user)
     } catch (_error) {
-      localStorage.removeItem('accessToken')
+      setAccessToken(null)
       setUser(null)
     }
   }
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: User
     }>('/api/auth/login', { email, password })
 
-    localStorage.setItem('accessToken', response.accessToken)
+    setAccessToken(response.accessToken)
     setUser(response.user)
     router.push('/')
   }
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
-      localStorage.removeItem('accessToken')
+      setAccessToken(null)
       setUser(null)
       router.push('/login')
     }
@@ -80,9 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initAuth = async () => {
       setLoading(true)
       try {
-        await fetchCurrentUser()
-      } catch (error) {
-        console.error('Auth init error:', error)
+        // On page load, try to restore session via refresh token cookie
+        await refreshToken()
+      } catch (_error) {
+        // No valid refresh token — user needs to log in
       } finally {
         setLoading(false)
       }
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const interval = setInterval(
       async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = getAccessToken()
         if (token) {
           try {
             await refreshToken()

@@ -10,6 +10,17 @@ interface ApiError {
   message: string
 }
 
+// In-memory token storage — not accessible to XSS unlike localStorage
+let accessToken: string | null = null
+
+export function setAccessToken(token: string | null) {
+  accessToken = token
+}
+
+export function getAccessToken(): string | null {
+  return accessToken
+}
+
 class ApiClient {
   private baseUrl: string
 
@@ -26,7 +37,7 @@ class ApiClient {
       url += `?${searchParams.toString()}`
     }
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
+    const token = accessToken
 
     const response = await fetch(url, {
       ...fetchOptions,
