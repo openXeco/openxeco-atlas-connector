@@ -1,6 +1,7 @@
 import { ProxyAgent } from 'undici'
 import { config } from '@/config/index.js'
 import { logger } from '@/utils/logger.js'
+import { mapResourceToCluster } from './transformer.js'
 import type {
   AtlasConfig,
   JsonApiDocument,
@@ -215,18 +216,7 @@ export class AtlasClient {
 
     const resources = Array.isArray(response.data) ? response.data : [response.data]
 
-    const clusters: Cluster[] = resources.map((resource) => ({
-      id: resource.id,
-      atlasId: resource.id,
-      name: (resource.attributes.title as string) || (resource.attributes.name as string) || '',
-      description: resource.attributes.body as string | undefined,
-      logoUrl: resource.attributes.field_logo as string | undefined,
-      website: resource.attributes.field_website as string | undefined,
-      latitude: resource.attributes.field_latitude as number | undefined,
-      longitude: resource.attributes.field_longitude as number | undefined,
-      status: resource.attributes.status as string | undefined,
-      metadata: resource.attributes,
-    }))
+    const clusters: Cluster[] = resources.map((resource) => mapResourceToCluster(resource))
 
     return {
       data: clusters,
@@ -250,18 +240,7 @@ export class AtlasClient {
 
     const resource = response.data
 
-    return {
-      id: resource.id,
-      atlasId: resource.id,
-      name: (resource.attributes.title as string) || (resource.attributes.name as string) || '',
-      description: resource.attributes.body as string | undefined,
-      logoUrl: resource.attributes.field_logo as string | undefined,
-      website: resource.attributes.field_website as string | undefined,
-      latitude: resource.attributes.field_latitude as number | undefined,
-      longitude: resource.attributes.field_longitude as number | undefined,
-      status: resource.attributes.status as string | undefined,
-      metadata: resource.attributes,
-    }
+    return mapResourceToCluster(resource)
   }
 
   async createCluster(data: ClusterInput): Promise<Cluster> {
@@ -336,20 +315,7 @@ export class AtlasClient {
       throw new Error('Failed to create cluster')
     }
 
-    const resource = response.data
-
-    return {
-      id: resource.id,
-      atlasId: resource.id,
-      name: (resource.attributes.title as string) || '',
-      description: resource.attributes.body as string | undefined,
-      logoUrl: resource.attributes.field_logo as string | undefined,
-      website: resource.attributes.field_website as string | undefined,
-      latitude: resource.attributes.field_latitude as number | undefined,
-      longitude: resource.attributes.field_longitude as number | undefined,
-      status: resource.attributes.status as string | undefined,
-      metadata: resource.attributes,
-    }
+    return mapResourceToCluster(response.data)
   }
 
   async updateCluster(id: string, data: Partial<ClusterInput>): Promise<Cluster> {
@@ -426,20 +392,7 @@ export class AtlasClient {
       throw new Error('Failed to update cluster')
     }
 
-    const resource = response.data
-
-    return {
-      id: resource.id,
-      atlasId: resource.id,
-      name: (resource.attributes.title as string) || '',
-      description: resource.attributes.body as string | undefined,
-      logoUrl: resource.attributes.field_logo as string | undefined,
-      website: resource.attributes.field_website as string | undefined,
-      latitude: resource.attributes.field_latitude as number | undefined,
-      longitude: resource.attributes.field_longitude as number | undefined,
-      status: resource.attributes.status as string | undefined,
-      metadata: resource.attributes,
-    }
+    return mapResourceToCluster(response.data)
   }
 
   private buildRelationships(data: Partial<ClusterInput>): Record<string, unknown> {

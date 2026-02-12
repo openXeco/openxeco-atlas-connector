@@ -5,6 +5,7 @@ export interface JwtPayload {
   userId: string
   email: string
   role: string
+  type: 'access' | 'refresh'
 }
 
 export interface TokenPair {
@@ -12,14 +13,20 @@ export interface TokenPair {
   refreshToken: string
 }
 
-export function generateTokens(fastify: FastifyInstance, payload: JwtPayload): TokenPair {
-  const accessToken = fastify.jwt.sign(payload, {
-    expiresIn: config.JWT_EXPIRES_IN,
-  })
+export function generateTokens(fastify: FastifyInstance, payload: Omit<JwtPayload, 'type'>): TokenPair {
+  const accessToken = fastify.jwt.sign(
+    { ...payload, type: 'access' },
+    {
+      expiresIn: config.JWT_EXPIRES_IN,
+    }
+  )
 
-  const refreshToken = fastify.jwt.sign(payload, {
-    expiresIn: config.JWT_REFRESH_EXPIRES_IN,
-  })
+  const refreshToken = fastify.jwt.sign(
+    { ...payload, type: 'refresh' },
+    {
+      expiresIn: config.JWT_REFRESH_EXPIRES_IN,
+    }
+  )
 
   return { accessToken, refreshToken }
 }
@@ -27,6 +34,9 @@ export function generateTokens(fastify: FastifyInstance, payload: JwtPayload): T
 export async function verifyAccessToken(fastify: FastifyInstance, token: string): Promise<JwtPayload | null> {
   try {
     const decoded = await fastify.jwt.verify<JwtPayload>(token)
+    if (decoded.type !== 'access') {
+      return null
+    }
     return decoded
   } catch {
     return null
@@ -36,6 +46,9 @@ export async function verifyAccessToken(fastify: FastifyInstance, token: string)
 export async function verifyRefreshToken(fastify: FastifyInstance, token: string): Promise<JwtPayload | null> {
   try {
     const decoded = await fastify.jwt.verify<JwtPayload>(token)
+    if (decoded.type !== 'refresh') {
+      return null
+    }
     return decoded
   } catch {
     return null

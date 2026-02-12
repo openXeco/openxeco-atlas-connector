@@ -38,7 +38,7 @@ export interface BatchSyncResult {
 }
 
 export class EntitySyncService {
-  async pushEntity(entityId: string, _userId?: string): Promise<SyncResult> {
+  async pushEntity(entityId: string, _userId?: string, options?: { force?: boolean }): Promise<SyncResult> {
     logger.info(`Pushing entity ${entityId} to ATLAS`)
 
     try {
@@ -54,27 +54,29 @@ export class EntitySyncService {
 
       let cluster
       if (entity.atlasId) {
-        const conflict = await this.detectConflicts(entityId)
-        if (conflict.hasConflict) {
-          await db.update(entities).set({ syncStatus: 'conflict' }).where(eq(entities.id, entityId))
+        if (!options?.force) {
+          const conflict = await this.detectConflicts(entityId)
+          if (conflict.hasConflict) {
+            await db.update(entities).set({ syncStatus: 'conflict' }).where(eq(entities.id, entityId))
 
-          await db.insert(syncLogs).values({
-            entityType: 'entity',
-            entityId,
-            operation: 'push',
-            status: 'failed',
-            details: {
-              error: 'Conflict detected',
-              conflictFields: conflict.conflictFields,
-            },
-          })
+            await db.insert(syncLogs).values({
+              entityType: 'entity',
+              entityId,
+              operation: 'push',
+              status: 'failed',
+              details: {
+                error: 'Conflict detected',
+                conflictFields: conflict.conflictFields,
+              },
+            })
 
-          return {
-            success: false,
-            entityId,
-            atlasId: entity.atlasId,
-            message: 'Conflict detected. Please resolve before pushing.',
-            error: 'CONFLICT',
+            return {
+              success: false,
+              entityId,
+              atlasId: entity.atlasId,
+              message: 'Conflict detected. Please resolve before pushing.',
+              error: 'CONFLICT',
+            }
           }
         }
 
@@ -148,7 +150,7 @@ export class EntitySyncService {
       let entity
       if (existing) {
         const localUpdated = existing.updatedAt ? new Date(existing.updatedAt) : new Date()
-        const remoteUpdated = new Date()
+        const remoteUpdated = cluster.updatedAt ? new Date(cluster.updatedAt) : new Date()
 
         if (localUpdated > remoteUpdated) {
           await db.update(entities).set({ syncStatus: 'conflict' }).where(eq(entities.id, existing.id))
@@ -296,7 +298,7 @@ export class EntitySyncService {
       const remoteEntity = jsonApiTransformer.toEntityFromCluster(cluster)
 
       const localUpdatedAt = entity.updatedAt ? new Date(entity.updatedAt) : new Date()
-      const remoteUpdatedAt = new Date()
+      const remoteUpdatedAt = cluster.updatedAt ? new Date(cluster.updatedAt) : new Date()
 
       const lastSynced = entity.lastSyncedAt ? new Date(entity.lastSyncedAt) : new Date(0)
 
@@ -317,15 +319,40 @@ export class EntitySyncService {
       const conflictFields: string[] = []
       const fieldsToCheck = [
         'name',
+        'nameNational',
+        'entityDepartment',
         'description',
-        'website',
-        'address',
+        'streetAddress',
+        'city',
+        'countryCode',
+        'postalCode',
         'latitude',
         'longitude',
+        'email',
+        'phone',
+        'website',
+        'registrationNumber',
+        'logoUrl',
+        'isHeadquarter',
+        'headquarterInfo',
+        'hasSubsidiaries',
+        'subsidiariesDetails',
+        'hasMajorityShares',
+        'majoritySharesDetails',
+        'article138Compliance',
+        'dataShareConsent',
+        'contactFirstName',
+        'contactLastName',
+        'contactEmail',
+        'contactPosition',
+        'contactPhone',
+        'expertiseDescription',
+        'goalsToAchieve',
+        'goalsToContribute',
         'countryId',
         'clusterTypeId',
-        'legalStatusId',
         'organizationTypeId',
+        'moderationState',
       ]
 
       for (const field of fieldsToCheck) {
@@ -362,16 +389,40 @@ export class EntitySyncService {
       const diffs: EntityDiff[] = []
       const fieldsToCompare = [
         'name',
+        'nameNational',
+        'entityDepartment',
         'description',
-        'website',
-        'logoUrl',
-        'address',
+        'streetAddress',
+        'city',
+        'countryCode',
+        'postalCode',
         'latitude',
         'longitude',
+        'email',
+        'phone',
+        'website',
+        'registrationNumber',
+        'logoUrl',
+        'isHeadquarter',
+        'headquarterInfo',
+        'hasSubsidiaries',
+        'subsidiariesDetails',
+        'hasMajorityShares',
+        'majoritySharesDetails',
+        'article138Compliance',
+        'dataShareConsent',
+        'contactFirstName',
+        'contactLastName',
+        'contactEmail',
+        'contactPosition',
+        'contactPhone',
+        'expertiseDescription',
+        'goalsToAchieve',
+        'goalsToContribute',
         'countryId',
         'clusterTypeId',
-        'legalStatusId',
         'organizationTypeId',
+        'moderationState',
       ]
 
       for (const field of fieldsToCompare) {
@@ -397,7 +448,7 @@ export class EntitySyncService {
 
     try {
       if (resolution === 'local') {
-        return await this.pushEntity(entityId, userId)
+        return await this.pushEntity(entityId, userId, { force: true })
       } else {
         const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1)
 

@@ -55,12 +55,13 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
     ])
 
     // Fall back to environment variables if not set in database
+    // Never expose secrets (apiKey, password) — return boolean flags instead
     return reply.send({
       data: {
         baseUrl: baseUrl || process.env.ATLAS_BASE_URL || '',
-        apiKey: apiKey || process.env.ATLAS_API_KEY || '',
+        apiKeyConfigured: !!(apiKey || process.env.ATLAS_API_KEY),
         username: username || process.env.ATLAS_USERNAME || '',
-        password: password || process.env.ATLAS_PASSWORD || '',
+        passwordConfigured: !!(password || process.env.ATLAS_PASSWORD),
       },
     })
   })

@@ -8,7 +8,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { apiClient } from '@/lib/api'
 
-interface AtlasSettings {
+interface AtlasSettingsResponse {
+  baseUrl: string
+  apiKeyConfigured: boolean
+  username: string
+  passwordConfigured: boolean
+}
+
+interface AtlasFormState {
   baseUrl: string
   apiKey: string
   username: string
@@ -16,11 +23,15 @@ interface AtlasSettings {
 }
 
 export function AtlasApiTab() {
-  const [settings, setSettings] = useState<AtlasSettings>({
+  const [settings, setSettings] = useState<AtlasFormState>({
     baseUrl: '',
     apiKey: '',
     username: '',
     password: '',
+  })
+  const [configStatus, setConfigStatus] = useState({
+    apiKeyConfigured: false,
+    passwordConfigured: false,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -37,8 +48,17 @@ export function AtlasApiTab() {
     setLoading(true)
     setError(null)
     try {
-      const response = await apiClient.get<{ data: AtlasSettings }>('/api/settings/atlas')
-      setSettings(response.data)
+      const response = await apiClient.get<{ data: AtlasSettingsResponse }>('/api/settings/atlas')
+      setSettings({
+        baseUrl: response.data.baseUrl,
+        apiKey: '',
+        username: response.data.username,
+        password: '',
+      })
+      setConfigStatus({
+        apiKeyConfigured: response.data.apiKeyConfigured,
+        passwordConfigured: response.data.passwordConfigured,
+      })
     } catch (_err) {
       setError('Failed to load settings')
     } finally {
@@ -50,7 +70,7 @@ export function AtlasApiTab() {
     loadSettings()
   }, [])
 
-  const handleChange = (field: keyof AtlasSettings, value: string) => {
+  const handleChange = (field: keyof AtlasFormState, value: string) => {
     setSettings((prev) => ({ ...prev, [field]: value }))
     setTestResult(null)
     setSuccess(null)
@@ -62,8 +82,26 @@ export function AtlasApiTab() {
     setSuccess(null)
 
     try {
-      await apiClient.patch('/api/settings/atlas', settings)
+      // Only send fields that were actually filled in
+      // Empty apiKey/password means "keep current value"
+      const payload: Record<string, string> = {}
+      if (settings.baseUrl) payload.baseUrl = settings.baseUrl
+      if (settings.username) payload.username = settings.username
+      if (settings.apiKey) payload.apiKey = settings.apiKey
+      if (settings.password) payload.password = settings.password
+
+      await apiClient.patch('/api/settings/atlas', payload)
       setSuccess('Settings saved successfully')
+
+      // Update config status if new values were provided
+      if (settings.apiKey) {
+        setConfigStatus((prev) => ({ ...prev, apiKeyConfigured: true }))
+        setSettings((prev) => ({ ...prev, apiKey: '' }))
+      }
+      if (settings.password) {
+        setConfigStatus((prev) => ({ ...prev, passwordConfigured: true }))
+        setSettings((prev) => ({ ...prev, password: '' }))
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings')
     } finally {
@@ -77,6 +115,7 @@ export function AtlasApiTab() {
     setError(null)
 
     try {
+      // Send current form values for testing — backend falls back to stored values for empty fields
       const response = await apiClient.post<{ success: boolean; message: string }>('/api/settings/atlas/test', settings)
       setTestResult(response)
     } catch (err) {
@@ -128,7 +167,9 @@ export function AtlasApiTab() {
                 type={showApiKey ? 'text' : 'password'}
                 value={settings.apiKey}
                 onChange={(e) => handleChange('apiKey', e.target.value)}
-                placeholder="Enter API key"
+                placeholder={
+                  configStatus.apiKeyConfigured ? 'Configured (leave blank to keep current)' : 'Enter API key'
+                }
                 className="pr-10"
               />
               <Button
@@ -162,7 +203,9 @@ export function AtlasApiTab() {
                 type={showPassword ? 'text' : 'password'}
                 value={settings.password}
                 onChange={(e) => handleChange('password', e.target.value)}
-                placeholder="Enter password"
+                placeholder={
+                  configStatus.passwordConfigured ? 'Configured (leave blank to keep current)' : 'Enter password'
+                }
                 className="pr-10"
               />
               <Button

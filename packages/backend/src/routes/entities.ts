@@ -235,147 +235,151 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const body = createEntitySchema.parse(request.body)
 
-      const [entity] = await db
-        .insert(entities)
-        .values({
-          // Basic information
-          name: body.name,
-          nameNational: body.nameNational,
-          entityDepartment: body.entityDepartment,
-          description: body.description,
+      const entity = await db.transaction(async (tx) => {
+        const [entity] = await tx
+          .insert(entities)
+          .values({
+            // Basic information
+            name: body.name,
+            nameNational: body.nameNational,
+            entityDepartment: body.entityDepartment,
+            description: body.description,
 
-          // Address
-          countryCode: body.countryCode,
-          city: body.city,
-          streetAddress: body.streetAddress,
-          postalCode: body.postalCode,
-          latitude: body.latitude?.toString(),
-          longitude: body.longitude?.toString(),
+            // Address
+            countryCode: body.countryCode,
+            city: body.city,
+            streetAddress: body.streetAddress,
+            postalCode: body.postalCode,
+            latitude: body.latitude?.toString(),
+            longitude: body.longitude?.toString(),
 
-          // Organization details
-          email: body.email,
-          phone: body.phone,
-          website: body.website,
-          registrationNumber: body.registrationNumber,
-          logoUrl: body.logoUrl,
+            // Organization details
+            email: body.email,
+            phone: body.phone,
+            website: body.website,
+            registrationNumber: body.registrationNumber,
+            logoUrl: body.logoUrl,
 
-          // Headquarters
-          isHeadquarter: body.isHeadquarter,
-          headquarterInfo: body.headquarterInfo,
+            // Headquarters
+            isHeadquarter: body.isHeadquarter,
+            headquarterInfo: body.headquarterInfo,
 
-          // Subsidiaries
-          hasSubsidiaries: body.hasSubsidiaries,
-          subsidiariesDetails: body.subsidiariesDetails,
-          hasMajorityShares: body.hasMajorityShares,
-          majoritySharesDetails: body.majoritySharesDetails,
+            // Subsidiaries
+            hasSubsidiaries: body.hasSubsidiaries,
+            subsidiariesDetails: body.subsidiariesDetails,
+            hasMajorityShares: body.hasMajorityShares,
+            majoritySharesDetails: body.majoritySharesDetails,
 
-          // Compliance
-          article138Compliance: body.article138Compliance,
-          dataShareConsent: body.dataShareConsent,
+            // Compliance
+            article138Compliance: body.article138Compliance,
+            dataShareConsent: body.dataShareConsent,
 
-          // Contact person
-          contactFirstName: body.contactFirstName,
-          contactLastName: body.contactLastName,
-          contactEmail: body.contactEmail,
-          contactPosition: body.contactPosition,
-          contactPhone: body.contactPhone,
+            // Contact person
+            contactFirstName: body.contactFirstName,
+            contactLastName: body.contactLastName,
+            contactEmail: body.contactEmail,
+            contactPosition: body.contactPosition,
+            contactPhone: body.contactPhone,
 
-          // Expertise
-          expertiseDescription: body.expertiseDescription,
-          goalsToAchieve: body.goalsToAchieve,
-          goalsToContribute: body.goalsToContribute,
+            // Expertise
+            expertiseDescription: body.expertiseDescription,
+            goalsToAchieve: body.goalsToAchieve,
+            goalsToContribute: body.goalsToContribute,
 
-          // "Other" text fields
-          otherSectors: body.otherSectors,
-          otherTechnologies: body.otherTechnologies,
-          otherUseCases: body.otherUseCases,
+            // "Other" text fields
+            otherSectors: body.otherSectors,
+            otherTechnologies: body.otherTechnologies,
+            otherUseCases: body.otherUseCases,
 
-          // Consent fields
-          dataProtectionConsent: body.dataProtectionConsent,
-          formCompletionConfirmed: body.formCompletionConfirmed,
+            // Consent fields
+            dataProtectionConsent: body.dataProtectionConsent,
+            formCompletionConfirmed: body.formCompletionConfirmed,
 
-          // Taxonomy references
-          countryId: body.countryId,
-          clusterTypeId: body.clusterTypeId,
-          organizationTypeId: body.organizationTypeId,
+            // Taxonomy references
+            countryId: body.countryId,
+            clusterTypeId: body.clusterTypeId,
+            organizationTypeId: body.organizationTypeId,
 
-          // Workflow
-          status: 'draft',
-          moderationState: body.moderationState || 'draft',
-          syncStatus: 'local',
-          createdBy: request.currentUser?.userId,
-          updatedBy: request.currentUser?.userId,
-        })
-        .returning()
+            // Workflow
+            status: 'draft',
+            moderationState: body.moderationState || 'draft',
+            syncStatus: 'local',
+            createdBy: request.currentUser?.userId,
+            updatedBy: request.currentUser?.userId,
+          })
+          .returning()
 
-      // Insert JRC Taxonomy relationships
-      if (body.thematicAreaIds && body.thematicAreaIds.length > 0) {
-        await db.insert(entityThematicAreas).values(
-          body.thematicAreaIds.map((taxonomyId) => ({
-            entityId: entity.id,
-            taxonomyId,
-          }))
-        )
-      }
-
-      if (body.sectorIds && body.sectorIds.length > 0) {
-        await db.insert(entitySectors).values(
-          body.sectorIds.map((taxonomyId) => ({
-            entityId: entity.id,
-            taxonomyId,
-          }))
-        )
-      }
-
-      if (body.technologyIds && body.technologyIds.length > 0) {
-        await db.insert(entityTechnologies).values(
-          body.technologyIds.map((taxonomyId) => ({
-            entityId: entity.id,
-            taxonomyId,
-          }))
-        )
-      }
-
-      if (body.useCaseIds && body.useCaseIds.length > 0) {
-        await db.insert(entityUseCases).values(
-          body.useCaseIds.map((taxonomyId) => ({
-            entityId: entity.id,
-            taxonomyId,
-          }))
-        )
-      }
-
-      if (body.fieldsOfActivityIds && body.fieldsOfActivityIds.length > 0) {
-        await db.insert(entityFieldsOfActivity).values(
-          body.fieldsOfActivityIds.map((taxonomyId) => ({
-            entityId: entity.id,
-            taxonomyId,
-          }))
-        )
-      }
-
-      // Handle sub-domain taxonomy relationships (hierarchical)
-      if (body.subDomainIds) {
-        const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = []
-        for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
-          for (const taxonomyId of subDomainIdList) {
-            subDomainInserts.push({
+        // Insert JRC Taxonomy relationships
+        if (body.thematicAreaIds && body.thematicAreaIds.length > 0) {
+          await tx.insert(entityThematicAreas).values(
+            body.thematicAreaIds.map((taxonomyId) => ({
               entityId: entity.id,
               taxonomyId,
-              parentDomainId,
-            })
+            }))
+          )
+        }
+
+        if (body.sectorIds && body.sectorIds.length > 0) {
+          await tx.insert(entitySectors).values(
+            body.sectorIds.map((taxonomyId) => ({
+              entityId: entity.id,
+              taxonomyId,
+            }))
+          )
+        }
+
+        if (body.technologyIds && body.technologyIds.length > 0) {
+          await tx.insert(entityTechnologies).values(
+            body.technologyIds.map((taxonomyId) => ({
+              entityId: entity.id,
+              taxonomyId,
+            }))
+          )
+        }
+
+        if (body.useCaseIds && body.useCaseIds.length > 0) {
+          await tx.insert(entityUseCases).values(
+            body.useCaseIds.map((taxonomyId) => ({
+              entityId: entity.id,
+              taxonomyId,
+            }))
+          )
+        }
+
+        if (body.fieldsOfActivityIds && body.fieldsOfActivityIds.length > 0) {
+          await tx.insert(entityFieldsOfActivity).values(
+            body.fieldsOfActivityIds.map((taxonomyId) => ({
+              entityId: entity.id,
+              taxonomyId,
+            }))
+          )
+        }
+
+        // Handle sub-domain taxonomy relationships (hierarchical)
+        if (body.subDomainIds) {
+          const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = []
+          for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
+            for (const taxonomyId of subDomainIdList) {
+              subDomainInserts.push({
+                entityId: entity.id,
+                taxonomyId,
+                parentDomainId,
+              })
+            }
+          }
+          if (subDomainInserts.length > 0) {
+            await tx.insert(entitySubDomains).values(subDomainInserts)
           }
         }
-        if (subDomainInserts.length > 0) {
-          await db.insert(entitySubDomains).values(subDomainInserts)
-        }
-      }
 
-      await db.insert(entityVersions).values({
-        entityId: entity.id,
-        version: '1.0',
-        data: entity as any,
-        changedBy: request.currentUser?.userId,
+        await tx.insert(entityVersions).values({
+          entityId: entity.id,
+          version: '1.0',
+          data: entity as any,
+          changedBy: request.currentUser?.userId,
+        })
+
+        return entity
       })
 
       return reply.status(201).send({
@@ -410,194 +414,198 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         })
       }
 
-      const [updated] = await db
-        .update(entities)
-        .set({
-          // Basic information
-          ...(body.name && { name: body.name }),
-          ...(body.nameNational !== undefined && { nameNational: body.nameNational }),
-          ...(body.entityDepartment !== undefined && { entityDepartment: body.entityDepartment }),
-          ...(body.description !== undefined && { description: body.description }),
+      const updated = await db.transaction(async (tx) => {
+        const [updated] = await tx
+          .update(entities)
+          .set({
+            // Basic information
+            ...(body.name && { name: body.name }),
+            ...(body.nameNational !== undefined && { nameNational: body.nameNational }),
+            ...(body.entityDepartment !== undefined && { entityDepartment: body.entityDepartment }),
+            ...(body.description !== undefined && { description: body.description }),
 
-          // Address
-          ...(body.countryCode !== undefined && { countryCode: body.countryCode }),
-          ...(body.city !== undefined && { city: body.city }),
-          ...(body.streetAddress !== undefined && { streetAddress: body.streetAddress }),
-          ...(body.postalCode !== undefined && { postalCode: body.postalCode }),
-          ...(body.latitude !== undefined && { latitude: body.latitude.toString() }),
-          ...(body.longitude !== undefined && { longitude: body.longitude.toString() }),
+            // Address
+            ...(body.countryCode !== undefined && { countryCode: body.countryCode }),
+            ...(body.city !== undefined && { city: body.city }),
+            ...(body.streetAddress !== undefined && { streetAddress: body.streetAddress }),
+            ...(body.postalCode !== undefined && { postalCode: body.postalCode }),
+            ...(body.latitude !== undefined && { latitude: body.latitude.toString() }),
+            ...(body.longitude !== undefined && { longitude: body.longitude.toString() }),
 
-          // Organization details
-          ...(body.email !== undefined && { email: body.email }),
-          ...(body.phone !== undefined && { phone: body.phone }),
-          ...(body.website !== undefined && { website: body.website }),
-          ...(body.registrationNumber !== undefined && {
-            registrationNumber: body.registrationNumber,
-          }),
-          ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl }),
+            // Organization details
+            ...(body.email !== undefined && { email: body.email }),
+            ...(body.phone !== undefined && { phone: body.phone }),
+            ...(body.website !== undefined && { website: body.website }),
+            ...(body.registrationNumber !== undefined && {
+              registrationNumber: body.registrationNumber,
+            }),
+            ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl }),
 
-          // Headquarters
-          ...(body.isHeadquarter !== undefined && { isHeadquarter: body.isHeadquarter }),
-          ...(body.headquarterInfo !== undefined && { headquarterInfo: body.headquarterInfo }),
+            // Headquarters
+            ...(body.isHeadquarter !== undefined && { isHeadquarter: body.isHeadquarter }),
+            ...(body.headquarterInfo !== undefined && { headquarterInfo: body.headquarterInfo }),
 
-          // Subsidiaries
-          ...(body.hasSubsidiaries !== undefined && { hasSubsidiaries: body.hasSubsidiaries }),
-          ...(body.subsidiariesDetails !== undefined && {
-            subsidiariesDetails: body.subsidiariesDetails,
-          }),
-          ...(body.hasMajorityShares !== undefined && {
-            hasMajorityShares: body.hasMajorityShares,
-          }),
-          ...(body.majoritySharesDetails !== undefined && {
-            majoritySharesDetails: body.majoritySharesDetails,
-          }),
+            // Subsidiaries
+            ...(body.hasSubsidiaries !== undefined && { hasSubsidiaries: body.hasSubsidiaries }),
+            ...(body.subsidiariesDetails !== undefined && {
+              subsidiariesDetails: body.subsidiariesDetails,
+            }),
+            ...(body.hasMajorityShares !== undefined && {
+              hasMajorityShares: body.hasMajorityShares,
+            }),
+            ...(body.majoritySharesDetails !== undefined && {
+              majoritySharesDetails: body.majoritySharesDetails,
+            }),
 
-          // Compliance
-          ...(body.article138Compliance !== undefined && {
-            article138Compliance: body.article138Compliance,
-          }),
-          ...(body.dataShareConsent !== undefined && { dataShareConsent: body.dataShareConsent }),
+            // Compliance
+            ...(body.article138Compliance !== undefined && {
+              article138Compliance: body.article138Compliance,
+            }),
+            ...(body.dataShareConsent !== undefined && { dataShareConsent: body.dataShareConsent }),
 
-          // Contact person
-          ...(body.contactFirstName !== undefined && { contactFirstName: body.contactFirstName }),
-          ...(body.contactLastName !== undefined && { contactLastName: body.contactLastName }),
-          ...(body.contactEmail !== undefined && { contactEmail: body.contactEmail }),
-          ...(body.contactPosition !== undefined && { contactPosition: body.contactPosition }),
-          ...(body.contactPhone !== undefined && { contactPhone: body.contactPhone }),
+            // Contact person
+            ...(body.contactFirstName !== undefined && { contactFirstName: body.contactFirstName }),
+            ...(body.contactLastName !== undefined && { contactLastName: body.contactLastName }),
+            ...(body.contactEmail !== undefined && { contactEmail: body.contactEmail }),
+            ...(body.contactPosition !== undefined && { contactPosition: body.contactPosition }),
+            ...(body.contactPhone !== undefined && { contactPhone: body.contactPhone }),
 
-          // Expertise
-          ...(body.expertiseDescription !== undefined && {
-            expertiseDescription: body.expertiseDescription,
-          }),
-          ...(body.goalsToAchieve !== undefined && { goalsToAchieve: body.goalsToAchieve }),
-          ...(body.goalsToContribute !== undefined && {
-            goalsToContribute: body.goalsToContribute,
-          }),
+            // Expertise
+            ...(body.expertiseDescription !== undefined && {
+              expertiseDescription: body.expertiseDescription,
+            }),
+            ...(body.goalsToAchieve !== undefined && { goalsToAchieve: body.goalsToAchieve }),
+            ...(body.goalsToContribute !== undefined && {
+              goalsToContribute: body.goalsToContribute,
+            }),
 
-          // "Other" text fields
-          ...(body.otherSectors !== undefined && { otherSectors: body.otherSectors }),
-          ...(body.otherTechnologies !== undefined && {
-            otherTechnologies: body.otherTechnologies,
-          }),
-          ...(body.otherUseCases !== undefined && { otherUseCases: body.otherUseCases }),
+            // "Other" text fields
+            ...(body.otherSectors !== undefined && { otherSectors: body.otherSectors }),
+            ...(body.otherTechnologies !== undefined && {
+              otherTechnologies: body.otherTechnologies,
+            }),
+            ...(body.otherUseCases !== undefined && { otherUseCases: body.otherUseCases }),
 
-          // Consent fields
-          ...(body.dataProtectionConsent !== undefined && {
-            dataProtectionConsent: body.dataProtectionConsent,
-          }),
-          ...(body.formCompletionConfirmed !== undefined && {
-            formCompletionConfirmed: body.formCompletionConfirmed,
-          }),
+            // Consent fields
+            ...(body.dataProtectionConsent !== undefined && {
+              dataProtectionConsent: body.dataProtectionConsent,
+            }),
+            ...(body.formCompletionConfirmed !== undefined && {
+              formCompletionConfirmed: body.formCompletionConfirmed,
+            }),
 
-          // Taxonomy references
-          ...(body.countryId !== undefined && { countryId: body.countryId }),
-          ...(body.clusterTypeId !== undefined && { clusterTypeId: body.clusterTypeId }),
-          ...(body.organizationTypeId !== undefined && {
-            organizationTypeId: body.organizationTypeId,
-          }),
+            // Taxonomy references
+            ...(body.countryId !== undefined && { countryId: body.countryId }),
+            ...(body.clusterTypeId !== undefined && { clusterTypeId: body.clusterTypeId }),
+            ...(body.organizationTypeId !== undefined && {
+              organizationTypeId: body.organizationTypeId,
+            }),
 
-          // Workflow
-          ...(body.moderationState !== undefined && { moderationState: body.moderationState }),
+            // Workflow
+            ...(body.moderationState !== undefined && { moderationState: body.moderationState }),
 
-          updatedAt: new Date(),
-          updatedBy: request.currentUser?.userId,
-        })
-        .where(eq(entities.id, id))
-        .returning()
+            updatedAt: new Date(),
+            updatedBy: request.currentUser?.userId,
+          })
+          .where(eq(entities.id, id))
+          .returning()
 
-      if (body.thematicAreaIds) {
-        await db.delete(entityThematicAreas).where(eq(entityThematicAreas.entityId, id))
-        if (body.thematicAreaIds.length > 0) {
-          await db.insert(entityThematicAreas).values(
-            body.thematicAreaIds.map((taxonomyId) => ({
-              entityId: id,
-              taxonomyId,
-            }))
-          )
-        }
-      }
-
-      if (body.sectorIds) {
-        await db.delete(entitySectors).where(eq(entitySectors.entityId, id))
-        if (body.sectorIds.length > 0) {
-          await db.insert(entitySectors).values(
-            body.sectorIds.map((taxonomyId) => ({
-              entityId: id,
-              taxonomyId,
-            }))
-          )
-        }
-      }
-
-      if (body.technologyIds) {
-        await db.delete(entityTechnologies).where(eq(entityTechnologies.entityId, id))
-        if (body.technologyIds.length > 0) {
-          await db.insert(entityTechnologies).values(
-            body.technologyIds.map((taxonomyId) => ({
-              entityId: id,
-              taxonomyId,
-            }))
-          )
-        }
-      }
-
-      if (body.useCaseIds) {
-        await db.delete(entityUseCases).where(eq(entityUseCases.entityId, id))
-        if (body.useCaseIds.length > 0) {
-          await db.insert(entityUseCases).values(
-            body.useCaseIds.map((taxonomyId) => ({
-              entityId: id,
-              taxonomyId,
-            }))
-          )
-        }
-      }
-
-      if (body.fieldsOfActivityIds) {
-        await db.delete(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, id))
-        if (body.fieldsOfActivityIds.length > 0) {
-          await db.insert(entityFieldsOfActivity).values(
-            body.fieldsOfActivityIds.map((taxonomyId) => ({
-              entityId: id,
-              taxonomyId,
-            }))
-          )
-        }
-      }
-
-      // Handle sub-domain taxonomy relationships (hierarchical)
-      if (body.subDomainIds) {
-        await db.delete(entitySubDomains).where(eq(entitySubDomains.entityId, id))
-        const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = []
-        for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
-          for (const taxonomyId of subDomainIdList) {
-            subDomainInserts.push({
-              entityId: id,
-              taxonomyId,
-              parentDomainId,
-            })
+        if (body.thematicAreaIds) {
+          await tx.delete(entityThematicAreas).where(eq(entityThematicAreas.entityId, id))
+          if (body.thematicAreaIds.length > 0) {
+            await tx.insert(entityThematicAreas).values(
+              body.thematicAreaIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              }))
+            )
           }
         }
-        if (subDomainInserts.length > 0) {
-          await db.insert(entitySubDomains).values(subDomainInserts)
+
+        if (body.sectorIds) {
+          await tx.delete(entitySectors).where(eq(entitySectors.entityId, id))
+          if (body.sectorIds.length > 0) {
+            await tx.insert(entitySectors).values(
+              body.sectorIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              }))
+            )
+          }
         }
-      }
 
-      const versions = await db
-        .select()
-        .from(entityVersions)
-        .where(eq(entityVersions.entityId, id))
-        .orderBy(desc(entityVersions.createdAt))
-        .limit(1)
+        if (body.technologyIds) {
+          await tx.delete(entityTechnologies).where(eq(entityTechnologies.entityId, id))
+          if (body.technologyIds.length > 0) {
+            await tx.insert(entityTechnologies).values(
+              body.technologyIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              }))
+            )
+          }
+        }
 
-      const lastVersion = versions[0]
-      const newVersion = lastVersion ? `${parseInt(lastVersion.version.split('.')[0]) + 1}.0` : '1.0'
+        if (body.useCaseIds) {
+          await tx.delete(entityUseCases).where(eq(entityUseCases.entityId, id))
+          if (body.useCaseIds.length > 0) {
+            await tx.insert(entityUseCases).values(
+              body.useCaseIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              }))
+            )
+          }
+        }
 
-      await db.insert(entityVersions).values({
-        entityId: id,
-        version: newVersion,
-        data: updated as any,
-        changedBy: request.currentUser?.userId,
+        if (body.fieldsOfActivityIds) {
+          await tx.delete(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, id))
+          if (body.fieldsOfActivityIds.length > 0) {
+            await tx.insert(entityFieldsOfActivity).values(
+              body.fieldsOfActivityIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              }))
+            )
+          }
+        }
+
+        // Handle sub-domain taxonomy relationships (hierarchical)
+        if (body.subDomainIds) {
+          await tx.delete(entitySubDomains).where(eq(entitySubDomains.entityId, id))
+          const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = []
+          for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
+            for (const taxonomyId of subDomainIdList) {
+              subDomainInserts.push({
+                entityId: id,
+                taxonomyId,
+                parentDomainId,
+              })
+            }
+          }
+          if (subDomainInserts.length > 0) {
+            await tx.insert(entitySubDomains).values(subDomainInserts)
+          }
+        }
+
+        const versions = await tx
+          .select()
+          .from(entityVersions)
+          .where(eq(entityVersions.entityId, id))
+          .orderBy(desc(entityVersions.createdAt))
+          .limit(1)
+
+        const lastVersion = versions[0]
+        const newVersion = lastVersion ? `${parseInt(lastVersion.version.split('.')[0]) + 1}.0` : '1.0'
+
+        await tx.insert(entityVersions).values({
+          entityId: id,
+          version: newVersion,
+          data: updated as any,
+          changedBy: request.currentUser?.userId,
+        })
+
+        return updated
       })
 
       return reply.send({

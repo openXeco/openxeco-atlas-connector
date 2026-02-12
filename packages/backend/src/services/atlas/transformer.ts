@@ -8,6 +8,117 @@ import type {
   TaxonomyTerm,
 } from './types.js'
 
+/**
+ * Maps a JSON:API resource to a Cluster object, extracting ALL attributes and relationships.
+ * Used as the single source of truth for parsing ATLAS API responses.
+ */
+export function mapResourceToCluster(resource: JsonApiResource): Cluster {
+  const attrs = resource.attributes
+
+  // Extract structured address (may be null or an object)
+  const address = attrs.field_address as
+    | { country_code?: string; locality?: string; address_line1?: string; postal_code?: string }
+    | null
+    | undefined
+
+  // Extract website URL (may be { uri: string } or a plain string)
+  const websiteField = attrs.field_url as { uri?: string } | string | null | undefined
+  const website =
+    typeof websiteField === 'object' && websiteField !== null ? websiteField.uri : (websiteField as string | undefined)
+
+  const cluster: Cluster = {
+    id: resource.id,
+    atlasId: resource.id,
+
+    // Basic information
+    name: (attrs.title as string) || (attrs.name as string) || '',
+    nameNational: attrs.field_institution_name_in_nation as string | undefined,
+    entityDepartment: attrs.field_entity_department as string | undefined,
+    description: attrs.body as string | undefined,
+
+    // Address
+    countryCode: address?.country_code,
+    city: address?.locality,
+    streetAddress: address?.address_line1,
+    postalCode: address?.postal_code,
+    latitude: attrs.field_latitude as number | undefined,
+    longitude: attrs.field_longitude as number | undefined,
+
+    // Organization details
+    email: attrs.field_general_contact_e_mail as string | undefined,
+    phone: attrs.field_phone_number as string | undefined,
+    website,
+    registrationNumber: attrs.field_registration_number as string | undefined,
+    logoUrl: attrs.field_logo as string | undefined,
+
+    // Headquarters
+    isHeadquarter: attrs.field_question_headquarter as boolean | undefined,
+    headquarterInfo: attrs.field_headquarter as string | undefined,
+
+    // Subsidiaries
+    hasSubsidiaries: attrs.field_question_subsidiaries as boolean | undefined,
+    subsidiariesDetails: attrs.field_subsidiaries_eu as string | undefined,
+    hasMajorityShares: attrs.field_question_majority as boolean | undefined,
+    majoritySharesDetails: attrs.field_majority_shares_noneu as string | undefined,
+
+    // Compliance
+    article138Compliance: attrs.field_article_136_compliance as boolean | undefined,
+    dataShareConsent: attrs.field_data_sharing_consent as boolean | undefined,
+
+    // Contact person
+    contactFirstName: attrs.field_first_name as string | undefined,
+    contactLastName: attrs.field_family_name as string | undefined,
+    contactEmail: attrs.field_e_mail as string | undefined,
+    contactPosition: attrs.field_position as string | undefined,
+    contactPhone: attrs.field_representative_phone_numbe as string | undefined,
+
+    // Expertise
+    expertiseDescription: attrs.field_field_of_activity_descr as string | undefined,
+    goalsToAchieve: attrs.field_goals_to_achieve as string | undefined,
+    goalsToContribute: attrs.field_goals_to_contribute as string | undefined,
+
+    // Workflow
+    status: attrs.status as string | undefined,
+    moderationState: attrs.moderation_state as string | undefined,
+
+    // Timestamps
+    updatedAt: attrs.changed as string | undefined,
+
+    metadata: attrs,
+  }
+
+  // Extract relationships
+  if (resource.relationships) {
+    const rels = resource.relationships
+
+    // Single-value relationships
+    if (rels.field_country?.data && !Array.isArray(rels.field_country.data)) {
+      cluster.countryId = rels.field_country.data.id
+    }
+    if (rels.field_cluster_type?.data && !Array.isArray(rels.field_cluster_type.data)) {
+      cluster.clusterTypeId = rels.field_cluster_type.data.id
+    }
+    if (rels.field_organization_type?.data && !Array.isArray(rels.field_organization_type.data)) {
+      cluster.organizationTypeId = rels.field_organization_type.data.id
+    }
+
+    // Multi-value relationships (JRC taxonomy)
+    const extractIds = (rel: JsonApiRelationship | undefined): string[] | undefined => {
+      if (!rel?.data) return undefined
+      const data = Array.isArray(rel.data) ? rel.data : [rel.data]
+      return data.length > 0 ? data.map((d) => d.id) : undefined
+    }
+
+    cluster.thematicAreaIds = extractIds(rels.field_cluster_thematic_area)
+    cluster.sectorIds = extractIds(rels.field_sectors)
+    cluster.technologyIds = extractIds(rels.field_technologies)
+    cluster.useCaseIds = extractIds(rels.field_use_cases)
+    cluster.fieldsOfActivityIds = extractIds(rels.field_field_of_activity)
+  }
+
+  return cluster
+}
+
 export class JsonApiTransformer {
   toJsonApiCluster(entity: Entity, taxonomies?: Taxonomy[]): JsonApiDocument {
     const relationships: Record<string, JsonApiRelationship> = {}
@@ -73,39 +184,7 @@ export class JsonApiTransformer {
       throw new Error('Invalid JSON:API document for cluster')
     }
 
-    const resource = document.data
-    const attrs = resource.attributes
-
-    const cluster: Cluster = {
-      id: resource.id,
-      atlasId: resource.id,
-      name: (attrs.title as string) || (attrs.name as string) || '',
-      description: attrs.body as string | undefined,
-      logoUrl: attrs.field_logo as string | undefined,
-      website: attrs.field_website as string | undefined,
-      latitude: attrs.field_latitude as number | undefined,
-      longitude: attrs.field_longitude as number | undefined,
-      status: attrs.status as string | undefined,
-      metadata: attrs,
-    }
-
-    if (resource.relationships) {
-      const rels = resource.relationships
-
-      if (rels.field_country?.data && !Array.isArray(rels.field_country.data)) {
-        cluster.countryId = rels.field_country.data.id
-      }
-
-      if (rels.field_cluster_type?.data && !Array.isArray(rels.field_cluster_type.data)) {
-        cluster.clusterTypeId = rels.field_cluster_type.data.id
-      }
-
-      if (rels.field_organization_type?.data && !Array.isArray(rels.field_organization_type.data)) {
-        cluster.organizationTypeId = rels.field_organization_type.data.id
-      }
-    }
-
-    return cluster
+    return mapResourceToCluster(document.data)
   }
 
   fromJsonApiClusters(document: JsonApiDocument): Cluster[] {

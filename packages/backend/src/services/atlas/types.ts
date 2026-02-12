@@ -162,6 +162,9 @@ export interface Cluster {
   status?: string
   moderationState?: string
 
+  // Timestamps
+  updatedAt?: string // ATLAS 'changed' attribute (ISO date string)
+
   metadata?: Record<string, unknown>
 }
 
