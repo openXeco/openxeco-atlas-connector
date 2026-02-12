@@ -38,7 +38,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to sync taxonomies',
+        message: 'Failed to sync taxonomies',
       })
     }
   })
@@ -64,7 +64,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
       }
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to sync taxonomy',
+        message: 'Failed to sync taxonomy',
       })
     }
   })
@@ -93,7 +93,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
       }
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to fetch taxonomies',
+        message: 'Failed to fetch taxonomies',
       })
     }
   })
@@ -115,7 +115,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to fetch taxonomy',
+        message: 'Failed to fetch taxonomy',
       })
     }
   })
@@ -145,7 +145,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
       }
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to search taxonomies',
+        message: 'Failed to search taxonomies',
       })
     }
   })

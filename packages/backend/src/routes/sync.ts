@@ -37,7 +37,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to push entity',
+        message: 'Failed to push entity',
       })
     }
   })
@@ -72,7 +72,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to pull entity',
+        message: 'Failed to pull entity',
       })
     }
   })
@@ -93,7 +93,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to get diff',
+        message: 'Failed to get diff',
       })
     }
   })
@@ -110,7 +110,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to detect conflicts',
+        message: 'Failed to detect conflicts',
       })
     }
   })
@@ -143,7 +143,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       }
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to resolve conflict',
+        message: 'Failed to resolve conflict',
       })
     }
   })
@@ -175,7 +175,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       }
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to push batch',
+        message: 'Failed to push batch',
       })
     }
   })
@@ -207,7 +207,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       }
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to pull batch',
+        message: 'Failed to pull batch',
       })
     }
   })
@@ -245,7 +245,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to get sync status',
+        message: 'Failed to get sync status',
       })
     }
   })
@@ -308,7 +308,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to fetch sync logs',
+        message: 'Failed to fetch sync logs',
       })
     }
   })

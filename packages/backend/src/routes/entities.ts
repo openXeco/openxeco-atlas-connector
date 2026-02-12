@@ -205,7 +205,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to fetch entities',
+        message: 'Failed to fetch entities',
       })
     }
   })
@@ -227,7 +227,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to fetch entity',
+        message: 'Failed to fetch entity',
       })
     }
   })
@@ -396,7 +396,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       }
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to create entity',
+        message: 'Failed to create entity',
       })
     }
   })
@@ -623,7 +623,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       }
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to update entity',
+        message: 'Failed to update entity',
       })
     }
   })
@@ -649,7 +649,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to delete entity',
+        message: 'Failed to delete entity',
       })
     }
   })
@@ -702,7 +702,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.status(500).send({
         error: 'Sync Failed',
-        message: error instanceof Error ? error.message : 'Failed to sync entity to ATLAS',
+        message: 'Failed to sync entity to ATLAS',
       })
     }
   })
@@ -726,7 +726,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to fetch entity versions',
+        message: 'Failed to fetch entity versions',
       })
     }
   })

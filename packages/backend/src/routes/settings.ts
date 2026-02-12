@@ -148,11 +148,10 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
           message: `Connection failed: ${response.status} ${response.statusText}`,
         })
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Connection test failed'
+    } catch (_error) {
       return reply.status(500).send({
         success: false,
-        message: `Connection failed: ${message}`,
+        message: 'Connection test failed',
       })
     }
   })
