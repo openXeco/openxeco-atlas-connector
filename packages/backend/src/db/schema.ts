@@ -277,6 +277,7 @@ export const syncLogs = pgTable(
     createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => ({
+    entityIdIdx: index('sync_log_entity_id_idx').on(table.entityId),
     entityTypeIdx: index('sync_log_entity_type_idx').on(table.entityType),
     statusIdx: index('sync_log_status_idx').on(table.status),
     createdAtIdx: index('sync_log_created_at_idx').on(table.createdAt),
