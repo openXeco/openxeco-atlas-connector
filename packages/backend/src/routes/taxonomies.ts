@@ -4,6 +4,7 @@ import { count } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { taxonomies } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
+import { logger } from '../utils/logger.js'
 import { taxonomySyncService } from '../services/atlas/taxonomy-sync.js'
 import type { TaxonomyType } from '../services/atlas/types.js'
 
@@ -35,7 +36,8 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const [result] = await db.select({ total: count() }).from(taxonomies)
       return reply.send({ data: { total: result.total } })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to count taxonomies', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to count taxonomies',
@@ -50,7 +52,8 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Taxonomy sync completed',
         result,
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to sync taxonomies', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to sync taxonomies',
@@ -127,7 +130,8 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       return reply.send({ data: taxonomy })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to fetch taxonomy', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch taxonomy',

@@ -4,6 +4,7 @@ import { eq, desc, and, gte, lte, count } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { syncLogs, entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
+import { logger } from '../utils/logger.js'
 import { entitySyncService } from '../services/sync/entity-sync.js'
 
 const resolveConflictSchema = z.object({
@@ -34,10 +35,11 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         data: result,
         message: result.message,
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to push entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: 'Failed to push entity',
+        message: error instanceof Error ? `Failed to push entity: ${error.message}` : 'Failed to push entity',
       })
     }
   })
@@ -69,10 +71,11 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         data: result,
         message: result.message,
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to pull entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: 'Failed to pull entity',
+        message: error instanceof Error ? `Failed to pull entity: ${error.message}` : 'Failed to pull entity',
       })
     }
   })
@@ -90,7 +93,8 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
           differentFields: diffs.filter((d) => d.isDifferent).length,
         },
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to get diff', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to get diff',
@@ -107,7 +111,8 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({
         data: conflict,
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to detect conflicts', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to detect conflicts',
@@ -138,7 +143,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({
           error: 'Validation Error',
-          message: error.errors,
+          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
       }
       return reply.status(500).send({
@@ -170,7 +175,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({
           error: 'Validation Error',
-          message: error.errors,
+          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
       }
       return reply.status(500).send({
@@ -202,7 +207,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({
           error: 'Validation Error',
-          message: error.errors,
+          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
       }
       return reply.status(500).send({
@@ -242,7 +247,8 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
           pendingPush: local + conflict,
         },
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to get sync status', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to get sync status',
@@ -305,7 +311,8 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
           count: logs.length,
         },
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to fetch sync logs', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch sync logs',
@@ -324,7 +331,8 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Deleted ${deleted} sync log entries older than ${days} days`,
         deleted,
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to cleanup sync logs', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to cleanup sync logs',

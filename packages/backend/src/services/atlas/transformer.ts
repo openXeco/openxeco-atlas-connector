@@ -34,7 +34,10 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
     name: (attrs.title as string) || (attrs.name as string) || '',
     nameNational: attrs.field_institution_name_in_nation as string | undefined,
     entityDepartment: attrs.field_entity_department as string | undefined,
-    description: attrs.body as string | undefined,
+    description:
+      typeof attrs.body === 'object' && attrs.body !== null
+        ? (attrs.body as { value?: string }).value || ''
+        : (attrs.body as string | undefined),
 
     // Address
     countryCode: address?.country_code,

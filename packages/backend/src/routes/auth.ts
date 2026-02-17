@@ -6,6 +6,7 @@ import { users } from '../db/schema.js'
 import { verifyPassword } from '../services/password.js'
 import { generateTokens, verifyRefreshToken } from '../services/jwt.js'
 import { authenticate } from '../middleware/auth.js'
+import { logger } from '../utils/logger.js'
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -61,7 +62,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({
           error: 'Validation Error',
-          message: error.errors,
+          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
       }
       throw error
@@ -114,7 +115,8 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({
         accessToken: tokens.accessToken,
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Token refresh failed', error instanceof Error ? error : { message: String(error) })
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Token refresh failed',

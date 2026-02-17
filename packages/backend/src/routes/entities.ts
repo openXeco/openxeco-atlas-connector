@@ -13,6 +13,7 @@ import {
   entitySubDomains,
 } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
+import { logger } from '../utils/logger.js'
 import { atlasClient } from '../services/atlas/client.js'
 import { jsonApiTransformer } from '../services/atlas/transformer.js'
 
@@ -202,7 +203,8 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           total,
         },
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to fetch entities', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch entities',
@@ -224,7 +226,8 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       return reply.send({ data: entity })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to fetch entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch entity',
@@ -399,9 +402,10 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({
           error: 'Validation Error',
-          message: error.errors,
+          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
       }
+      logger.error('Failed to create entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to create entity',
@@ -654,9 +658,10 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({
           error: 'Validation Error',
-          message: error.errors,
+          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
       }
+      logger.error('Failed to update entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to update entity',
@@ -682,7 +687,8 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({
         message: 'Entity deleted successfully',
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to delete entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to delete entity',
@@ -726,8 +732,9 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         data: updated,
         message: 'Entity synced to ATLAS successfully',
       })
-    } catch (_error) {
+    } catch (error) {
       const { id } = request.params as { id: string }
+      logger.error(`Failed to sync entity ${id} to ATLAS`, error instanceof Error ? error : { message: String(error) })
 
       await db
         .update(entities)
@@ -738,7 +745,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.status(500).send({
         error: 'Sync Failed',
-        message: 'Failed to sync entity to ATLAS',
+        message: error instanceof Error ? `Failed to sync entity to ATLAS: ${error.message}` : 'Failed to sync entity to ATLAS',
       })
     }
   })
@@ -759,7 +766,8 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           count: versions.length,
         },
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Failed to fetch entity versions', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch entity versions',

@@ -134,12 +134,17 @@ export class AtlasClient {
           }
 
           const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument
+          const apiErrors = errorData.errors || []
+          const errorDetail = apiErrors.length > 0
+            ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
+            : response.statusText
           logger.error('ATLAS API error:', {
             status: response.status,
             statusText: response.statusText,
-            errors: errorData.errors || [],
+            errors: apiErrors,
+            url: url.toString(),
           })
-          throw new Error(`ATLAS API error: ${response.status} ${response.statusText}`)
+          throw new Error(`ATLAS API error ${response.status}: ${errorDetail}`)
         }
 
         const data = (await response.json()) as JsonApiDocument<T>
@@ -153,13 +158,16 @@ export class AtlasClient {
       } catch (error) {
         if (error instanceof TypeError && attempt < maxRetries) {
           const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
-          logger.warn(`ATLAS API network error, retrying in ${delay}ms...`)
+          const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
+          logger.warn(`ATLAS API network error (attempt ${attempt}/${maxRetries}): ${cause}, retrying in ${delay}ms...`)
           await new Promise((resolve) => setTimeout(resolve, delay))
           continue
         }
 
         if (error instanceof TypeError) {
-          throw new Error(`ATLAS API returned error: ${error.cause}`)
+          const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
+          logger.error('ATLAS API network error (final):', { message: error.message, cause, url: url.toString() })
+          throw new Error(`ATLAS API network error: ${cause}`)
         }
 
         if (error instanceof Error) {

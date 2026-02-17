@@ -51,7 +51,9 @@ class ApiClient {
 
     if (!response.ok) {
       const error: ApiError = await response.json()
-      throw new Error(error.message || 'An error occurred')
+      const message =
+        typeof error.message === 'string' ? error.message : Array.isArray(error.message) ? String(error.message) : 'An error occurred'
+      throw new Error(message || 'An error occurred')
     }
 
     return response.json()

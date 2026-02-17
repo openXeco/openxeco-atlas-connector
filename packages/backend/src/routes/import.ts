@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { authenticate } from '../middleware/auth.js'
+import { logger } from '../utils/logger.js'
 import { openXecoClient, openXecoFormTransformer } from '../services/openxeco/index.js'
 
 const ECCC_FORM_ID = 11
@@ -36,9 +37,11 @@ export async function importRoutes(fastify: FastifyInstance): Promise<void> {
         session = await openXecoClient.login({ email, password })
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Login failed'
-        return reply.status(401).send({
-          error: 'Authentication Failed',
-          message: message.includes('Invalid credentials') ? 'Invalid email or password for cybersecurity.lu' : message,
+        logger.error('OpenXeco import: login failed', { email, error: message })
+        const statusCode = message.includes('Invalid credentials') ? 401 : 502
+        return reply.status(statusCode).send({
+          error: statusCode === 401 ? 'Authentication Failed' : 'External API Error',
+          message,
         })
       }
 
@@ -82,7 +85,7 @@ export async function importRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.errors.length === 0 ? 'Form data imported successfully' : 'Form data imported with some errors',
       })
     } catch (error) {
-      fastify.log.error(error, 'Import from OpenXeco failed')
+      logger.error('Import from OpenXeco failed', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Failed to import form data',
