@@ -75,13 +75,9 @@ export class OpenXecoClient {
         if (status === 401) {
           throw new Error('Invalid credentials: email or password is incorrect')
         }
-        if (status === 500) {
-          // cybersecurity.lu API sometimes returns 500 for invalid credentials,
-          // but it can also be a genuine server error — include the response body
-          const hint = errorBody.substring(0, 200)
-          throw new Error(`cybersecurity.lu returned server error (500). This may indicate invalid credentials or an API issue. Details: ${hint || 'no response body'}`)
-        }
-        throw new Error(`Login failed with status ${status}: ${errorBody.substring(0, 200)}`)
+        // Per API docs, login only returns 200 or 401 — any other status is a server-side issue
+        const hint = errorBody.substring(0, 200)
+        throw new Error(`cybersecurity.lu API error (${status}): ${hint || response.statusText}`)
       }
 
       // Extract cookies from response - use getSetCookie() for Node.js 18+
