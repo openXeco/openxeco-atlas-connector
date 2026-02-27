@@ -11,7 +11,7 @@ interface ApiError {
 }
 
 class ApiClient {
-  private baseUrl: string;
+  private readonly baseUrl: string;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -21,6 +21,7 @@ class ApiClient {
     const { params, ...fetchOptions } = options;
 
     let url = `${this.baseUrl}${endpoint}`;
+
     if (params) {
       const searchParams = new URLSearchParams(params);
       url += `?${searchParams.toString()}`;

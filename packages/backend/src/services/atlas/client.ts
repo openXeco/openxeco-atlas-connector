@@ -1,5 +1,5 @@
-import { config } from '../../config/index.js';
-import { logger } from '../../utils/logger.js';
+import { config } from '@/config/index.js';
+import { logger } from '@/utils/logger.js';
 import type {
   AtlasConfig,
   JsonApiDocument,
@@ -16,6 +16,7 @@ export class AtlasClient {
   private config: AtlasConfig;
   private authToken?: string;
   private tokenExpiry?: Date;
+  private apiKey?: string;
 
   constructor(atlasConfig?: Partial<AtlasConfig>) {
     this.config = {
@@ -28,28 +29,19 @@ export class AtlasClient {
     };
   }
 
-  async authenticate(): Promise<void> {
+  async prepareCredentials(): Promise<void> {
     if (this.authToken && this.tokenExpiry && this.tokenExpiry > new Date()) {
       return;
     }
 
-    try {
-      if (this.config.username && this.config.password) {
-        const credentials = `${this.config.username}:${this.config.password}`;
-        this.authToken = Buffer.from(credentials).toString('base64');
-        this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        logger.info('ATLAS authenticated with Basic Auth');
-      } else if (this.config.apiKey) {
-        this.authToken = this.config.apiKey;
-        this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        logger.info('ATLAS authenticated with API key');
-      } else {
-        logger.info('Using ATLAS public access (no authentication)');
-      }
-    } catch (error) {
-      logger.error('ATLAS authentication failed:', error as Error);
-      throw new Error('Failed to authenticate with ATLAS API');
+    if (this.config.username && this.config.password) {
+      const credentials = `${this.config.username}:${this.config.password}`;
+      this.authToken = Buffer.from(credentials).toString('base64');
+      this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      logger.info('ATLAS authenticated with Basic Auth');
     }
+
+    this.apiKey = this.config.apiKey;
   }
 
   private async request<T = JsonApiResource>(
@@ -60,13 +52,17 @@ export class AtlasClient {
       params?: QueryParams;
     }
   ): Promise<JsonApiDocument<T>> {
-    await this.authenticate();
+    await this.prepareCredentials();
 
     const baseUrl = this.config.baseUrl.endsWith('/')
       ? this.config.baseUrl
       : `${this.config.baseUrl}/`;
     const relativePath = path.startsWith('/') ? path.slice(1) : path;
     const url = new URL(relativePath, baseUrl);
+
+    if (this.apiKey) {
+      url.searchParams.set('api-key', this.apiKey);
+    }
 
     if (options?.params) {
       if (options.params.page) {
