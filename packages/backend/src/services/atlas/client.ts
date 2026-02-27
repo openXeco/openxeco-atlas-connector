@@ -1,6 +1,6 @@
 import { ProxyAgent } from 'undici'
-import { config } from '@/config/index.js';
-import { logger } from '@/utils/logger.js';
+import { config } from '@/config/index.js'
+import { logger } from '@/utils/logger.js'
 import { mapResourceToCluster } from './transformer.js'
 import type {
   AtlasConfig,
@@ -19,7 +19,7 @@ export class AtlasClient {
   private authToken?: string
   private tokenExpiry?: Date
   private proxyDispatcher?: ProxyAgent
-  private apiKey?: string;
+  private apiKey?: string
 
   constructor(atlasConfig?: Partial<AtlasConfig>) {
     this.config = {
@@ -43,13 +43,13 @@ export class AtlasClient {
     }
 
     if (this.config.username && this.config.password) {
-      const credentials = `${this.config.username}:${this.config.password}`;
-      this.authToken = Buffer.from(credentials).toString('base64');
-      this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      logger.info('ATLAS authenticated with Basic Auth');
+      const credentials = `${this.config.username}:${this.config.password}`
+      this.authToken = Buffer.from(credentials).toString('base64')
+      this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      logger.info('ATLAS authenticated with Basic Auth')
     }
 
-    this.apiKey = this.config.apiKey;
+    this.apiKey = this.config.apiKey
   }
 
   private async request<T = JsonApiResource>(
@@ -60,14 +60,14 @@ export class AtlasClient {
       params?: QueryParams
     }
   ): Promise<JsonApiDocument<T>> {
-    await this.prepareCredentials();
+    await this.prepareCredentials()
 
     const baseUrl = this.config.baseUrl.endsWith('/') ? this.config.baseUrl : `${this.config.baseUrl}/`
     const relativePath = path.startsWith('/') ? path.slice(1) : path
     const url = new URL(relativePath, baseUrl)
 
     if (this.apiKey) {
-      url.searchParams.set('api-key', this.apiKey);
+      url.searchParams.set('api-key', this.apiKey)
     }
 
     if (options?.params) {
@@ -131,9 +131,10 @@ export class AtlasClient {
 
           const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument
           const apiErrors = errorData.errors || []
-          const errorDetail = apiErrors.length > 0
-            ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
-            : response.statusText
+          const errorDetail =
+            apiErrors.length > 0
+              ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
+              : response.statusText
           logger.error('ATLAS API error:', {
             status: response.status,
             statusText: response.statusText,
