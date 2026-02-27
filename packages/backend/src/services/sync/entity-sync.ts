@@ -1,6 +1,6 @@
-import { eq, desc, lt } from 'drizzle-orm'
+import { eq, desc, lt, and } from 'drizzle-orm'
 import { db } from '../../config/database.js'
-import { entities, entityVersions, syncLogs } from '../../db/schema.js'
+import { entities, entityVersions, syncLogs, taxonomies } from '../../db/schema.js'
 import { logger } from '../../utils/logger.js'
 import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
@@ -48,9 +48,32 @@ export class EntitySyncService {
         throw new Error('Entity not found')
       }
 
+      let countryId: string | undefined
+      let clusterTypeId: string | undefined
+      let organizationTypeId: string | undefined
+
+      if (entity.countryId) {
+        const [country] = await db.select().from(taxonomies).where(and(eq(taxonomies.taxonomyType, 'country'), eq(taxonomies.id, entity.countryId))).limit(1)
+        countryId = country.atlasId || undefined
+      }
+
+      if (entity.clusterTypeId) {
+        const [clusterType] = await db.select().from(taxonomies).where(and(eq(taxonomies.taxonomyType, 'cluster_type'), eq(taxonomies.id, entity.clusterTypeId))).limit(1)
+        clusterTypeId = clusterType.atlasId || undefined
+      }
+
+      if (entity.organizationTypeId) {
+        const [organizationType] = await db
+          .select()
+          .from(taxonomies)
+          .where(and(eq(taxonomies.taxonomyType, 'organization_type'), eq(taxonomies.id, entity.organizationTypeId)))
+          .limit(1)
+        organizationTypeId = organizationType.atlasId || undefined
+      }
+
       await db.update(entities).set({ syncStatus: 'pending_push' }).where(eq(entities.id, entityId))
 
-      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity)
+      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity, countryId, clusterTypeId, organizationTypeId)
 
       let cluster
       if (entity.atlasId) {

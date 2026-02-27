@@ -267,7 +267,7 @@ export class JsonApiTransformer {
     }
   }
 
-  toClusterInputFromEntity(entity: Entity): ClusterInput {
+  toClusterInputFromEntity(entity: Entity, countryId?: string, clusterTypeId?: string, organizationTypeId?: string): ClusterInput {
     return {
       // Basic information
       name: entity.name,
@@ -317,9 +317,9 @@ export class JsonApiTransformer {
       goalsToContribute: entity.goalsToContribute || undefined,
 
       // Taxonomy references
-      countryId: entity.countryId || undefined,
-      clusterTypeId: entity.clusterTypeId || undefined,
-      organizationTypeId: entity.organizationTypeId || undefined,
+      countryId,
+      clusterTypeId,
+      organizationTypeId,
 
       // Workflow
       moderationState: entity.moderationState || undefined,
