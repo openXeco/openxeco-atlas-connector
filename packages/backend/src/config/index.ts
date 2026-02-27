@@ -1,22 +1,22 @@
-import { existsSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import dotenv from 'dotenv';
-import { z } from 'zod';
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import dotenv from 'dotenv'
+import { z } from 'zod'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const envCandidates = [
   path.resolve(process.cwd(), '.env'),
   path.resolve(__dirname, '../../../.env'),
   path.resolve(__dirname, '../../../../.env'),
-];
+]
 
 for (const envPath of envCandidates) {
   if (existsSync(envPath)) {
-    dotenv.config({ path: envPath });
-    break;
+    dotenv.config({ path: envPath })
+    break
   }
 }
 
@@ -37,20 +37,22 @@ const envSchema = z.object({
   ATLAS_API_KEY: z.string(),
   ATLAS_USERNAME: z.string().optional(),
   ATLAS_PASSWORD: z.string().optional(),
-});
 
-export type Env = z.infer<typeof envSchema>;
+  HTTPS_PROXY: z.string().url().optional(),
+})
+
+export type Env = z.infer<typeof envSchema>
 
 function loadConfig(): Env {
-  const result = envSchema.safeParse(process.env);
+  const result = envSchema.safeParse(process.env)
 
   if (!result.success) {
-    console.error('❌ Invalid environment variables:');
-    console.error(result.error.format());
-    process.exit(1);
+    console.error('❌ Invalid environment variables:')
+    console.error(result.error.format())
+    process.exit(1)
   }
 
-  return result.data;
+  return result.data
 }
 
-export const config = loadConfig();
+export const config = loadConfig()

@@ -1,5 +1,7 @@
+import { ProxyAgent } from 'undici'
 import { config } from '@/config/index.js';
 import { logger } from '@/utils/logger.js';
+import { mapResourceToCluster } from './transformer.js'
 import type {
   AtlasConfig,
   JsonApiDocument,
@@ -10,12 +12,13 @@ import type {
   ClusterInput,
   QueryParams,
   PaginatedResponse,
-} from './types.js';
+} from './types.js'
 
 export class AtlasClient {
-  private config: AtlasConfig;
-  private authToken?: string;
-  private tokenExpiry?: Date;
+  private config: AtlasConfig
+  private authToken?: string
+  private tokenExpiry?: Date
+  private proxyDispatcher?: ProxyAgent
   private apiKey?: string;
 
   constructor(atlasConfig?: Partial<AtlasConfig>) {
@@ -26,12 +29,17 @@ export class AtlasClient {
       password: config.ATLAS_PASSWORD,
       timeout: 30000,
       ...atlasConfig,
-    };
+    }
+
+    if (config.HTTPS_PROXY) {
+      this.proxyDispatcher = new ProxyAgent(config.HTTPS_PROXY)
+      logger.info(`ATLAS API requests will use proxy: ${config.HTTPS_PROXY}`)
+    }
   }
 
   async prepareCredentials(): Promise<void> {
     if (this.authToken && this.tokenExpiry && this.tokenExpiry > new Date()) {
-      return;
+      return
     }
 
     if (this.config.username && this.config.password) {
@@ -48,17 +56,15 @@ export class AtlasClient {
     method: string,
     path: string,
     options?: {
-      body?: unknown;
-      params?: QueryParams;
+      body?: unknown
+      params?: QueryParams
     }
   ): Promise<JsonApiDocument<T>> {
     await this.prepareCredentials();
 
-    const baseUrl = this.config.baseUrl.endsWith('/')
-      ? this.config.baseUrl
-      : `${this.config.baseUrl}/`;
-    const relativePath = path.startsWith('/') ? path.slice(1) : path;
-    const url = new URL(relativePath, baseUrl);
+    const baseUrl = this.config.baseUrl.endsWith('/') ? this.config.baseUrl : `${this.config.baseUrl}/`
+    const relativePath = path.startsWith('/') ? path.slice(1) : path
+    const url = new URL(relativePath, baseUrl)
 
     if (this.apiKey) {
       url.searchParams.set('api-key', this.apiKey);
@@ -66,107 +72,161 @@ export class AtlasClient {
 
     if (options?.params) {
       if (options.params.page) {
-        url.searchParams.set('page[number]', String(options.params.page));
+        url.searchParams.set('page[number]', String(options.params.page))
       }
       if (options.params.pageSize) {
-        url.searchParams.set('page[size]', String(options.params.pageSize));
+        url.searchParams.set('page[size]', String(options.params.pageSize))
       }
       if (options.params.filter) {
         Object.entries(options.params.filter).forEach(([key, value]) => {
-          url.searchParams.set(`filter[${key}]`, value);
-        });
+          url.searchParams.set(`filter[${key}]`, value)
+        })
       }
       if (options.params.include) {
-        url.searchParams.set('include', options.params.include.join(','));
+        url.searchParams.set('include', options.params.include.join(','))
       }
       if (options.params.sort) {
-        url.searchParams.set('sort', options.params.sort);
+        url.searchParams.set('sort', options.params.sort)
       }
     }
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/vnd.api+json',
       Accept: 'application/vnd.api+json',
-    };
+    }
 
     if (this.authToken) {
-      const authScheme = this.config.username && this.config.password ? 'Basic' : 'Bearer';
-      headers.Authorization = `${authScheme} ${this.authToken}`;
+      const authScheme = this.config.username && this.config.password ? 'Basic' : 'Bearer'
+      headers.Authorization = `${authScheme} ${this.authToken}`
     }
 
-    logger.info(`ATLAS API request: ${method} ${url.toString()}`);
+    const maxRetries = 3
+    const retryableStatuses = [408, 429, 502, 503, 504]
 
-    try {
-      const response = await fetch(url.toString(), {
-        method,
-        headers,
-        body: options?.body ? JSON.stringify(options.body) : undefined,
-        signal: AbortSignal.timeout(this.config.timeout || 30000),
-      });
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      logger.info(`ATLAS API request: ${method} ${url.toString()} (attempt ${attempt})`)
 
-      if (!response.ok) {
-        const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument;
-        logger.error('ATLAS API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          errors: errorData.errors || [],
-        });
-        throw new Error(`ATLAS API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = (await response.json()) as JsonApiDocument<T>;
-
-      if (data.errors && data.errors.length > 0) {
-        logger.error('ATLAS API returned errors:', { errors: data.errors });
-        throw new Error(`ATLAS API error: ${data.errors[0].title || 'Unknown error'}`);
-      }
-
-      return data;
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error('ATLAS API request timeout');
+      try {
+        const fetchOptions: RequestInit = {
+          method,
+          headers,
+          body: options?.body ? JSON.stringify(options.body) : undefined,
+          signal: AbortSignal.timeout(this.config.timeout || 30000),
         }
-        throw error;
+
+        if (this.proxyDispatcher) {
+          // undici ProxyAgent as dispatcher for proxy support
+          ;(fetchOptions as Record<string, unknown>).dispatcher = this.proxyDispatcher
+        }
+
+        const response = await fetch(url.toString(), fetchOptions)
+
+        if (!response.ok) {
+          if (retryableStatuses.includes(response.status) && attempt < maxRetries) {
+            const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
+            logger.warn(`ATLAS API returned ${response.status}, retrying in ${delay}ms...`)
+            await new Promise((resolve) => setTimeout(resolve, delay))
+            continue
+          }
+
+          const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument
+          const apiErrors = errorData.errors || []
+          const errorDetail = apiErrors.length > 0
+            ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
+            : response.statusText
+          logger.error('ATLAS API error:', {
+            status: response.status,
+            statusText: response.statusText,
+            errors: apiErrors,
+            url: url.toString(),
+          })
+          throw new Error(`ATLAS API error ${response.status}: ${errorDetail}`)
+        }
+
+        const data = (await response.json()) as JsonApiDocument<T>
+
+        if (data.errors && data.errors.length > 0) {
+          logger.error('ATLAS API returned errors:', { errors: data.errors })
+          throw new Error(`ATLAS API error: ${data.errors[0].title || 'Unknown error'}`)
+        }
+
+        return data
+      } catch (error) {
+        if (error instanceof TypeError && attempt < maxRetries) {
+          const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
+          const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
+          logger.warn(`ATLAS API network error (attempt ${attempt}/${maxRetries}): ${cause}, retrying in ${delay}ms...`)
+          await new Promise((resolve) => setTimeout(resolve, delay))
+          continue
+        }
+
+        if (error instanceof TypeError) {
+          const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
+          logger.error('ATLAS API network error (final):', { message: error.message, cause, url: url.toString() })
+          throw new Error(`ATLAS API network error: ${cause}`)
+        }
+
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            throw new Error('ATLAS API request timeout')
+          }
+          throw error
+        }
+        throw new Error('Unknown error occurred during ATLAS API request')
       }
-      throw new Error('Unknown error occurred during ATLAS API request');
     }
+
+    throw new Error('ATLAS API request failed after retries')
   }
 
   async getTaxonomies(type: TaxonomyType): Promise<TaxonomyTerm[]> {
-    logger.info(`Fetching taxonomies of type: ${type}`);
+    logger.info(`Fetching taxonomies of type: ${type}`)
 
-    const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}`);
+    const allTerms: TaxonomyTerm[] = []
+    let page = 1
+    const pageSize = 50
 
-    if (!response.data) {
-      return [];
+    while (true) {
+      const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}`, {
+        params: { page, pageSize },
+      })
+
+      if (!response.data) break
+
+      const resources = Array.isArray(response.data) ? response.data : [response.data]
+
+      for (const resource of resources) {
+        allTerms.push({
+          id: resource.id,
+          atlasId: resource.id,
+          type,
+          name: (resource.attributes.name as string) || '',
+          description: resource.attributes.description as string | undefined,
+          parentId: resource.relationships?.parent?.data
+            ? (resource.relationships.parent.data as { id: string }).id
+            : undefined,
+          metadata: resource.attributes,
+        })
+      }
+
+      // Stop if we got fewer results than page size (last page) or no next link
+      if (resources.length < pageSize || !response.links?.next) break
+      page++
     }
 
-    const resources = Array.isArray(response.data) ? response.data : [response.data];
-
-    return resources.map((resource) => ({
-      id: resource.id,
-      atlasId: resource.id,
-      type,
-      name: (resource.attributes.name as string) || '',
-      description: resource.attributes.description as string | undefined,
-      parentId: resource.relationships?.parent?.data
-        ? (resource.relationships.parent.data as { id: string }).id
-        : undefined,
-      metadata: resource.attributes,
-    }));
+    return allTerms
   }
 
   async getTaxonomy(type: TaxonomyType, id: string): Promise<TaxonomyTerm> {
-    logger.info(`Fetching taxonomy: ${type}/${id}`);
+    logger.info(`Fetching taxonomy: ${type}/${id}`)
 
-    const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}/${id}`);
+    const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}/${id}`)
 
     if (!response.data || Array.isArray(response.data)) {
-      throw new Error('Taxonomy not found');
+      throw new Error('Taxonomy not found')
     }
 
-    const resource = response.data;
+    const resource = response.data
 
     return {
       id: resource.id,
@@ -178,35 +238,24 @@ export class AtlasClient {
         ? (resource.relationships.parent.data as { id: string }).id
         : undefined,
       metadata: resource.attributes,
-    };
+    }
   }
 
   async getClusters(params?: QueryParams): Promise<PaginatedResponse<Cluster>> {
-    logger.info('Fetching clusters from ATLAS');
+    logger.info('Fetching clusters from ATLAS')
 
-    const response = await this.request<JsonApiResource>('GET', '/node/cluster', { params });
+    const response = await this.request<JsonApiResource>('GET', '/node/cluster', { params })
 
     if (!response.data) {
       return {
         data: [],
         meta: { total: 0, page: 1, pageSize: 10 },
-      };
+      }
     }
 
-    const resources = Array.isArray(response.data) ? response.data : [response.data];
+    const resources = Array.isArray(response.data) ? response.data : [response.data]
 
-    const clusters: Cluster[] = resources.map((resource) => ({
-      id: resource.id,
-      atlasId: resource.id,
-      name: (resource.attributes.title as string) || (resource.attributes.name as string) || '',
-      description: resource.attributes.body as string | undefined,
-      logoUrl: resource.attributes.field_logo as string | undefined,
-      website: resource.attributes.field_website as string | undefined,
-      latitude: resource.attributes.field_latitude as number | undefined,
-      longitude: resource.attributes.field_longitude as number | undefined,
-      status: resource.attributes.status as string | undefined,
-      metadata: resource.attributes,
-    }));
+    const clusters: Cluster[] = resources.map((resource) => mapResourceToCluster(resource))
 
     return {
       data: clusters,
@@ -216,36 +265,25 @@ export class AtlasClient {
         pageSize: params?.pageSize || 10,
       },
       links: response.links,
-    };
+    }
   }
 
   async getCluster(id: string): Promise<Cluster> {
-    logger.info(`Fetching cluster: ${id}`);
+    logger.info(`Fetching cluster: ${id}`)
 
-    const response = await this.request<JsonApiResource>('GET', `/node/cluster/${id}`);
+    const response = await this.request<JsonApiResource>('GET', `/node/cluster/${id}`)
 
     if (!response.data || Array.isArray(response.data)) {
-      throw new Error('Cluster not found');
+      throw new Error('Cluster not found')
     }
 
-    const resource = response.data;
+    const resource = response.data
 
-    return {
-      id: resource.id,
-      atlasId: resource.id,
-      name: (resource.attributes.title as string) || (resource.attributes.name as string) || '',
-      description: resource.attributes.body as string | undefined,
-      logoUrl: resource.attributes.field_logo as string | undefined,
-      website: resource.attributes.field_website as string | undefined,
-      latitude: resource.attributes.field_latitude as number | undefined,
-      longitude: resource.attributes.field_longitude as number | undefined,
-      status: resource.attributes.status as string | undefined,
-      metadata: resource.attributes,
-    };
+    return mapResourceToCluster(resource)
   }
 
   async createCluster(data: ClusterInput): Promise<Cluster> {
-    logger.info('Creating cluster in ATLAS');
+    logger.info('Creating cluster in ATLAS')
 
     const body = {
       data: {
@@ -308,42 +346,27 @@ export class AtlasClient {
         },
         relationships: this.buildRelationships(data),
       },
-    };
-
-    const response = await this.request<JsonApiResource>('POST', '/node/cluster', { body });
-
-    if (!response.data || Array.isArray(response.data)) {
-      throw new Error('Failed to create cluster');
     }
 
-    const resource = response.data;
+    const response = await this.request<JsonApiResource>('POST', '/node/cluster', { body })
 
-    return {
-      id: resource.id,
-      atlasId: resource.id,
-      name: (resource.attributes.title as string) || '',
-      description: resource.attributes.body as string | undefined,
-      logoUrl: resource.attributes.field_logo as string | undefined,
-      website: resource.attributes.field_website as string | undefined,
-      latitude: resource.attributes.field_latitude as number | undefined,
-      longitude: resource.attributes.field_longitude as number | undefined,
-      status: resource.attributes.status as string | undefined,
-      metadata: resource.attributes,
-    };
+    if (!response.data || Array.isArray(response.data)) {
+      throw new Error('Failed to create cluster')
+    }
+
+    return mapResourceToCluster(response.data)
   }
 
   async updateCluster(id: string, data: Partial<ClusterInput>): Promise<Cluster> {
-    logger.info(`Updating cluster: ${id}`);
+    logger.info(`Updating cluster: ${id}`)
 
-    const attributes: Record<string, unknown> = {};
+    const attributes: Record<string, unknown> = {}
 
     // Basic information
-    if (data.name) attributes.title = data.name;
-    if (data.nameNational !== undefined)
-      attributes.field_institution_name_in_nation = data.nameNational;
-    if (data.entityDepartment !== undefined)
-      attributes.field_entity_department = data.entityDepartment;
-    if (data.description !== undefined) attributes.body = data.description;
+    if (data.name) attributes.title = data.name
+    if (data.nameNational !== undefined) attributes.field_institution_name_in_nation = data.nameNational
+    if (data.entityDepartment !== undefined) attributes.field_entity_department = data.entityDepartment
+    if (data.description !== undefined) attributes.body = data.description
 
     // Address (structured)
     if (data.countryCode || data.city || data.streetAddress || data.postalCode) {
@@ -352,57 +375,46 @@ export class AtlasClient {
         ...(data.city && { locality: data.city }),
         ...(data.streetAddress && { address_line1: data.streetAddress }),
         ...(data.postalCode && { postal_code: data.postalCode }),
-      };
+      }
     }
-    if (data.latitude !== undefined) attributes.field_latitude = data.latitude;
-    if (data.longitude !== undefined) attributes.field_longitude = data.longitude;
+    if (data.latitude !== undefined) attributes.field_latitude = data.latitude
+    if (data.longitude !== undefined) attributes.field_longitude = data.longitude
 
     // Organization details
-    if (data.email !== undefined) attributes.field_general_contact_e_mail = data.email;
-    if (data.phone !== undefined) attributes.field_phone_number = data.phone;
-    if (data.website !== undefined) attributes.field_url = { uri: data.website };
-    if (data.registrationNumber !== undefined)
-      attributes.field_registration_number = data.registrationNumber;
-    if (data.logoUrl !== undefined) attributes.field_logo = data.logoUrl;
+    if (data.email !== undefined) attributes.field_general_contact_e_mail = data.email
+    if (data.phone !== undefined) attributes.field_phone_number = data.phone
+    if (data.website !== undefined) attributes.field_url = { uri: data.website }
+    if (data.registrationNumber !== undefined) attributes.field_registration_number = data.registrationNumber
+    if (data.logoUrl !== undefined) attributes.field_logo = data.logoUrl
 
     // Headquarters
-    if (data.isHeadquarter !== undefined)
-      attributes.field_question_headquarter = data.isHeadquarter;
-    if (data.headquarterInfo !== undefined) attributes.field_headquarter = data.headquarterInfo;
+    if (data.isHeadquarter !== undefined) attributes.field_question_headquarter = data.isHeadquarter
+    if (data.headquarterInfo !== undefined) attributes.field_headquarter = data.headquarterInfo
 
     // Subsidiaries
-    if (data.hasSubsidiaries !== undefined)
-      attributes.field_question_subsidiaries = data.hasSubsidiaries;
-    if (data.subsidiariesDetails !== undefined)
-      attributes.field_subsidiaries_eu = data.subsidiariesDetails;
-    if (data.hasMajorityShares !== undefined)
-      attributes.field_question_majority = data.hasMajorityShares;
-    if (data.majoritySharesDetails !== undefined)
-      attributes.field_majority_shares_noneu = data.majoritySharesDetails;
+    if (data.hasSubsidiaries !== undefined) attributes.field_question_subsidiaries = data.hasSubsidiaries
+    if (data.subsidiariesDetails !== undefined) attributes.field_subsidiaries_eu = data.subsidiariesDetails
+    if (data.hasMajorityShares !== undefined) attributes.field_question_majority = data.hasMajorityShares
+    if (data.majoritySharesDetails !== undefined) attributes.field_majority_shares_noneu = data.majoritySharesDetails
 
     // Compliance
-    if (data.article138Compliance !== undefined)
-      attributes.field_article_136_compliance = data.article138Compliance;
-    if (data.dataShareConsent !== undefined)
-      attributes.field_data_sharing_consent = data.dataShareConsent;
+    if (data.article138Compliance !== undefined) attributes.field_article_136_compliance = data.article138Compliance
+    if (data.dataShareConsent !== undefined) attributes.field_data_sharing_consent = data.dataShareConsent
 
     // Contact person
-    if (data.contactFirstName !== undefined) attributes.field_first_name = data.contactFirstName;
-    if (data.contactLastName !== undefined) attributes.field_family_name = data.contactLastName;
-    if (data.contactEmail !== undefined) attributes.field_e_mail = data.contactEmail;
-    if (data.contactPosition !== undefined) attributes.field_position = data.contactPosition;
-    if (data.contactPhone !== undefined)
-      attributes.field_representative_phone_numbe = data.contactPhone;
+    if (data.contactFirstName !== undefined) attributes.field_first_name = data.contactFirstName
+    if (data.contactLastName !== undefined) attributes.field_family_name = data.contactLastName
+    if (data.contactEmail !== undefined) attributes.field_e_mail = data.contactEmail
+    if (data.contactPosition !== undefined) attributes.field_position = data.contactPosition
+    if (data.contactPhone !== undefined) attributes.field_representative_phone_numbe = data.contactPhone
 
     // Expertise
-    if (data.expertiseDescription !== undefined)
-      attributes.field_field_of_activity_descr = data.expertiseDescription;
-    if (data.goalsToAchieve !== undefined) attributes.field_goals_to_achieve = data.goalsToAchieve;
-    if (data.goalsToContribute !== undefined)
-      attributes.field_goals_to_contribute = data.goalsToContribute;
+    if (data.expertiseDescription !== undefined) attributes.field_field_of_activity_descr = data.expertiseDescription
+    if (data.goalsToAchieve !== undefined) attributes.field_goals_to_achieve = data.goalsToAchieve
+    if (data.goalsToContribute !== undefined) attributes.field_goals_to_contribute = data.goalsToContribute
 
     // Workflow
-    if (data.moderationState !== undefined) attributes.moderation_state = data.moderationState;
+    if (data.moderationState !== undefined) attributes.moderation_state = data.moderationState
 
     const body = {
       data: {
@@ -411,52 +423,39 @@ export class AtlasClient {
         attributes,
         relationships: this.buildRelationships(data),
       },
-    };
-
-    const response = await this.request<JsonApiResource>('PATCH', `/node/cluster/${id}`, { body });
-
-    if (!response.data || Array.isArray(response.data)) {
-      throw new Error('Failed to update cluster');
     }
 
-    const resource = response.data;
+    const response = await this.request<JsonApiResource>('PATCH', `/node/cluster/${id}`, { body })
 
-    return {
-      id: resource.id,
-      atlasId: resource.id,
-      name: (resource.attributes.title as string) || '',
-      description: resource.attributes.body as string | undefined,
-      logoUrl: resource.attributes.field_logo as string | undefined,
-      website: resource.attributes.field_website as string | undefined,
-      latitude: resource.attributes.field_latitude as number | undefined,
-      longitude: resource.attributes.field_longitude as number | undefined,
-      status: resource.attributes.status as string | undefined,
-      metadata: resource.attributes,
-    };
+    if (!response.data || Array.isArray(response.data)) {
+      throw new Error('Failed to update cluster')
+    }
+
+    return mapResourceToCluster(response.data)
   }
 
   private buildRelationships(data: Partial<ClusterInput>): Record<string, unknown> {
-    const relationships: Record<string, unknown> = {};
+    const relationships: Record<string, unknown> = {}
 
     // Country reference
     if (data.countryId) {
       relationships.field_country = {
         data: { type: 'taxonomy_term--country', id: data.countryId },
-      };
+      }
     }
 
     // Organization type (cluster_type) *
     if (data.clusterTypeId) {
       relationships.field_cluster_type = {
         data: { type: 'taxonomy_term--cluster_type', id: data.clusterTypeId },
-      };
+      }
     }
 
     // Organization type taxonomy
     if (data.organizationTypeId) {
       relationships.field_organization_type = {
         data: { type: 'taxonomy_term--organization_type', id: data.organizationTypeId },
-      };
+      }
     }
 
     // JRC Cybersecurity Taxonomy - Knowledge domains (thematic areas)
@@ -466,7 +465,7 @@ export class AtlasClient {
           type: 'taxonomy_term--cluster_thematic_area',
           id,
         })),
-      };
+      }
     }
 
     // JRC Cybersecurity Taxonomy - Sectors
@@ -476,7 +475,7 @@ export class AtlasClient {
           type: 'taxonomy_term--sectors',
           id,
         })),
-      };
+      }
     }
 
     // JRC Cybersecurity Taxonomy - Technologies
@@ -486,7 +485,7 @@ export class AtlasClient {
           type: 'taxonomy_term--technologies',
           id,
         })),
-      };
+      }
     }
 
     // JRC Cybersecurity Taxonomy - Use cases
@@ -496,7 +495,7 @@ export class AtlasClient {
           type: 'taxonomy_term--use_cases',
           id,
         })),
-      };
+      }
     }
 
     // Article 8(3) expertise (fields of activity) *
@@ -506,11 +505,11 @@ export class AtlasClient {
           type: 'taxonomy_term--fields_of_activity',
           id,
         })),
-      };
+      }
     }
 
-    return relationships;
+    return relationships
   }
 }
 
-export const atlasClient = new AtlasClient();
+export const atlasClient = new AtlasClient()

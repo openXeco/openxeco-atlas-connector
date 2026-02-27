@@ -9,7 +9,7 @@ import {
   boolean,
   index,
   uniqueIndex,
-} from 'drizzle-orm/pg-core';
+} from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -18,7 +18,7 @@ export const users = pgTable('users', {
   role: varchar('role', { length: 50 }).default('admin'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
-});
+})
 
 export const taxonomies = pgTable(
   'taxonomies',
@@ -37,7 +37,7 @@ export const taxonomies = pgTable(
     atlasIdIdx: index('taxonomy_atlas_id_idx').on(table.atlasId),
     parentIdIdx: index('taxonomy_parent_id_idx').on(table.parentId),
   })
-);
+)
 
 export const entities = pgTable(
   'entities',
@@ -82,7 +82,7 @@ export const entities = pgTable(
     majoritySharesDetails: text('majority_shares_details'), // field_majority_shares_noneu
 
     // Compliance (mandatory)
-    article138Compliance: boolean('article_138_compliance'), // field_article_136_compliance *
+    article138Compliance: boolean('article_138_compliance'), // ATLAS: field_article_136_compliance (ATLAS uses "136", local uses "138") *
     dataShareConsent: boolean('data_share_consent'), // field_data_sharing_consent *
 
     // Contact person / Representative (mandatory)
@@ -127,7 +127,7 @@ export const entities = pgTable(
     countryCodeIdx: index('entity_country_code_idx').on(table.countryCode),
     createdByIdx: index('entity_created_by_idx').on(table.createdBy),
   })
-);
+)
 
 export const entityVersions = pgTable(
   'entity_versions',
@@ -145,7 +145,7 @@ export const entityVersions = pgTable(
     entityIdIdx: index('entity_version_entity_id_idx').on(table.entityId),
     createdAtIdx: index('entity_version_created_at_idx').on(table.createdAt),
   })
-);
+)
 
 // JRC Cybersecurity Taxonomy relationships - specific tables for each dimension
 export const entityThematicAreas = pgTable(
@@ -161,14 +161,11 @@ export const entityThematicAreas = pgTable(
     createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_thematic_area_unique_idx').on(
-      table.entityId,
-      table.taxonomyId
-    ),
+    entityTaxonomyIdx: uniqueIndex('entity_thematic_area_unique_idx').on(table.entityId, table.taxonomyId),
     entityIdIdx: index('entity_thematic_area_entity_id_idx').on(table.entityId),
     taxonomyIdIdx: index('entity_thematic_area_taxonomy_id_idx').on(table.taxonomyId),
   })
-);
+)
 
 export const entitySectors = pgTable(
   'entity_sectors',
@@ -187,7 +184,7 @@ export const entitySectors = pgTable(
     entityIdIdx: index('entity_sector_entity_id_idx').on(table.entityId),
     taxonomyIdIdx: index('entity_sector_taxonomy_id_idx').on(table.taxonomyId),
   })
-);
+)
 
 export const entityTechnologies = pgTable(
   'entity_technologies',
@@ -202,14 +199,11 @@ export const entityTechnologies = pgTable(
     createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_technology_unique_idx').on(
-      table.entityId,
-      table.taxonomyId
-    ),
+    entityTaxonomyIdx: uniqueIndex('entity_technology_unique_idx').on(table.entityId, table.taxonomyId),
     entityIdIdx: index('entity_technology_entity_id_idx').on(table.entityId),
     taxonomyIdIdx: index('entity_technology_taxonomy_id_idx').on(table.taxonomyId),
   })
-);
+)
 
 export const entityUseCases = pgTable(
   'entity_use_cases',
@@ -224,14 +218,11 @@ export const entityUseCases = pgTable(
     createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_use_case_unique_idx').on(
-      table.entityId,
-      table.taxonomyId
-    ),
+    entityTaxonomyIdx: uniqueIndex('entity_use_case_unique_idx').on(table.entityId, table.taxonomyId),
     entityIdIdx: index('entity_use_case_entity_id_idx').on(table.entityId),
     taxonomyIdIdx: index('entity_use_case_taxonomy_id_idx').on(table.taxonomyId),
   })
-);
+)
 
 export const entityFieldsOfActivity = pgTable(
   'entity_fields_of_activity',
@@ -246,14 +237,11 @@ export const entityFieldsOfActivity = pgTable(
     createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_field_of_activity_unique_idx').on(
-      table.entityId,
-      table.taxonomyId
-    ),
+    entityTaxonomyIdx: uniqueIndex('entity_field_of_activity_unique_idx').on(table.entityId, table.taxonomyId),
     entityIdIdx: index('entity_field_of_activity_entity_id_idx').on(table.entityId),
     taxonomyIdIdx: index('entity_field_of_activity_taxonomy_id_idx').on(table.taxonomyId),
   })
-);
+)
 
 // Sub-domain taxonomy relationships (hierarchical - children of thematic areas)
 export const entitySubDomains = pgTable(
@@ -270,15 +258,12 @@ export const entitySubDomains = pgTable(
     createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_sub_domain_unique_idx').on(
-      table.entityId,
-      table.taxonomyId
-    ),
+    entityTaxonomyIdx: uniqueIndex('entity_sub_domain_unique_idx').on(table.entityId, table.taxonomyId),
     entityIdIdx: index('entity_sub_domain_entity_id_idx').on(table.entityId),
     taxonomyIdIdx: index('entity_sub_domain_taxonomy_id_idx').on(table.taxonomyId),
     parentDomainIdIdx: index('entity_sub_domain_parent_id_idx').on(table.parentDomainId),
   })
-);
+)
 
 export const syncLogs = pgTable(
   'sync_logs',
@@ -292,38 +277,39 @@ export const syncLogs = pgTable(
     createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => ({
+    entityIdIdx: index('sync_log_entity_id_idx').on(table.entityId),
     entityTypeIdx: index('sync_log_entity_type_idx').on(table.entityType),
     statusIdx: index('sync_log_status_idx').on(table.status),
     createdAtIdx: index('sync_log_created_at_idx').on(table.createdAt),
   })
-);
+)
 
 export const atlasConfig = pgTable('atlas_config', {
   id: uuid('id').primaryKey().defaultRandom(),
   key: varchar('key', { length: 255 }).unique().notNull(),
   value: text('value'),
   updatedAt: timestamp('updated_at').defaultNow(),
-});
+})
 
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Taxonomy = typeof taxonomies.$inferSelect;
-export type NewTaxonomy = typeof taxonomies.$inferInsert;
-export type Entity = typeof entities.$inferSelect;
-export type NewEntity = typeof entities.$inferInsert;
-export type EntityVersion = typeof entityVersions.$inferSelect;
-export type NewEntityVersion = typeof entityVersions.$inferInsert;
-export type EntityThematicArea = typeof entityThematicAreas.$inferSelect;
-export type NewEntityThematicArea = typeof entityThematicAreas.$inferInsert;
-export type EntitySector = typeof entitySectors.$inferSelect;
-export type NewEntitySector = typeof entitySectors.$inferInsert;
-export type EntityTechnology = typeof entityTechnologies.$inferSelect;
-export type NewEntityTechnology = typeof entityTechnologies.$inferInsert;
-export type EntityUseCase = typeof entityUseCases.$inferSelect;
-export type NewEntityUseCase = typeof entityUseCases.$inferInsert;
-export type EntityFieldOfActivity = typeof entityFieldsOfActivity.$inferSelect;
-export type NewEntityFieldOfActivity = typeof entityFieldsOfActivity.$inferInsert;
-export type EntitySubDomain = typeof entitySubDomains.$inferSelect;
-export type NewEntitySubDomain = typeof entitySubDomains.$inferInsert;
-export type SyncLog = typeof syncLogs.$inferSelect;
-export type NewSyncLog = typeof syncLogs.$inferInsert;
+export type User = typeof users.$inferSelect
+export type NewUser = typeof users.$inferInsert
+export type Taxonomy = typeof taxonomies.$inferSelect
+export type NewTaxonomy = typeof taxonomies.$inferInsert
+export type Entity = typeof entities.$inferSelect
+export type NewEntity = typeof entities.$inferInsert
+export type EntityVersion = typeof entityVersions.$inferSelect
+export type NewEntityVersion = typeof entityVersions.$inferInsert
+export type EntityThematicArea = typeof entityThematicAreas.$inferSelect
+export type NewEntityThematicArea = typeof entityThematicAreas.$inferInsert
+export type EntitySector = typeof entitySectors.$inferSelect
+export type NewEntitySector = typeof entitySectors.$inferInsert
+export type EntityTechnology = typeof entityTechnologies.$inferSelect
+export type NewEntityTechnology = typeof entityTechnologies.$inferInsert
+export type EntityUseCase = typeof entityUseCases.$inferSelect
+export type NewEntityUseCase = typeof entityUseCases.$inferInsert
+export type EntityFieldOfActivity = typeof entityFieldsOfActivity.$inferSelect
+export type NewEntityFieldOfActivity = typeof entityFieldsOfActivity.$inferInsert
+export type EntitySubDomain = typeof entitySubDomains.$inferSelect
+export type NewEntitySubDomain = typeof entitySubDomains.$inferInsert
+export type SyncLog = typeof syncLogs.$inferSelect
+export type NewSyncLog = typeof syncLogs.$inferInsert

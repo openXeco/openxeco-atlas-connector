@@ -1,147 +1,120 @@
 # OpenXeco ATLAS Connector
 
-A connector application for managing clusters with the European Cybersecurity ATLAS API.
+Manages cybersecurity cluster registrations and syncs them with the [European Cybersecurity ATLAS API](https://eccc-atlas.eu). Built for ECCC membership workflows.
 
 ## Tech Stack
 
-- **Frontend**: Next.js 16.1, React 19, TailwindCSS 3.4, shadcn/ui
-- **Backend**: Fastify 5.7, TypeScript 5.7
-- **Database**: PostgreSQL 17, Drizzle ORM 1.0-beta
-- **Cache**: Redis 7 (optional)
-- **Auth**: JWT with argon2 password hashing
-- **Deployment**: Docker + Docker Compose
+- **Frontend**: Next.js 16.1, React 19, TailwindCSS, shadcn/ui
+- **Backend**: Fastify 5.7, TypeScript, Drizzle ORM
+- **Database**: PostgreSQL 17
+- **Auth**: JWT (access + refresh tokens), Argon2
+- **Deployment**: Docker Compose
 
-## Prerequisites
-
-- Node.js 20+
-- pnpm 10.28+
-- Docker & Docker Compose
-
-## Getting Started
-
-### 1. Install Dependencies
+## Quick Start
 
 ```bash
 pnpm install
-```
+cp .env.example .env         # edit with your config — change JWT_SECRET!
 
-### 2. Setup Environment
+docker-compose up -d db      # start PostgreSQL
 
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-# IMPORTANT: Change JWT_SECRET to a secure random string (min 32 chars)
-```
-
-### 3. Start Development Services
-
-```bash
-# Start PostgreSQL and Redis
-docker-compose up -d db redis
-```
-
-### 4. Initialize Database
-
-```bash
-# Push database schema
 pnpm --filter @atlas-connector/backend db:push
-
-# Create admin user
 pnpm --filter @atlas-connector/backend seed:admin
+
+# two terminals:
+pnpm --filter @atlas-connector/backend dev     # localhost:3001
+pnpm --filter @atlas-connector/frontend dev    # localhost:3000
 ```
 
-### 5. Run Development Servers
-
-```bash
-# Terminal 1: Backend
-pnpm --filter @atlas-connector/backend dev
-
-# Terminal 2: Frontend
-pnpm --filter @atlas-connector/frontend dev
-```
-
-### 6. Access the Application
-
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:3001
-- Login with: `admin@atlas-connector.local` / `admin123456`
-
-**⚠️ Change the default password after first login!**
+Default login: `admin@atlas-connector.local` / `admin123456` — change the password immediately.
 
 ## Project Structure
 
 ```
-openxeco-atlas-connector/
-├── packages/
-│   ├── backend/          # Fastify API server
-│   └── frontend/         # Next.js application
-├── docker-compose.yml    # Development services
-├── package.json          # Root workspace config
-├── pnpm-workspace.yaml   # pnpm workspace config
-└── tsconfig.base.json    # Shared TypeScript config
+packages/
+├── backend/           # Fastify REST API
+│   └── src/
+│       ├── routes/    # auth, entities, taxonomies, sync, settings, users
+│       ├── services/  # ATLAS client, JSON:API transformer, sync engine
+│       ├── db/        # Drizzle schema + migrations
+│       └── middleware/ # JWT auth, admin enforcement
+└── frontend/          # Next.js (App Router)
+    └── src/
+        ├── app/       # pages — login, entities, taxonomies, sync, settings
+        ├── components/ # shadcn/ui based
+        ├── contexts/  # auth context (in-memory token management)
+        └── lib/       # API client
 ```
 
-## Scripts
+## Commands
 
-### Root Commands
+```bash
+# quality
+pnpm lint
+pnpm typecheck
+pnpm format
 
-| Command          | Description                  |
-| ---------------- | ---------------------------- |
-| `pnpm install`   | Install all dependencies     |
-| `pnpm lint`      | Run ESLint on all packages   |
-| `pnpm format`    | Format code with Prettier    |
-| `pnpm typecheck` | Run TypeScript type checking |
+# backend
+pnpm --filter @atlas-connector/backend dev
+pnpm --filter @atlas-connector/backend build
+pnpm --filter @atlas-connector/backend test
+pnpm --filter @atlas-connector/backend db:push       # apply schema
+pnpm --filter @atlas-connector/backend db:generate   # generate migration
+pnpm --filter @atlas-connector/backend db:migrate     # run migrations
+pnpm --filter @atlas-connector/backend db:studio      # Drizzle Studio UI
+pnpm --filter @atlas-connector/backend seed:admin
 
-### Backend Commands
+# frontend
+pnpm --filter @atlas-connector/frontend dev
+pnpm --filter @atlas-connector/frontend build
+```
 
-| Command                                              | Description                  |
-| ---------------------------------------------------- | ---------------------------- |
-| `pnpm --filter @atlas-connector/backend dev`         | Start backend dev server     |
-| `pnpm --filter @atlas-connector/backend build`       | Build backend for production |
-| `pnpm --filter @atlas-connector/backend db:push`     | Push database schema         |
-| `pnpm --filter @atlas-connector/backend db:generate` | Generate migrations          |
-| `pnpm --filter @atlas-connector/backend db:studio`   | Open Drizzle Studio          |
-| `pnpm --filter @atlas-connector/backend seed:admin`  | Create admin user            |
+## API
 
-### Frontend Commands
+### Auth
 
-| Command                                         | Description                   |
-| ----------------------------------------------- | ----------------------------- |
-| `pnpm --filter @atlas-connector/frontend dev`   | Start frontend dev server     |
-| `pnpm --filter @atlas-connector/frontend build` | Build frontend for production |
+| Method | Endpoint            | Auth | Description          |
+| ------ | ------------------- | ---- | -------------------- |
+| POST   | `/api/auth/login`   | No   | Login                |
+| POST   | `/api/auth/logout`  | Yes  | Logout               |
+| POST   | `/api/auth/refresh` | No   | Refresh access token |
+| GET    | `/api/auth/me`      | Yes  | Current user         |
 
-## API Endpoints
+### Entities
 
-### Authentication
+| Method | Endpoint                     | Description            |
+| ------ | ---------------------------- | ---------------------- |
+| GET    | `/api/entities`              | List (paginated)       |
+| GET    | `/api/entities/:id`          | Get by ID              |
+| POST   | `/api/entities`              | Create                 |
+| PATCH  | `/api/entities/:id`          | Update                 |
+| DELETE | `/api/entities/:id`          | Delete                 |
+| GET    | `/api/entities/:id/versions` | Version history        |
 
-| Method | Endpoint            | Description          | Auth Required |
-| ------ | ------------------- | -------------------- | ------------- |
-| POST   | `/api/auth/login`   | User login           | No            |
-| POST   | `/api/auth/logout`  | User logout          | Yes           |
-| POST   | `/api/auth/refresh` | Refresh access token | No            |
-| GET    | `/api/auth/me`      | Get current user     | Yes           |
+### Sync
+
+| Method | Endpoint                          | Description              |
+| ------ | --------------------------------- | ------------------------ |
+| POST   | `/api/sync/entities/:id/push`     | Push entity to ATLAS     |
+| POST   | `/api/sync/entities/:id/pull`     | Pull entity from ATLAS   |
+| GET    | `/api/sync/entities/:id/diff`     | Field-level diff         |
+| GET    | `/api/sync/entities/:id/conflicts`| Detect conflicts         |
+| POST   | `/api/sync/entities/:id/resolve`  | Resolve conflict         |
+| POST   | `/api/sync/batch/push`            | Batch push               |
+| POST   | `/api/sync/batch/pull`            | Batch pull               |
+| GET    | `/api/sync/status`                | Sync status overview     |
+| GET    | `/api/sync/logs`                  | Sync log history         |
+| DELETE | `/api/sync/logs/cleanup`          | Clean old logs           |
 
 ### Taxonomies
 
-| Method | Endpoint                     | Description                    | Auth Required |
-| ------ | ---------------------------- | ------------------------------ | ------------- |
-| POST   | `/api/taxonomies/sync`       | Sync all taxonomies from ATLAS | Yes           |
-| POST   | `/api/taxonomies/sync/:type` | Sync specific taxonomy type    | Yes           |
-| GET    | `/api/taxonomies/:type`      | Get taxonomies by type         | Yes           |
-| GET    | `/api/taxonomies/id/:id`     | Get taxonomy by ID             | Yes           |
-| GET    | `/api/taxonomies/search`     | Search taxonomies              | Yes           |
-
-### Entities (Clusters)
-
-| Method | Endpoint                     | Description                | Auth Required |
-| ------ | ---------------------------- | -------------------------- | ------------- |
-| GET    | `/api/entities`              | List all entities          | Yes           |
-| GET    | `/api/entities/:id`          | Get entity by ID           | Yes           |
-| POST   | `/api/entities`              | Create new entity          | Yes           |
-| PATCH  | `/api/entities/:id`          | Update entity              | Yes           |
-| DELETE | `/api/entities/:id`          | Delete entity              | Yes           |
-| POST   | `/api/entities/:id/sync`     | Sync entity to ATLAS       | Yes           |
-| GET    | `/api/entities/:id/versions` | Get entity version history | Yes           |
+| Method | Endpoint                     | Description              |
+| ------ | ---------------------------- | ------------------------ |
+| POST   | `/api/taxonomies/sync`       | Sync all from ATLAS      |
+| POST   | `/api/taxonomies/sync/:type` | Sync one type            |
+| GET    | `/api/taxonomies/:type`      | List by type             |
+| GET    | `/api/taxonomies/id/:id`     | Get by ID                |
+| GET    | `/api/taxonomies/search`     | Search by name           |
 
 ### Health
 
@@ -151,174 +124,44 @@ openxeco-atlas-connector/
 | GET    | `/health/live`  | Liveness probe  |
 | GET    | `/health/ready` | Readiness probe |
 
-## Features
+## ECCC Registration Fields
 
-### Phase 1: Foundation ✅
+The entity model covers the full ECCC membership registration form:
 
-- Monorepo with pnpm workspaces
-- Docker development environment (PostgreSQL 17, Redis 7)
-- Backend: Fastify 5.7 with TypeScript
-- Frontend: Next.js 16.1 with React 19
-- Database: Drizzle ORM with PostgreSQL
-- Code quality: ESLint, Prettier, TypeScript strict mode
+- **Basic info**: name (English + national language), department
+- **Address**: country code (ISO 3166-1), city, street, postal code, coordinates
+- **Contact**: email, phone, website, registration number
+- **Contact person**: first name, last name, email, position, phone
+- **Compliance**: Article 138 compliance, data sharing consent
+- **Structure**: headquarters flag, subsidiaries, majority shares
+- **Expertise**: description (800 char limit), goals to achieve/contribute
+- **JRC taxonomy dimensions**: thematic areas, sectors, technologies, use cases, fields of activity
 
-### Phase 2: Authentication ✅
+Conditional validation applies (e.g. `headquarterInfo` required when `isHeadquarter` is false). See the entity creation endpoint for the full schema.
 
-- JWT-based authentication with refresh tokens
-- Argon2 password hashing
-- Protected routes and middleware
-- Login page with form validation
-- Auth context and hooks
-- Auto token refresh
+> **Note**: ATLAS uses "article 136" while this application stores it as "article 138" — the field maps correctly during sync.
 
-### Phase 3: ATLAS Integration ✅
+## Entity Status Flow
 
-- JSON:API client for ATLAS API
-- Taxonomy sync service (22 taxonomy types)
-- Entity CRUD operations
-- JSON:API transformer for data conversion
-- Entity versioning system
-- Sync status tracking
-- Database indexes for performance
-
-### Phase 4: Taxonomy Management ✅
-
-- Taxonomy list page with statistics
-- Individual taxonomy type detail pages
-- Search functionality across taxonomy terms
-- Tree view for hierarchical taxonomies
-- Sync triggers from UI with loading states
-- Real-time term counts per type
-- List and tree view modes
-
-### Phase 5: Entity Management ✅
-
-- Entity list page with data table (TanStack Table)
-- Column sorting and search functionality
-- Status and sync status badges with color coding
-- Multi-step form wizard for entity creation
-- Entity edit page with pre-filled data
-- Entity detail page with tabbed interface
-- Version history timeline
-- Taxonomy relationship display
-- Sync to ATLAS functionality from UI
-- CRUD operations with proper validation
-- Row actions (view, edit, delete) with dropdown menu
-
-### Phase 6: ATLAS Sync ✅
-
-- Entity sync service with push/pull operations
-- Conflict detection and resolution logic
-- Diff comparison between local and ATLAS entities
-- Batch sync operations for multiple entities
-- Sync API endpoints (push, pull, diff, resolve, logs, status)
-- Sync status dashboard with real-time statistics
-- Sync history page with filterable logs
-- Conflict resolution UI with visual indicators
-- Sync status widget showing pending/conflict/failed entities
-- Comprehensive sync logging for audit trail
-- Sync status flow management (local → pending_push → synced/conflict/failed)
-
-### Phase 7: ATLAS-Compliant Registration ✅
-
-- Complete ECCC membership registration form field support
-- Structured address fields (country_code, city, street_address, postal_code)
-- Contact person/representative fields (first_name, last_name, email, position, phone)
-- Compliance fields (article_136_compliance, data_sharing_consent)
-- Headquarters and subsidiaries information fields
-- Expertise description with 800 character limit
-- JRC Cybersecurity Taxonomy relationships:
-  - Knowledge domains (thematic areas)
-  - Sectors
-  - Technologies
-  - Use cases
-  - Fields of activity (Article 8(3) expertise)
-- Conditional validation (headquarters, subsidiaries, majority shares)
-- Editorial workflow support (draft, ready_for_publication, to_be_rejected)
-- Complete field mapping to ATLAS JSON:API specification
-- Database migration for all new fields
-- Comprehensive validation with detailed error messages
-
-## ATLAS-Compliant Entity Registration
-
-The connector now fully implements the European Cybersecurity Competence Community (ECCC) membership registration requirements.
-
-### Mandatory Fields
-
-**Basic Information:**
-
-- Organization name (English) - `name`
-- Organization name (national language) - `nameNational`
-
-**Address (Structured):**
-
-- Country code (ISO 3166-1 alpha-2) - `countryCode`
-- City - `city`
-- Street address - `streetAddress`
-
-**Organization Details:**
-
-- General contact email - `email`
-- Website URL - `website`
-
-**Compliance:**
-
-- Article 138 compliance - `article138Compliance`
-- Data sharing consent - `dataShareConsent`
-
-**Contact Person:**
-
-- First name - `contactFirstName`
-- Last name - `contactLastName`
-- Email - `contactEmail`
-
-**Expertise:**
-
-- Expertise description (max 800 chars) - `expertiseDescription`
-
-**Taxonomy:**
-
-- Organization type - `clusterTypeId`
-- Fields of activity (Article 8(3)) - `fieldsOfActivityIds`
-
-### Example API Request
-
-```json
-{
-  "name": "Example Cybersecurity Org",
-  "nameNational": "Organisation Exemple",
-  "countryCode": "BE",
-  "city": "Brussels",
-  "streetAddress": "Rue de la Loi 123",
-  "email": "contact@example.org",
-  "website": "https://example.org",
-  "article138Compliance": true,
-  "dataShareConsent": true,
-  "contactFirstName": "John",
-  "contactLastName": "Doe",
-  "contactEmail": "john.doe@example.org",
-  "expertiseDescription": "Specialized in threat intelligence",
-  "clusterTypeId": "uuid-of-cluster-type",
-  "fieldsOfActivityIds": ["uuid-1", "uuid-2"]
-}
+```
+status:     draft → ready_for_publication → published / to_be_rejected
+syncStatus: local → pending_push → synced / conflict / failed
 ```
 
-### Validation Rules
+## Environment
 
-- **Conditional validation**: If `isHeadquarter` is false, `headquarterInfo` is required
-- **Field length limits**: Short text (400 chars), Long text (800 chars)
-- **JRC Taxonomy**: At least one dimension required
-- **Email format**: Valid email addresses only
-- **URL format**: Valid URLs with scheme
+See `.env.example` for all variables. Key ones:
 
-### Sync to ATLAS
-
-```bash
-POST /api/sync/entities/:id/push
-```
-
-This validates all mandatory fields, transforms to ATLAS JSON:API format, and creates/updates the cluster in ATLAS.
+| Variable | Description |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | Min 32 chars, change from default |
+| `ATLAS_BASE_URL` | ATLAS API base URL |
+| `ATLAS_USERNAME` | ATLAS API username |
+| `ATLAS_PASSWORD` | ATLAS API password |
+| `HTTPS_PROXY` | Optional proxy for ATLAS requests |
+| `NEXT_PUBLIC_API_URL` | Backend URL for frontend |
 
 ## License
 
-BSD-2-Clause license
+BSD-2-Clause

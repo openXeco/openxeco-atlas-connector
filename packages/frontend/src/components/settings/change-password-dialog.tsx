@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -8,77 +8,72 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { apiClient } from '@/lib/api';
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { apiClient } from '@/lib/api'
 
 interface User {
-  id: string;
-  email: string;
-  role: string;
-  createdAt: string;
+  id: string
+  email: string
+  role: string
+  createdAt: string
 }
 
 interface ChangePasswordDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  user: User | null;
-  onSuccess: () => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  user: User | null
+  onSuccess: () => void
 }
 
-export function ChangePasswordDialog({
-  open,
-  onOpenChange,
-  user,
-  onSuccess,
-}: ChangePasswordDialogProps) {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function ChangePasswordDialog({ open, onOpenChange, user, onSuccess }: ChangePasswordDialogProps) {
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
-      setPassword('');
-      setConfirmPassword('');
-      setError(null);
+      setPassword('')
+      setConfirmPassword('')
+      setError(null)
     }
-  }, [open]);
+  }, [open])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+    e.preventDefault()
+    setError(null)
 
-    if (!user) return;
+    if (!user) return
 
     // Validation
     if (!password) {
-      setError('Password is required');
-      return;
+      setError('Password is required')
+      return
     }
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
+      setError('Password must be at least 8 characters')
+      return
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
+      setError('Passwords do not match')
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
 
     try {
-      await apiClient.patch(`/api/users/${user.id}/password`, { password });
-      onSuccess();
-      onOpenChange(false);
+      await apiClient.patch(`/api/users/${user.id}/password`, { password })
+      onSuccess()
+      onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -90,11 +85,7 @@ export function ChangePasswordDialog({
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                {error}
-              </div>
-            )}
+            {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
             <div className="grid gap-2">
               <Label htmlFor="newPassword">New Password</Label>
@@ -122,12 +113,7 @@ export function ChangePasswordDialog({
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
@@ -137,5 +123,5 @@ export function ChangePasswordDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

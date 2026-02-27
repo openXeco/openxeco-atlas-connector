@@ -1,10 +1,10 @@
-import { eq } from 'drizzle-orm';
-import { db } from '../../config/database.js';
-import { taxonomies, syncLogs } from '../../db/schema.js';
-import { logger } from '../../utils/logger.js';
-import { atlasClient } from './client.js';
-import { jsonApiTransformer } from './transformer.js';
-import type { TaxonomyType } from './types.js';
+import { eq, and, ilike, sql } from 'drizzle-orm'
+import { db } from '../../config/database.js'
+import { taxonomies, syncLogs } from '../../db/schema.js'
+import { logger } from '../../utils/logger.js'
+import { atlasClient } from './client.js'
+import { jsonApiTransformer } from './transformer.js'
+import type { TaxonomyType } from './types.js'
 
 const TAXONOMY_TYPES: TaxonomyType[] = [
   'activities_of_interest',
@@ -27,27 +27,27 @@ const TAXONOMY_TYPES: TaxonomyType[] = [
   'technologies',
   'use_cases',
   'citations_source',
-];
+]
 
 export class TaxonomySyncService {
   async syncAllTaxonomies(): Promise<{
-    success: number;
-    failed: number;
-    total: number;
+    success: number
+    failed: number
+    total: number
   }> {
-    logger.info('Starting taxonomy sync from ATLAS');
+    logger.info('Starting taxonomy sync from ATLAS')
 
-    let success = 0;
-    let failed = 0;
+    let success = 0
+    let failed = 0
 
     for (const type of TAXONOMY_TYPES) {
       try {
-        await this.syncTaxonomyType(type);
-        success++;
-        logger.info(`✓ Synced taxonomy type: ${type}`);
+        await this.syncTaxonomyType(type)
+        success++
+        logger.info(`✓ Synced taxonomy type: ${type}`)
       } catch (error) {
-        failed++;
-        logger.error(`✗ Failed to sync taxonomy type: ${type}`, error as Error);
+        failed++
+        logger.error(`✗ Failed to sync taxonomy type: ${type}`, error as Error)
 
         await db.insert(syncLogs).values({
           entityType: 'taxonomy',
@@ -57,70 +57,58 @@ export class TaxonomySyncService {
             taxonomyType: type,
             error: error instanceof Error ? error.message : 'Unknown error',
           },
-        });
+        })
       }
     }
 
-    logger.info(`Taxonomy sync complete: ${success} success, ${failed} failed`);
+    logger.info(`Taxonomy sync complete: ${success} success, ${failed} failed`)
 
     return {
       success,
       failed,
       total: TAXONOMY_TYPES.length,
-    };
+    }
   }
 
   async syncTaxonomyType(type: TaxonomyType): Promise<number> {
-    logger.info(`Syncing taxonomy type: ${type}`);
+    logger.info(`Syncing taxonomy type: ${type}`)
 
-    const terms = await atlasClient.getTaxonomies(type);
+    const terms = await atlasClient.getTaxonomies(type)
 
     if (terms.length === 0) {
-      logger.warn(`No terms found for taxonomy type: ${type}`);
-      return 0;
+      logger.warn(`No terms found for taxonomy type: ${type}`)
+      return 0
     }
 
-    let synced = 0;
-
-    for (const term of terms) {
-      try {
-        const taxonomyData = jsonApiTransformer.toTaxonomyFromTerm(term);
-
-        const [existing] = await db
-          .select()
-          .from(taxonomies)
-          .where(eq(taxonomies.atlasId, term.atlasId))
-          .limit(1);
-
-        if (existing) {
-          await db
-            .update(taxonomies)
-            .set({
-              name: taxonomyData.name!,
-              taxonomyType: taxonomyData.taxonomyType!,
-              description: taxonomyData.description,
-              parentId: taxonomyData.parentId,
-              metadata: taxonomyData.metadata,
-              lastSyncedAt: new Date(),
-            })
-            .where(eq(taxonomies.id, existing.id));
-        } else {
-          await db.insert(taxonomies).values({
-            atlasId: taxonomyData.atlasId!,
-            taxonomyType: taxonomyData.taxonomyType!,
-            name: taxonomyData.name!,
-            description: taxonomyData.description,
-            parentId: taxonomyData.parentId,
-            metadata: taxonomyData.metadata,
-            lastSyncedAt: taxonomyData.lastSyncedAt,
-          });
-        }
-
-        synced++;
-      } catch (error) {
-        logger.error(`Failed to sync taxonomy term: ${term.name}`, error as Error);
+    const rows = terms.map((term) => {
+      const data = jsonApiTransformer.toTaxonomyFromTerm(term)
+      return {
+        atlasId: data.atlasId!,
+        taxonomyType: data.taxonomyType!,
+        name: data.name!,
+        description: data.description,
+        parentId: data.parentId,
+        metadata: data.metadata,
+        lastSyncedAt: new Date(),
       }
-    }
+    })
+
+    await db
+      .insert(taxonomies)
+      .values(rows)
+      .onConflictDoUpdate({
+        target: taxonomies.atlasId,
+        set: {
+          name: sql`excluded.name`,
+          taxonomyType: sql`excluded.taxonomy_type`,
+          description: sql`excluded.description`,
+          parentId: sql`excluded.parent_id`,
+          metadata: sql`excluded.metadata`,
+          lastSyncedAt: sql`excluded.last_synced_at`,
+        },
+      })
+
+    const synced = rows.length
 
     await db.insert(syncLogs).values({
       entityType: 'taxonomy',
@@ -130,45 +118,45 @@ export class TaxonomySyncService {
         taxonomyType: type,
         count: synced,
       },
-    });
+    })
 
-    logger.info(`Synced ${synced} terms for taxonomy type: ${type}`);
+    logger.info(`Synced ${synced} terms for taxonomy type: ${type}`)
 
-    return synced;
+    return synced
   }
 
   async getTaxonomiesByType(type: TaxonomyType) {
-    return db
-      .select()
-      .from(taxonomies)
-      .where(eq(taxonomies.taxonomyType, type))
-      .orderBy(taxonomies.name);
+    return db.select().from(taxonomies).where(eq(taxonomies.taxonomyType, type)).orderBy(taxonomies.name)
   }
 
   async getTaxonomyById(id: string) {
-    const [taxonomy] = await db.select().from(taxonomies).where(eq(taxonomies.id, id)).limit(1);
+    const [taxonomy] = await db.select().from(taxonomies).where(eq(taxonomies.id, id)).limit(1)
 
-    return taxonomy;
+    return taxonomy
   }
 
   async getTaxonomyByAtlasId(atlasId: string) {
-    const [taxonomy] = await db
-      .select()
-      .from(taxonomies)
-      .where(eq(taxonomies.atlasId, atlasId))
-      .limit(1);
+    const [taxonomy] = await db.select().from(taxonomies).where(eq(taxonomies.atlasId, atlasId)).limit(1)
 
-    return taxonomy;
+    return taxonomy
   }
 
-  async searchTaxonomies(_query: string, type?: TaxonomyType) {
+  async searchTaxonomies(query: string, type?: TaxonomyType) {
+    const conditions = []
+    if (query) {
+      conditions.push(ilike(taxonomies.name, `%${query}%`))
+    }
+    if (type) {
+      conditions.push(eq(taxonomies.taxonomyType, type))
+    }
+
     return db
       .select()
       .from(taxonomies)
-      .where(type ? eq(taxonomies.taxonomyType, type) : undefined)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(taxonomies.name)
-      .limit(50);
+      .limit(50)
   }
 }
 
-export const taxonomySyncService = new TaxonomySyncService();
+export const taxonomySyncService = new TaxonomySyncService()

@@ -4,44 +4,39 @@
 
 // API Response Types
 export interface OpenXecoFormQuestion {
-  id: number;
-  form_id: number;
-  value: string; // The question text
-  type: string; // TEXT, SELECT, CHECKBOX, TEXTAREA, etc.
-  reference: string | null; // e.g., "FORM-ECCC-001-Q101"
-  status: string;
-  position: number;
-  options: string | null; // JSON string of options for SELECT/MULTISELECT
+  id: number
+  form_id: number
+  value: string // The question text
+  type: string // TEXT, SELECT, CHECKBOX, TEXTAREA, etc.
+  reference: string | null // e.g., "FORM-ECCC-001-Q101"
+  status: string
+  position: number
+  options: string | null // JSON string of options for SELECT/MULTISELECT
 }
 
 export interface OpenXecoFormAnswer {
-  id: number;
-  form_question_id: number;
-  user_id: number;
-  value: string;
+  id: number
+  form_question_id: number
+  user_id: number
+  value: string
 }
 
 export interface OpenXecoLoginResponse {
   // Cookie-based auth - response contains session info
-  user_id?: number;
-  email?: string;
+  user_id?: number
+  email?: string
 }
 
 // Field Mapping Types
-export type FieldType =
-  | 'string'
-  | 'boolean'
-  | 'taxonomy_single'
-  | 'taxonomy_multi'
-  | 'conditional_string';
+export type FieldType = 'string' | 'boolean' | 'taxonomy_single' | 'taxonomy_multi' | 'conditional_string'
 
 export interface FieldMapping {
-  questionRef: string;
-  entityField: string;
-  fieldType: FieldType;
-  taxonomyType?: string;
-  conditionalOn?: string;
-  conditionalValue?: boolean;
+  questionRef: string
+  entityField: string
+  fieldType: FieldType
+  taxonomyType?: string
+  conditionalOn?: string
+  conditionalValue?: boolean
 }
 
 /**
@@ -148,13 +143,13 @@ export const QUESTION_TO_ENTITY_MAPPING: FieldMapping[] = [
     entityField: 'formCompletionConfirmed',
     fieldType: 'boolean',
   },
-];
+]
 
 // Lookup maps for fast access
 export const MAPPING_BY_QUESTION_REF = new Map<string, FieldMapping>(
   QUESTION_TO_ENTITY_MAPPING.map((m) => [m.questionRef, m])
-);
+)
 
 export const MAPPING_BY_ENTITY_FIELD = new Map<string, FieldMapping>(
   QUESTION_TO_ENTITY_MAPPING.map((m) => [m.entityField, m])
-);
+)

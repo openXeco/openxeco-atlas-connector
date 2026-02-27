@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { useMemo } from 'react';
+import { useMemo } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,9 +8,9 @@ import {
   flexRender,
   type ColumnDef,
   type SortingState,
-} from '@tanstack/react-table';
-import { ArrowUpDown, Eye, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+} from '@tanstack/react-table'
+import { ArrowUpDown, Eye, Pencil, Trash2, MoreHorizontal } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,63 +18,56 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import type { Entity } from '@/types/entity';
-import { useState } from 'react';
+} from '@/components/ui/dropdown-menu'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import type { Entity } from '@/types/entity'
+import { useState } from 'react'
 
 interface EntityDataTableProps {
-  data: Entity[];
-  loading?: boolean;
-  onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  data: Entity[]
+  loading?: boolean
+  onView: (id: string) => void
+  onEdit: (id: string) => void
+  onDelete: (id: string) => void
 }
 
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'published':
-      return 'bg-green-500/10 text-green-700 hover:bg-green-500/20';
+      return 'bg-green-500/10 text-green-700 hover:bg-green-500/20'
     case 'ready_for_publication':
-      return 'bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20';
+      return 'bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20'
     case 'to_be_rejected':
-      return 'bg-orange-500/10 text-orange-700 hover:bg-orange-500/20';
+      return 'bg-orange-500/10 text-orange-700 hover:bg-orange-500/20'
     case 'draft':
-      return 'bg-gray-500/10 text-gray-700 hover:bg-gray-500/20';
+      return 'bg-gray-500/10 text-gray-700 hover:bg-gray-500/20'
     case 'rejected':
-      return 'bg-red-500/10 text-red-700 hover:bg-red-500/20';
+      return 'bg-red-500/10 text-red-700 hover:bg-red-500/20'
     default:
-      return 'bg-gray-500/10 text-gray-700 hover:bg-gray-500/20';
+      return 'bg-gray-500/10 text-gray-700 hover:bg-gray-500/20'
   }
-};
+}
 
 const getSyncStatusColor = (syncStatus: string) => {
   switch (syncStatus) {
     case 'synced':
-      return 'bg-green-500/10 text-green-700 hover:bg-green-500/20';
+      return 'bg-green-500/10 text-green-700 hover:bg-green-500/20'
     case 'pending_push':
-      return 'bg-blue-500/10 text-blue-700 hover:bg-blue-500/20';
+      return 'bg-blue-500/10 text-blue-700 hover:bg-blue-500/20'
     case 'local':
-      return 'bg-gray-500/10 text-gray-700 hover:bg-gray-500/20';
+      return 'bg-gray-500/10 text-gray-700 hover:bg-gray-500/20'
     case 'failed':
-      return 'bg-red-500/10 text-red-700 hover:bg-red-500/20';
+      return 'bg-red-500/10 text-red-700 hover:bg-red-500/20'
     case 'conflict':
-      return 'bg-orange-500/10 text-orange-700 hover:bg-orange-500/20';
+      return 'bg-orange-500/10 text-orange-700 hover:bg-orange-500/20'
     default:
-      return 'bg-gray-500/10 text-gray-700 hover:bg-gray-500/20';
+      return 'bg-gray-500/10 text-gray-700 hover:bg-gray-500/20'
   }
-};
+}
 
 export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: EntityDataTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([])
 
   const columns = useMemo<ColumnDef<Entity>[]>(
     () => [
@@ -90,19 +83,17 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
               Name
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
-          );
+          )
         },
         cell: ({ row }) => {
           return (
             <div className="flex flex-col">
               <span className="font-medium">{row.original.name}</span>
               {row.original.description && (
-                <span className="text-sm text-muted-foreground line-clamp-1">
-                  {row.original.description}
-                </span>
+                <span className="text-sm text-muted-foreground line-clamp-1">{row.original.description}</span>
               )}
             </div>
-          );
+          )
         },
       },
       {
@@ -113,7 +104,7 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
             <Badge variant="secondary" className={getStatusColor(row.original.status)}>
               {row.original.status}
             </Badge>
-          );
+          )
         },
       },
       {
@@ -124,7 +115,7 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
             <Badge variant="secondary" className={getSyncStatusColor(row.original.syncStatus)}>
               {row.original.syncStatus.replace('_', ' ')}
             </Badge>
-          );
+          )
         },
       },
       {
@@ -139,10 +130,10 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
               Updated
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
-          );
+          )
         },
         cell: ({ row }) => {
-          return new Date(row.original.updatedAt).toLocaleDateString();
+          return new Date(row.original.updatedAt).toLocaleDateString()
         },
       },
       {
@@ -167,21 +158,18 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onDelete(row.original.id)}
-                  className="text-destructive"
-                >
+                <DropdownMenuItem onClick={() => onDelete(row.original.id)} className="text-destructive">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          );
+          )
         },
       },
     ],
     [onView, onEdit, onDelete]
-  );
+  )
 
   const table = useReactTable({
     data,
@@ -192,14 +180,14 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
     state: {
       sorting,
     },
-  });
+  })
 
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-muted-foreground">Loading entities...</div>
       </div>
-    );
+    )
   }
 
   if (data.length === 0) {
@@ -208,7 +196,7 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
         <div className="text-muted-foreground">No entities found</div>
         <p className="text-sm text-muted-foreground">Create your first entity to get started</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -220,11 +208,9 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
               {headerGroup.headers.map((header) => {
                 return (
                   <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
-                );
+                )
               })}
             </TableRow>
           ))}
@@ -233,14 +219,12 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
           {table.getRowModel().rows.map((row) => (
             <TableRow key={row.id}>
               {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
+                <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
               ))}
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </div>
-  );
+  )
 }

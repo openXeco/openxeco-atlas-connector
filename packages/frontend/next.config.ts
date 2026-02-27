@@ -1,6 +1,6 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from 'next'
 
-const backendUrl = process.env.BACKEND_INTERNAL_URL || 'http://backend:3001';
+const backendUrl = process.env.BACKEND_INTERNAL_URL || 'http://backend:3001'
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -11,6 +11,6 @@ const nextConfig: NextConfig = {
       destination: `${backendUrl}/api/:path*`,
     },
   ],
-};
+}
 
-export default nextConfig;
+export default nextConfig

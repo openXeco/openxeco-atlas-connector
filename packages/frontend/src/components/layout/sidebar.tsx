@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building2, Tags, RefreshCw, Settings } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { LayoutDashboard, Building2, Tags, RefreshCw, Settings } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -11,10 +11,10 @@ const navigation = [
   { name: 'Entities', href: '/entities', icon: Building2 },
   { name: 'Sync', href: '/sync', icon: RefreshCw },
   { name: 'Settings', href: '/settings', icon: Settings },
-];
+]
 
 export function Sidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname()
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r bg-card">
@@ -28,7 +28,7 @@ export function Sidebar() {
       </div>
       <nav className="flex-1 space-y-1 p-4">
         {navigation.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href
           return (
             <Link
               key={item.name}
@@ -43,9 +43,9 @@ export function Sidebar() {
               <item.icon className="h-5 w-5" />
               {item.name}
             </Link>
-          );
+          )
         })}
       </nav>
     </aside>
-  );
+  )
 }

@@ -1,61 +1,61 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowUpCircle, AlertTriangle, CheckCircle } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { apiClient } from '@/lib/api';
-import type { Entity } from '@/types/entity';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowUpCircle, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { apiClient } from '@/lib/api'
+import type { Entity } from '@/types/entity'
 
 interface SyncStatusWidgetProps {
-  onRefresh?: () => void;
+  onRefresh?: () => void
 }
 
 export function SyncStatusWidget({ onRefresh: _onRefresh }: SyncStatusWidgetProps) {
-  const router = useRouter();
-  const [entities, setEntities] = useState<Entity[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter()
+  const [entities, setEntities] = useState<Entity[]>([])
+  const [loading, setLoading] = useState(true)
 
   const loadEntities = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.get<{ data: Entity[] }>('/api/entities?limit=100');
-      setEntities(response.data);
+      const response = await apiClient.get<{ data: Entity[] }>('/api/entities?limit=100')
+      setEntities(response.data)
     } catch (err) {
-      console.error('Failed to load entities:', err);
+      console.error('Failed to load entities:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadEntities();
-  }, []);
+    loadEntities()
+  }, [])
 
-  const localEntities = entities.filter((e) => e.syncStatus === 'local');
-  const conflictEntities = entities.filter((e) => e.syncStatus === 'conflict');
-  const failedEntities = entities.filter((e) => e.syncStatus === 'failed');
+  const localEntities = entities.filter((e) => e.syncStatus === 'local')
+  const conflictEntities = entities.filter((e) => e.syncStatus === 'conflict')
+  const failedEntities = entities.filter((e) => e.syncStatus === 'failed')
 
   const handleViewEntity = (id: string) => {
-    router.push(`/entities/${id}`);
-  };
+    router.push(`/entities/${id}`)
+  }
 
   const getSyncStatusColor = (syncStatus: string) => {
     switch (syncStatus) {
       case 'synced':
-        return 'bg-green-500/10 text-green-700';
+        return 'bg-green-500/10 text-green-700'
       case 'local':
-        return 'bg-gray-500/10 text-gray-700';
+        return 'bg-gray-500/10 text-gray-700'
       case 'conflict':
-        return 'bg-orange-500/10 text-orange-700';
+        return 'bg-orange-500/10 text-orange-700'
       case 'failed':
-        return 'bg-red-500/10 text-red-700';
+        return 'bg-red-500/10 text-red-700'
       default:
-        return 'bg-gray-500/10 text-gray-700';
+        return 'bg-gray-500/10 text-gray-700'
     }
-  };
+  }
 
   if (loading) {
     return (
@@ -64,7 +64,7 @@ export function SyncStatusWidget({ onRefresh: _onRefresh }: SyncStatusWidgetProp
           <div className="text-muted-foreground">Loading sync status...</div>
         </CardContent>
       </Card>
-    );
+    )
   }
 
   return (
@@ -124,9 +124,7 @@ export function SyncStatusWidget({ onRefresh: _onRefresh }: SyncStatusWidgetProp
                   <AlertTriangle className="h-5 w-5 text-orange-600" />
                   Conflicts ({conflictEntities.length})
                 </CardTitle>
-                <CardDescription>
-                  These entities have conflicts that need to be resolved
-                </CardDescription>
+                <CardDescription>These entities have conflicts that need to be resolved</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -182,9 +180,7 @@ export function SyncStatusWidget({ onRefresh: _onRefresh }: SyncStatusWidgetProp
                     <div className="font-medium">{entity.name}</div>
                     <div className="text-sm text-muted-foreground">
                       Last sync attempt{' '}
-                      {entity.lastSyncedAt
-                        ? new Date(entity.lastSyncedAt).toLocaleDateString()
-                        : 'Never'}
+                      {entity.lastSyncedAt ? new Date(entity.lastSyncedAt).toLocaleDateString() : 'Never'}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -202,19 +198,15 @@ export function SyncStatusWidget({ onRefresh: _onRefresh }: SyncStatusWidgetProp
         </Card>
       )}
 
-      {localEntities.length === 0 &&
-        conflictEntities.length === 0 &&
-        failedEntities.length === 0 && (
-          <Card>
-            <CardContent className="flex h-64 flex-col items-center justify-center gap-2">
-              <CheckCircle className="h-12 w-12 text-green-600" />
-              <div className="text-lg font-medium">All entities are synced!</div>
-              <p className="text-sm text-muted-foreground">
-                There are no pending syncs, conflicts, or failures
-              </p>
-            </CardContent>
-          </Card>
-        )}
+      {localEntities.length === 0 && conflictEntities.length === 0 && failedEntities.length === 0 && (
+        <Card>
+          <CardContent className="flex h-64 flex-col items-center justify-center gap-2">
+            <CheckCircle className="h-12 w-12 text-green-600" />
+            <div className="text-lg font-medium">All entities are synced!</div>
+            <p className="text-sm text-muted-foreground">There are no pending syncs, conflicts, or failures</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
-  );
+  )
 }
