@@ -234,7 +234,7 @@ export interface ClusterInput {
 
 export interface AtlasConfig {
   baseUrl: string
-  apiKey?: string
+  apiKey: string
   username?: string
   password?: string
   timeout?: number
