@@ -36,27 +36,16 @@ export class AtlasClient {
     }
   }
 
-  async authenticate(): Promise<void> {
+  async prepareAuthentication(): Promise<void> {
     if (this.authToken && this.tokenExpiry && this.tokenExpiry > new Date()) {
       return
     }
 
-    try {
-      if (this.config.username && this.config.password) {
-        const credentials = `${this.config.username}:${this.config.password}`
-        this.authToken = Buffer.from(credentials).toString('base64')
-        this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
-        logger.info('ATLAS authenticated with Basic Auth')
-      } else if (this.config.apiKey) {
-        this.authToken = this.config.apiKey
-        this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
-        logger.info('ATLAS authenticated with API key')
-      } else {
-        logger.info('Using ATLAS public access (no authentication)')
-      }
-    } catch (error) {
-      logger.error('ATLAS authentication failed:', error as Error)
-      throw new Error('Failed to authenticate with ATLAS API')
+    if (this.config.username && this.config.password) {
+      const credentials = `${this.config.username}:${this.config.password}`
+      this.authToken = Buffer.from(credentials).toString('base64')
+      this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      logger.info('ATLAS authenticated with Basic Auth')
     }
   }
 
@@ -68,11 +57,13 @@ export class AtlasClient {
       params?: QueryParams
     }
   ): Promise<JsonApiDocument<T>> {
-    await this.authenticate()
+    await this.prepareAuthentication()
 
     const baseUrl = this.config.baseUrl.endsWith('/') ? this.config.baseUrl : `${this.config.baseUrl}/`
     const relativePath = path.startsWith('/') ? path.slice(1) : path
     const url = new URL(relativePath, baseUrl)
+
+    url.searchParams.set('api-key', this.config.apiKey)
 
     if (options?.params) {
       if (options.params.page) {
