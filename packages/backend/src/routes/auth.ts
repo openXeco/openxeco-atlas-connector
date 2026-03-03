@@ -71,7 +71,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.post('/refresh', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (request, reply) => {
     try {
-      const refreshToken = request.cookies.refreshToken || (request.body as { refreshToken?: string })?.refreshToken
+      const refreshToken = request.cookies.refreshToken
 
       if (!refreshToken) {
         return reply.status(401).send({
