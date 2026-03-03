@@ -23,7 +23,6 @@ const taxonomyTypeSchema = z.enum([
   'languages',
   'legal_status',
   'nationality',
-  'organization_type',
   'position_category',
   'sectors',
   'technologies',
@@ -118,7 +117,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.get('/id/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
       const taxonomy = await taxonomySyncService.getTaxonomyById(id)
 
@@ -131,6 +130,12 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ data: taxonomy })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: 'Invalid taxonomy ID format',
+        })
+      }
       logger.error('Failed to fetch taxonomy', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',

@@ -100,10 +100,6 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
     if (rels.field_cluster_type?.data && !Array.isArray(rels.field_cluster_type.data)) {
       cluster.clusterTypeId = rels.field_cluster_type.data.id
     }
-    if (rels.field_organization_type?.data && !Array.isArray(rels.field_organization_type.data)) {
-      cluster.organizationTypeId = rels.field_organization_type.data.id
-    }
-
     // Multi-value relationships (JRC taxonomy)
     const extractIds = (rel: JsonApiRelationship | undefined): string[] | undefined => {
       if (!rel?.data) return undefined
@@ -125,29 +121,11 @@ export class JsonApiTransformer {
   toJsonApiCluster(entity: Entity, taxonomies?: Taxonomy[]): JsonApiDocument {
     const relationships: Record<string, JsonApiRelationship> = {}
 
-    if (entity.countryId) {
-      relationships.field_country = {
-        data: {
-          type: 'taxonomy_term--country',
-          id: entity.countryId,
-        },
-      }
-    }
-
     if (entity.clusterTypeId) {
       relationships.field_cluster_type = {
         data: {
           type: 'taxonomy_term--cluster_type',
           id: entity.clusterTypeId,
-        },
-      }
-    }
-
-    if (entity.organizationTypeId) {
-      relationships.field_organization_type = {
-        data: {
-          type: 'taxonomy_term--organization_type',
-          id: entity.organizationTypeId,
         },
       }
     }
@@ -253,7 +231,6 @@ export class JsonApiTransformer {
       // Taxonomy references
       countryId: cluster.countryId,
       clusterTypeId: cluster.clusterTypeId,
-      organizationTypeId: cluster.organizationTypeId,
 
       // Workflow
       status: cluster.status || 'draft',
@@ -266,7 +243,7 @@ export class JsonApiTransformer {
     }
   }
 
-  toClusterInputFromEntity(entity: Entity, countryId?: string, clusterTypeId?: string, organizationTypeId?: string): ClusterInput {
+  toClusterInputFromEntity(entity: Entity, clusterTypeId?: string): ClusterInput {
     return {
       // Basic information
       name: entity.name,
@@ -316,9 +293,7 @@ export class JsonApiTransformer {
       goalsToContribute: entity.goalsToContribute || undefined,
 
       // Taxonomy references
-      countryId,
       clusterTypeId,
-      organizationTypeId,
 
       // Workflow
       moderationState: entity.moderationState || undefined,

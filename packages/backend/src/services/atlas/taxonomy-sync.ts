@@ -21,7 +21,6 @@ const TAXONOMY_TYPES: TaxonomyType[] = [
   'languages',
   'legal_status',
   'nationality',
-  'organization_type',
   'position_category',
   'sectors',
   'technologies',
@@ -29,12 +28,12 @@ const TAXONOMY_TYPES: TaxonomyType[] = [
   'citations_source',
 ]
 
-// @TODO
-// Ignore organization_type and use cluster_type with the same purpose
-// Find a way to manage children and parents with cluster_thematic_area. Proposal, use a configuration file (hardcoded with UUIDs) to say who is parent and who is child.
-// Check why there multiple calls with different pages and it triggers the throttling on ATLAS
+// NOTE: cluster_thematic_area terms are flat on ATLAS (no parent relationships returned by the API).
+// If hierarchy is ever needed, it would require a local config file mapping parent/child UUIDs.
 
 export class TaxonomySyncService {
+  private static readonly TYPE_DELAY_MS = 2000
+
   async syncAllTaxonomies(): Promise<{
     success: number
     failed: number
@@ -45,7 +44,8 @@ export class TaxonomySyncService {
     let success = 0
     let failed = 0
 
-    for (const type of TAXONOMY_TYPES) {
+    for (let i = 0; i < TAXONOMY_TYPES.length; i++) {
+      const type = TAXONOMY_TYPES[i]
       try {
         await this.syncTaxonomyType(type)
         success++
@@ -63,6 +63,11 @@ export class TaxonomySyncService {
             error: error instanceof Error ? error.message : 'Unknown error',
           },
         })
+      }
+
+      // Delay between taxonomy types to avoid ATLAS API rate limiting
+      if (i < TAXONOMY_TYPES.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, TaxonomySyncService.TYPE_DELAY_MS))
       }
     }
 

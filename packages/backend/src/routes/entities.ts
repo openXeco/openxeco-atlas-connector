@@ -195,9 +195,8 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.get('/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
-      // @TODO check those relations to fix the frontend with those
       const entity = await db.query.entities.findFirst({
         where: { id },
         with: {
@@ -212,7 +211,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
 
-      console.log(entity)
       if (!entity) {
         return reply.status(404).send({
           error: 'Not Found',
@@ -222,6 +220,12 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ data: entity })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: 'Invalid entity ID format',
+        })
+      }
       logger.error('Failed to fetch entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
@@ -410,7 +414,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.patch('/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
       const body = updateEntitySchema.parse(request.body)
 
       const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
@@ -666,7 +670,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.delete('/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
       const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
@@ -683,6 +687,12 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Entity deleted successfully',
       })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: 'Invalid entity ID format',
+        })
+      }
       logger.error('Failed to delete entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
@@ -692,80 +702,40 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   fastify.post('/:id/sync', { preHandler: authenticate }, async (request, reply) => {
-    const { id } = request.params as { id: string }
+    try {
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
-    const result = await entitySyncService.pushEntity(id)
+      const result = await entitySyncService.pushEntity(id)
 
-    if (result.success) {
-      return reply.send({
-        data: result.atlasId,
-        message: 'Entity synced to ATLAS successfully',
-      })
-    } else {
+      if (result.success) {
+        return reply.send({
+          data: result.atlasId,
+          message: 'Entity synced to ATLAS successfully',
+        })
+      } else {
+        return reply.status(result.error === 'CONFLICT' ? 409 : 500).send({
+          error: result.error || 'Sync Failed',
+          message: result.message,
+        })
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
+        })
+      }
+      logger.error('Failed to sync entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
-        error: 'Sync Failed',
-        message: `${result.message} - ${result.error}`,
+        error: 'Internal Server Error',
+        message: 'Failed to sync entity to ATLAS',
       })
     }
-    // try {
-    //   const { id } = request.params as { id: string }
-    //
-    //   const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
-    //
-    //   if (!entity) {
-    //     return reply.status(404).send({
-    //       error: 'Not Found',
-    //       message: 'Entity not found',
-    //     })
-    //   }
-    //
-    //   const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity)
-    //
-    //   let cluster
-    //   if (entity.atlasId) {
-    //     cluster = await atlasClient.updateCluster(entity.atlasId, clusterInput)
-    //   } else {
-    //     cluster = await atlasClient.createCluster(clusterInput)
-    //   }
-    //
-    //   const [updated] = await db
-    //     .update(entities)
-    //     .set({
-    //       atlasId: cluster.atlasId,
-    //       syncStatus: 'synced',
-    //       lastSyncedAt: new Date(),
-    //     })
-    //     .where(eq(entities.id, id))
-    //     .returning()
-    //
-    //   return reply.send({
-    //     data: updated,
-    //     message: 'Entity synced to ATLAS successfully',
-    //   })
-    // } catch (error) {
-    //   const { id } = request.params as { id: string }
-    //   logger.error(`Failed to sync entity ${id} to ATLAS`, error instanceof Error ? error : { message: String(error) })
-    //
-    //   await db
-    //     .update(entities)
-    //     .set({
-    //       syncStatus: 'failed',
-    //     })
-    //     .where(eq(entities.id, id))
-    //
-    //   return reply.status(500).send({
-    //     error: 'Sync Failed',
-    //     message:
-    //       error instanceof Error
-    //         ? `Failed to sync entity to ATLAS: ${error.message}`
-    //         : 'Failed to sync entity to ATLAS',
-    //   })
-    // }
   })
 
   fastify.get('/:id/versions', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
       const versions = await db
         .select()
@@ -780,6 +750,12 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: 'Invalid entity ID format',
+        })
+      }
       logger.error('Failed to fetch entity versions', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',

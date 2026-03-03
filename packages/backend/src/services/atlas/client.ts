@@ -99,7 +99,9 @@ export class AtlasClient {
     const retryableStatuses = [408, 429, 502, 503, 504]
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      logger.info(`ATLAS API request: ${method} ${url.toString()} (attempt ${attempt})`)
+      const logUrl = new URL(url.toString())
+      logUrl.searchParams.delete('api-key')
+      logger.info(`ATLAS API request: ${method} ${logUrl.toString()} (attempt ${attempt})`)
 
       try {
         const fetchOptions: RequestInit = {
@@ -133,7 +135,7 @@ export class AtlasClient {
             status: response.status,
             statusText: response.statusText,
             errors: apiErrors,
-            url: url.toString(),
+            url: logUrl.toString(),
           })
           throw new Error(`ATLAS API error ${response.status}: ${errorDetail}`)
         }
@@ -157,7 +159,7 @@ export class AtlasClient {
 
         if (error instanceof TypeError) {
           const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
-          logger.error('ATLAS API network error (final):', { message: error.message, cause, url: url.toString() })
+          logger.error('ATLAS API network error (final):', { message: error.message, cause, url: logUrl.toString() })
           throw new Error(`ATLAS API network error: ${cause}`)
         }
 
@@ -180,6 +182,7 @@ export class AtlasClient {
     const allTerms: TaxonomyTerm[] = []
     let page = 1
     const pageSize = 50
+    const pageDelayMs = 1500
 
     while (true) {
       const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}`, {
@@ -207,6 +210,9 @@ export class AtlasClient {
       // Stop if we got fewer results than page size (last page) or no next link
       if (resources.length < pageSize || !response.links?.next) break
       page++
+
+      // Delay between pages to avoid ATLAS API rate limiting
+      await new Promise((resolve) => setTimeout(resolve, pageDelayMs))
     }
 
     return allTerms
@@ -432,24 +438,10 @@ export class AtlasClient {
   private buildRelationships(data: Partial<ClusterInput>): Record<string, unknown> {
     const relationships: Record<string, unknown> = {}
 
-    // Country reference
-    if (data.countryId) {
-      relationships.field_country = {
-        data: { type: 'taxonomy_term--country', id: data.countryId },
-      }
-    }
-
     // Organization type (cluster_type) *
     if (data.clusterTypeId) {
       relationships.field_cluster_type = {
         data: { type: 'taxonomy_term--cluster_type', id: data.clusterTypeId },
-      }
-    }
-
-    // Organization type taxonomy
-    if (data.organizationTypeId) {
-      relationships.field_organization_type = {
-        data: { type: 'taxonomy_term--organization_type', id: data.organizationTypeId },
       }
     }
 

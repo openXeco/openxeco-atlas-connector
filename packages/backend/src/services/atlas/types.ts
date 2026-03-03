@@ -73,7 +73,6 @@ export type TaxonomyType =
   | 'languages'
   | 'legal_status'
   | 'nationality'
-  | 'organization_type'
   | 'position_category'
   | 'sectors'
   | 'technologies'
@@ -224,9 +223,7 @@ export interface ClusterInput {
   goalsToContribute?: string
 
   // Taxonomy references
-  countryId?: string
   clusterTypeId?: string
-  organizationTypeId?: string
 
   // JRC Taxonomy IDs
   thematicAreaIds?: string[]
