@@ -243,7 +243,17 @@ export class JsonApiTransformer {
     }
   }
 
-  toClusterInputFromEntity(entity: Entity, clusterTypeId?: string): ClusterInput {
+  toClusterInputFromEntity(
+    entity: Entity,
+    clusterTypeId?: string,
+    taxonomyIds?: {
+      thematicAreaIds?: string[]
+      sectorIds?: string[]
+      technologyIds?: string[]
+      useCaseIds?: string[]
+      fieldsOfActivityIds?: string[]
+    }
+  ): ClusterInput {
     return {
       // Basic information
       name: entity.name,
@@ -294,6 +304,11 @@ export class JsonApiTransformer {
 
       // Taxonomy references
       clusterTypeId,
+      thematicAreaIds: taxonomyIds?.thematicAreaIds,
+      sectorIds: taxonomyIds?.sectorIds,
+      technologyIds: taxonomyIds?.technologyIds,
+      useCaseIds: taxonomyIds?.useCaseIds,
+      fieldsOfActivityIds: taxonomyIds?.fieldsOfActivityIds,
 
       // Workflow
       moderationState: entity.moderationState || undefined,

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { RefreshCw, CheckCircle2, AlertCircle, Clock, ArrowUpCircle } from 'lucide-react'
+import { useAuth } from '@/contexts/auth-context'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { ProtectedRoute } from '@/components/auth/protected-route'
@@ -22,6 +23,7 @@ interface SyncStatus {
 }
 
 export default function SyncPage() {
+  const { user, loading: authLoading } = useAuth()
   const [status, setStatus] = useState<SyncStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -41,8 +43,10 @@ export default function SyncPage() {
   }
 
   useEffect(() => {
-    loadStatus()
-  }, [])
+    if (!authLoading && user) {
+      loadStatus()
+    }
+  }, [authLoading, user])
 
   const handleRefresh = () => {
     loadStatus()

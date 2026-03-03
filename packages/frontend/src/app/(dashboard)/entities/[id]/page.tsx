@@ -15,6 +15,7 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react'
+import { useAuth } from '@/contexts/auth-context'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { ProtectedRoute } from '@/components/auth/protected-route'
@@ -29,6 +30,7 @@ import type { Taxonomy } from '@/types/taxonomy'
 export default function EntityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [entity, setEntity] = useState<Entity | null>(null)
   const [versions, setVersions] = useState<EntityVersion[]>([])
   const [loading, setLoading] = useState(true)
@@ -80,9 +82,11 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
   }
 
   useEffect(() => {
-    loadEntity()
-    loadVersions()
-  }, [resolvedParams.id])
+    if (!authLoading && user) {
+      loadEntity()
+      loadVersions()
+    }
+  }, [resolvedParams.id, authLoading, user])
 
   const handleEdit = () => {
     router.push(`/entities/${resolvedParams.id}/edit`)

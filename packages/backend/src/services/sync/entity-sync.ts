@@ -1,6 +1,16 @@
-import { eq, desc, lt, and } from 'drizzle-orm'
+import { eq, desc, lt, and, inArray } from 'drizzle-orm'
 import { db } from '@/config/database.js'
-import { entities, entityVersions, syncLogs, taxonomies } from '@/db/schema.js'
+import {
+  entities,
+  entityVersions,
+  syncLogs,
+  taxonomies,
+  entityThematicAreas,
+  entitySectors,
+  entityTechnologies,
+  entityUseCases,
+  entityFieldsOfActivity,
+} from '@/db/schema.js'
 import { logger } from '@/utils/logger.js'
 import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
@@ -61,7 +71,48 @@ export class EntitySyncService {
 
       await db.update(entities).set({ syncStatus: 'pending_push' }).where(eq(entities.id, entityId))
 
-      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity, clusterTypeId)
+      // Load JRC taxonomy IDs from junction tables and resolve to ATLAS UUIDs
+      const [thematicRows, sectorRows, technologyRows, useCaseRows, fieldsOfActivityRows] = await Promise.all([
+        db.select({ taxonomyId: entityThematicAreas.taxonomyId }).from(entityThematicAreas).where(eq(entityThematicAreas.entityId, entityId)),
+        db.select({ taxonomyId: entitySectors.taxonomyId }).from(entitySectors).where(eq(entitySectors.entityId, entityId)),
+        db.select({ taxonomyId: entityTechnologies.taxonomyId }).from(entityTechnologies).where(eq(entityTechnologies.entityId, entityId)),
+        db.select({ taxonomyId: entityUseCases.taxonomyId }).from(entityUseCases).where(eq(entityUseCases.entityId, entityId)),
+        db.select({ taxonomyId: entityFieldsOfActivity.taxonomyId }).from(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, entityId)),
+      ])
+
+      // Collect all local taxonomy IDs that need atlas ID resolution
+      const allLocalIds = [
+        ...thematicRows.map((r) => r.taxonomyId),
+        ...sectorRows.map((r) => r.taxonomyId),
+        ...technologyRows.map((r) => r.taxonomyId),
+        ...useCaseRows.map((r) => r.taxonomyId),
+        ...fieldsOfActivityRows.map((r) => r.taxonomyId),
+      ]
+
+      // Resolve local taxonomy IDs to ATLAS UUIDs in a single query
+      const localToAtlas = new Map<string, string>()
+      if (allLocalIds.length > 0) {
+        const taxRecords = await db
+          .select({ id: taxonomies.id, atlasId: taxonomies.atlasId })
+          .from(taxonomies)
+          .where(inArray(taxonomies.id, allLocalIds))
+        for (const t of taxRecords) {
+          localToAtlas.set(t.id, t.atlasId || t.id)
+        }
+      }
+
+      const resolveIds = (rows: { taxonomyId: string }[]): string[] | undefined => {
+        if (rows.length === 0) return undefined
+        return rows.map((r) => localToAtlas.get(r.taxonomyId) || r.taxonomyId)
+      }
+
+      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity, clusterTypeId, {
+        thematicAreaIds: resolveIds(thematicRows),
+        sectorIds: resolveIds(sectorRows),
+        technologyIds: resolveIds(technologyRows),
+        useCaseIds: resolveIds(useCaseRows),
+        fieldsOfActivityIds: resolveIds(fieldsOfActivityRows),
+      })
 
       let cluster
       if (entity.atlasId) {
@@ -352,7 +403,6 @@ export class EntitySyncService {
         'goalsToContribute',
         'countryId',
         'clusterTypeId',
-        'organizationTypeId',
         'moderationState',
       ]
 
@@ -422,7 +472,6 @@ export class EntitySyncService {
         'goalsToContribute',
         'countryId',
         'clusterTypeId',
-        'organizationTypeId',
         'moderationState',
       ]
 

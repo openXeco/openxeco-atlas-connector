@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, RefreshCw, Search } from 'lucide-react'
+import { useAuth } from '@/contexts/auth-context'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { ProtectedRoute } from '@/components/auth/protected-route'
@@ -15,6 +16,7 @@ import type { Entity, EntityListParams } from '@/types/entity'
 
 export default function EntitiesPage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [entities, setEntities] = useState<Entity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -45,8 +47,10 @@ export default function EntitiesPage() {
   }
 
   useEffect(() => {
-    loadEntities()
-  }, [filters])
+    if (!authLoading && user) {
+      loadEntities()
+    }
+  }, [filters, authLoading, user])
 
   const handleCreateNew = () => {
     router.push('/entities/new')

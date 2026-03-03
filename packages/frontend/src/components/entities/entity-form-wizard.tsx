@@ -21,7 +21,7 @@ import type { Taxonomy } from '@/types/taxonomy'
 const entitySchema = z.object({
   // Step 1: Organisation
   nameNational: z.string().min(1, 'National name is required').max(400),
-  name: z.string().min(1, 'Name is required').max(500),
+  name: z.string().min(1, 'Name is required').max(400),
   entityDepartment: z.string().max(400).optional(),
   countryId: z.string().uuid('Select a country'),
   countryCode: z.string().length(2, 'Use ISO-3166 alpha-2 code').optional(),
@@ -34,7 +34,7 @@ const entitySchema = z.object({
   website: z.string().url('Invalid URL'),
   phone: z.string().max(50).optional(),
   email: z.string().email('Invalid email'),
-  clusterTypeId: z.string().uuid().optional(),
+  clusterTypeId: z.string().uuid('Select a type of organisation'),
   hasSubsidiaries: z.boolean().optional(),
   subsidiariesDetails: z.string().optional(),
   hasMajorityShares: z.boolean().optional(),
@@ -268,11 +268,12 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     value={formData.countryId}
                     onValueChange={(value: string) => {
                       setValue('countryId', value)
-                      // Extract 2-letter country code from country name for countryCode field
                       const selectedCountry = countries.find((c) => c.id === value)
                       if (selectedCountry) {
-                        // Use first 2 letters of name as fallback (will need proper mapping in production)
-                        setValue('countryCode', selectedCountry.name.substring(0, 2).toUpperCase())
+                        const meta = selectedCountry.metadata as { field_iso_code?: string } | null
+                        if (meta?.field_iso_code) {
+                          setValue('countryCode', meta.field_iso_code)
+                        }
                       }
                     }}
                   >
@@ -367,7 +368,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="FORM-ECCC-001-Q110">Type of organisation (Article 8(2))</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q110">Type of organisation (Article 8(2)) *</Label>
                   <Select
                     value={formData.clusterTypeId}
                     onValueChange={(value: string) => setValue('clusterTypeId', value)}
@@ -383,6 +384,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.clusterTypeId && <p className="text-sm text-destructive">{errors.clusterTypeId.message}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -706,6 +708,14 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     onCheckedChange={(checked) => setValue('dataProtectionConsent', checked)}
                     required
                     error={errors.dataProtectionConsent?.message}
+                  />
+
+                  <ConsentCheckbox
+                    id="FORM-ECCC-001-Q114b"
+                    label="I agree that the data provided may be shared with the ECCC and other NCCs"
+                    checked={formData.dataShareConsent || false}
+                    onCheckedChange={(checked) => setValue('dataShareConsent', checked)}
+                    error={errors.dataShareConsent?.message}
                   />
 
                   <ConsentCheckbox
