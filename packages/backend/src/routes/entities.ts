@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { eq, desc, and, count as countFn } from 'drizzle-orm'
-import { db } from '../config/database.js'
+import { db } from '@/config/database.js'
 import {
   entities,
   entityVersions,
@@ -14,8 +14,7 @@ import {
 } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { logger } from '../utils/logger.js'
-import { atlasClient } from '../services/atlas/client.js'
-import { jsonApiTransformer } from '../services/atlas/transformer.js'
+import { entitySyncService } from '@/services/sync/entity-sync.js'
 
 // Base validation schema for ATLAS-compliant entity registration
 const baseEntitySchema = z.object({
@@ -98,11 +97,7 @@ const baseEntitySchema = z.object({
 const createEntitySchema = baseEntitySchema
   .refine(
     (data) => {
-      // If isHeadquarter is false, headquarterInfo is required
-      if (data.isHeadquarter === false && !data.headquarterInfo) {
-        return false
-      }
-      return true
+      return !(data.isHeadquarter === false && !data.headquarterInfo)
     },
     {
       message: 'Headquarter information is required when organization is not the main headquarter',
@@ -111,11 +106,7 @@ const createEntitySchema = baseEntitySchema
   )
   .refine(
     (data) => {
-      // If hasSubsidiaries is true, subsidiariesDetails is required
-      if (data.hasSubsidiaries === true && !data.subsidiariesDetails) {
-        return false
-      }
-      return true
+      return !(data.hasSubsidiaries === true && !data.subsidiariesDetails)
     },
     {
       message: 'Subsidiaries details are required when organization has subsidiaries',
@@ -124,11 +115,7 @@ const createEntitySchema = baseEntitySchema
   )
   .refine(
     (data) => {
-      // If hasMajorityShares is true, majoritySharesDetails is required
-      if (data.hasMajorityShares === true && !data.majoritySharesDetails) {
-        return false
-      }
-      return true
+      return !(data.hasMajorityShares === true && !data.majoritySharesDetails)
     },
     {
       message: 'Majority shares details are required when organization holds majority shares',
@@ -137,11 +124,7 @@ const createEntitySchema = baseEntitySchema
   )
   .refine(
     (data) => {
-      // dataProtectionConsent must be true for publication
-      if (data.moderationState === 'ready_for_publication' && !data.dataProtectionConsent) {
-        return false
-      }
-      return true
+      return !(data.moderationState === 'ready_for_publication' && !data.dataProtectionConsent)
     },
     {
       message: 'Data protection consent is required for publication',
@@ -150,11 +133,7 @@ const createEntitySchema = baseEntitySchema
   )
   .refine(
     (data) => {
-      // formCompletionConfirmed must be true for publication
-      if (data.moderationState === 'ready_for_publication' && !data.formCompletionConfirmed) {
-        return false
-      }
-      return true
+      return !(data.moderationState === 'ready_for_publication' && !data.formCompletionConfirmed)
     },
     {
       message: 'Form completion confirmation is required for publication',
@@ -180,9 +159,11 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       const offset = (page - 1) * limit
 
       const conditions = []
+
       if (status) {
         conditions.push(eq(entities.status, status))
       }
+
       if (syncStatus) {
         conditions.push(eq(entities.syncStatus, syncStatus))
       }
@@ -216,8 +197,22 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const { id } = request.params as { id: string }
 
-      const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
+      // @TODO check those relations to fix the frontend with those
+      const entity = await db.query.entities.findFirst({
+        where: { id },
+        with: {
+          country: true,
+          clusterType: true,
+          thematicAreas: true,
+          sectors: true,
+          technologies: true,
+          useCases: true,
+          subDomains: true,
+          fieldsOfActivity: true,
+        },
+      })
 
+      console.log(entity)
       if (!entity) {
         return reply.status(404).send({
           error: 'Not Found',
@@ -387,7 +382,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             useCaseIds: body.useCaseIds || [],
             fieldsOfActivityIds: body.fieldsOfActivityIds || [],
             subDomainIds: body.subDomainIds || {},
-          } as any,
+          },
           changedBy: request.currentUser?.userId,
         })
 
@@ -643,7 +638,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             technologyIds: currentTech.map((r) => r.taxonomyId),
             useCaseIds: currentUseCases.map((r) => r.taxonomyId),
             fieldsOfActivityIds: currentFields.map((r) => r.taxonomyId),
-          } as any,
+          },
           changedBy: request.currentUser?.userId,
         })
 
@@ -697,57 +692,75 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   fastify.post('/:id/sync', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string }
+    const { id } = request.params as { id: string }
 
-      const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
+    const result = await entitySyncService.pushEntity(id)
 
-      if (!entity) {
-        return reply.status(404).send({
-          error: 'Not Found',
-          message: 'Entity not found',
-        })
-      }
-
-      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity)
-
-      let cluster
-      if (entity.atlasId) {
-        cluster = await atlasClient.updateCluster(entity.atlasId, clusterInput)
-      } else {
-        cluster = await atlasClient.createCluster(clusterInput)
-      }
-
-      const [updated] = await db
-        .update(entities)
-        .set({
-          atlasId: cluster.atlasId,
-          syncStatus: 'synced',
-          lastSyncedAt: new Date(),
-        })
-        .where(eq(entities.id, id))
-        .returning()
-
+    if (result.success) {
       return reply.send({
-        data: updated,
+        data: result.atlasId,
         message: 'Entity synced to ATLAS successfully',
       })
-    } catch (error) {
-      const { id } = request.params as { id: string }
-      logger.error(`Failed to sync entity ${id} to ATLAS`, error instanceof Error ? error : { message: String(error) })
-
-      await db
-        .update(entities)
-        .set({
-          syncStatus: 'failed',
-        })
-        .where(eq(entities.id, id))
-
+    } else {
       return reply.status(500).send({
         error: 'Sync Failed',
-        message: error instanceof Error ? `Failed to sync entity to ATLAS: ${error.message}` : 'Failed to sync entity to ATLAS',
+        message: `${result.message} - ${result.error}`,
       })
     }
+    // try {
+    //   const { id } = request.params as { id: string }
+    //
+    //   const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
+    //
+    //   if (!entity) {
+    //     return reply.status(404).send({
+    //       error: 'Not Found',
+    //       message: 'Entity not found',
+    //     })
+    //   }
+    //
+    //   const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity)
+    //
+    //   let cluster
+    //   if (entity.atlasId) {
+    //     cluster = await atlasClient.updateCluster(entity.atlasId, clusterInput)
+    //   } else {
+    //     cluster = await atlasClient.createCluster(clusterInput)
+    //   }
+    //
+    //   const [updated] = await db
+    //     .update(entities)
+    //     .set({
+    //       atlasId: cluster.atlasId,
+    //       syncStatus: 'synced',
+    //       lastSyncedAt: new Date(),
+    //     })
+    //     .where(eq(entities.id, id))
+    //     .returning()
+    //
+    //   return reply.send({
+    //     data: updated,
+    //     message: 'Entity synced to ATLAS successfully',
+    //   })
+    // } catch (error) {
+    //   const { id } = request.params as { id: string }
+    //   logger.error(`Failed to sync entity ${id} to ATLAS`, error instanceof Error ? error : { message: String(error) })
+    //
+    //   await db
+    //     .update(entities)
+    //     .set({
+    //       syncStatus: 'failed',
+    //     })
+    //     .where(eq(entities.id, id))
+    //
+    //   return reply.status(500).send({
+    //     error: 'Sync Failed',
+    //     message:
+    //       error instanceof Error
+    //         ? `Failed to sync entity to ATLAS: ${error.message}`
+    //         : 'Failed to sync entity to ATLAS',
+    //   })
+    // }
   })
 
   fastify.get('/:id/versions', { preHandler: authenticate }, async (request, reply) => {

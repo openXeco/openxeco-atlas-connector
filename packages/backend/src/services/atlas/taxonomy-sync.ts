@@ -29,6 +29,11 @@ const TAXONOMY_TYPES: TaxonomyType[] = [
   'citations_source',
 ]
 
+// @TODO
+// Ignore organization_type and use cluster_type with the same purpose
+// Find a way to manage children and parents with cluster_thematic_area. Proposal, use a configuration file (hardcoded with UUIDs) to say who is parent and who is child.
+// Check why there multiple calls with different pages and it triggers the throttling on ATLAS
+
 export class TaxonomySyncService {
   async syncAllTaxonomies(): Promise<{
     success: number

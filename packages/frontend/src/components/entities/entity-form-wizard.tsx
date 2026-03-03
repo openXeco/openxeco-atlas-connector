@@ -18,6 +18,12 @@ import { apiClient } from '@/lib/api'
 import type { EntityFormData } from '@/types/entity'
 import type { Taxonomy } from '@/types/taxonomy'
 
+// @TODO:
+// - ignore organizationType and use clusterType
+// - show validation errors on the last page and not under the field
+// - sometimes the "submit" button is pressed without pressing it and the entity is saved automatically. check.
+// - find a way to manage cluster_thematic_area with children and parents.
+
 const entitySchema = z.object({
   // Step 1: Organisation
   nameNational: z.string().min(1, 'National name is required').max(400),

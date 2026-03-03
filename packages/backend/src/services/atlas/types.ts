@@ -6,6 +6,13 @@ export interface JsonApiResource {
   links?: Record<string, string>
 }
 
+export type JsonApiAddress =
+  | { country_code?: string; locality?: string; address_line1?: string; postal_code?: string }
+  | null
+  | undefined
+
+export type JsonApiWebsite = { uri?: string } | string | null | undefined
+
 export interface JsonApiRelationship {
   data?: JsonApiResourceIdentifier | JsonApiResourceIdentifier[] | null
   links?: Record<string, string>

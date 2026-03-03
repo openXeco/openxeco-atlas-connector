@@ -32,11 +32,11 @@ export const taxonomies = pgTable(
     metadata: jsonb('metadata'),
     lastSyncedAt: timestamp('last_synced_at').defaultNow(),
   },
-  (table) => ({
-    taxonomyTypeIdx: index('taxonomy_type_idx').on(table.taxonomyType),
-    atlasIdIdx: index('taxonomy_atlas_id_idx').on(table.atlasId),
-    parentIdIdx: index('taxonomy_parent_id_idx').on(table.parentId),
-  })
+  (table) => [
+    index('taxonomy_type_idx').on(table.taxonomyType),
+    index('taxonomy_atlas_id_idx').on(table.atlasId),
+    index('taxonomy_parent_id_idx').on(table.parentId),
+  ]
 )
 
 export const entities = pgTable(
@@ -119,14 +119,14 @@ export const entities = pgTable(
     createdBy: uuid('created_by').references(() => users.id),
     updatedBy: uuid('updated_by').references(() => users.id),
   },
-  (table) => ({
-    atlasIdIdx: index('entity_atlas_id_idx').on(table.atlasId),
-    statusIdx: index('entity_status_idx').on(table.status),
-    moderationStateIdx: index('entity_moderation_state_idx').on(table.moderationState),
-    syncStatusIdx: index('entity_sync_status_idx').on(table.syncStatus),
-    countryCodeIdx: index('entity_country_code_idx').on(table.countryCode),
-    createdByIdx: index('entity_created_by_idx').on(table.createdBy),
-  })
+  (table) => [
+    index('entity_atlas_id_idx').on(table.atlasId),
+    index('entity_status_idx').on(table.status),
+    index('entity_moderation_state_idx').on(table.moderationState),
+    index('entity_sync_status_idx').on(table.syncStatus),
+    index('entity_country_code_idx').on(table.countryCode),
+    index('entity_created_by_idx').on(table.createdBy),
+  ]
 )
 
 export const entityVersions = pgTable(
@@ -141,10 +141,10 @@ export const entityVersions = pgTable(
     changedBy: uuid('changed_by').references(() => users.id),
     createdAt: timestamp('created_at').defaultNow(),
   },
-  (table) => ({
-    entityIdIdx: index('entity_version_entity_id_idx').on(table.entityId),
-    createdAtIdx: index('entity_version_created_at_idx').on(table.createdAt),
-  })
+  (table) => [
+    index('entity_version_entity_id_idx').on(table.entityId),
+    index('entity_version_created_at_idx').on(table.createdAt),
+  ]
 )
 
 // JRC Cybersecurity Taxonomy relationships - specific tables for each dimension
@@ -160,11 +160,11 @@ export const entityThematicAreas = pgTable(
       .references(() => taxonomies.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').defaultNow(),
   },
-  (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_thematic_area_unique_idx').on(table.entityId, table.taxonomyId),
-    entityIdIdx: index('entity_thematic_area_entity_id_idx').on(table.entityId),
-    taxonomyIdIdx: index('entity_thematic_area_taxonomy_id_idx').on(table.taxonomyId),
-  })
+  (table) => [
+    uniqueIndex('entity_thematic_area_unique_idx').on(table.entityId, table.taxonomyId),
+    index('entity_thematic_area_entity_id_idx').on(table.entityId),
+    index('entity_thematic_area_taxonomy_id_idx').on(table.taxonomyId),
+  ]
 )
 
 export const entitySectors = pgTable(
@@ -179,11 +179,11 @@ export const entitySectors = pgTable(
       .references(() => taxonomies.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').defaultNow(),
   },
-  (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_sector_unique_idx').on(table.entityId, table.taxonomyId),
-    entityIdIdx: index('entity_sector_entity_id_idx').on(table.entityId),
-    taxonomyIdIdx: index('entity_sector_taxonomy_id_idx').on(table.taxonomyId),
-  })
+  (table) => [
+    uniqueIndex('entity_sector_unique_idx').on(table.entityId, table.taxonomyId),
+    index('entity_sector_entity_id_idx').on(table.entityId),
+    index('entity_sector_taxonomy_id_idx').on(table.taxonomyId),
+  ]
 )
 
 export const entityTechnologies = pgTable(
@@ -198,11 +198,11 @@ export const entityTechnologies = pgTable(
       .references(() => taxonomies.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').defaultNow(),
   },
-  (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_technology_unique_idx').on(table.entityId, table.taxonomyId),
-    entityIdIdx: index('entity_technology_entity_id_idx').on(table.entityId),
-    taxonomyIdIdx: index('entity_technology_taxonomy_id_idx').on(table.taxonomyId),
-  })
+  (table) => [
+    uniqueIndex('entity_technology_unique_idx').on(table.entityId, table.taxonomyId),
+    index('entity_technology_entity_id_idx').on(table.entityId),
+    index('entity_technology_taxonomy_id_idx').on(table.taxonomyId),
+  ]
 )
 
 export const entityUseCases = pgTable(
@@ -217,11 +217,11 @@ export const entityUseCases = pgTable(
       .references(() => taxonomies.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').defaultNow(),
   },
-  (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_use_case_unique_idx').on(table.entityId, table.taxonomyId),
-    entityIdIdx: index('entity_use_case_entity_id_idx').on(table.entityId),
-    taxonomyIdIdx: index('entity_use_case_taxonomy_id_idx').on(table.taxonomyId),
-  })
+  (table) => [
+    uniqueIndex('entity_use_case_unique_idx').on(table.entityId, table.taxonomyId),
+    index('entity_use_case_entity_id_idx').on(table.entityId),
+    index('entity_use_case_taxonomy_id_idx').on(table.taxonomyId),
+  ]
 )
 
 export const entityFieldsOfActivity = pgTable(
@@ -236,11 +236,11 @@ export const entityFieldsOfActivity = pgTable(
       .references(() => taxonomies.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').defaultNow(),
   },
-  (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_field_of_activity_unique_idx').on(table.entityId, table.taxonomyId),
-    entityIdIdx: index('entity_field_of_activity_entity_id_idx').on(table.entityId),
-    taxonomyIdIdx: index('entity_field_of_activity_taxonomy_id_idx').on(table.taxonomyId),
-  })
+  (table) => [
+    uniqueIndex('entity_field_of_activity_unique_idx').on(table.entityId, table.taxonomyId),
+    index('entity_field_of_activity_entity_id_idx').on(table.entityId),
+    index('entity_field_of_activity_taxonomy_id_idx').on(table.taxonomyId),
+  ]
 )
 
 // Sub-domain taxonomy relationships (hierarchical - children of thematic areas)
@@ -257,12 +257,12 @@ export const entitySubDomains = pgTable(
     parentDomainId: uuid('parent_domain_id').references(() => taxonomies.id), // Links to the parent thematic area
     createdAt: timestamp('created_at').defaultNow(),
   },
-  (table) => ({
-    entityTaxonomyIdx: uniqueIndex('entity_sub_domain_unique_idx').on(table.entityId, table.taxonomyId),
-    entityIdIdx: index('entity_sub_domain_entity_id_idx').on(table.entityId),
-    taxonomyIdIdx: index('entity_sub_domain_taxonomy_id_idx').on(table.taxonomyId),
-    parentDomainIdIdx: index('entity_sub_domain_parent_id_idx').on(table.parentDomainId),
-  })
+  (table) => [
+    uniqueIndex('entity_sub_domain_unique_idx').on(table.entityId, table.taxonomyId),
+    index('entity_sub_domain_entity_id_idx').on(table.entityId),
+    index('entity_sub_domain_taxonomy_id_idx').on(table.taxonomyId),
+    index('entity_sub_domain_parent_id_idx').on(table.parentDomainId),
+  ]
 )
 
 export const syncLogs = pgTable(
@@ -276,12 +276,12 @@ export const syncLogs = pgTable(
     details: jsonb('details'),
     createdAt: timestamp('created_at').defaultNow(),
   },
-  (table) => ({
-    entityIdIdx: index('sync_log_entity_id_idx').on(table.entityId),
-    entityTypeIdx: index('sync_log_entity_type_idx').on(table.entityType),
-    statusIdx: index('sync_log_status_idx').on(table.status),
-    createdAtIdx: index('sync_log_created_at_idx').on(table.createdAt),
-  })
+  (table) => [
+    index('sync_log_entity_id_idx').on(table.entityId),
+    index('sync_log_entity_type_idx').on(table.entityType),
+    index('sync_log_status_idx').on(table.status),
+    index('sync_log_created_at_idx').on(table.createdAt),
+  ]
 )
 
 export const atlasConfig = pgTable('atlas_config', {

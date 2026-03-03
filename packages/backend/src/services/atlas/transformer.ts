@@ -1,11 +1,13 @@
-import type { Entity, Taxonomy } from '../../db/schema.js'
+import type { Entity, Taxonomy } from '@/db/schema.js'
 import type {
+  JsonApiAddress,
   JsonApiDocument,
   JsonApiResource,
   JsonApiRelationship,
   Cluster,
   ClusterInput,
   TaxonomyTerm,
+  JsonApiWebsite,
 } from './types.js'
 
 /**
@@ -16,13 +18,10 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
   const attrs = resource.attributes
 
   // Extract structured address (may be null or an object)
-  const address = attrs.field_address as
-    | { country_code?: string; locality?: string; address_line1?: string; postal_code?: string }
-    | null
-    | undefined
+  const address = attrs.field_address as JsonApiAddress
 
   // Extract website URL (may be { uri: string } or a plain string)
-  const websiteField = attrs.field_url as { uri?: string } | string | null | undefined
+  const websiteField = attrs.field_url as JsonApiWebsite
   const website =
     typeof websiteField === 'object' && websiteField !== null ? websiteField.uri : (websiteField as string | undefined)
 

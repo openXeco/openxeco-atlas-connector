@@ -4,7 +4,7 @@
  * Handles authentication and data fetching from the cybersecurity.lu platform
  */
 
-import { logger } from '../../utils/logger.js'
+import { logger } from '@/utils/logger.js'
 import type { OpenXecoFormQuestion, OpenXecoFormAnswer } from './types.js'
 
 const OPENXECO_API_BASE = 'https://api.cybersecurity.lu'
@@ -21,8 +21,8 @@ export interface OpenXecoSession {
 }
 
 export class OpenXecoClient {
-  private baseUrl: string
-  private timeout: number
+  private readonly baseUrl: string
+  private readonly timeout: number
 
   constructor(baseUrl: string = OPENXECO_API_BASE, timeout: number = 30000) {
     this.baseUrl = baseUrl

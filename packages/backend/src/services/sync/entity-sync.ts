@@ -1,10 +1,10 @@
 import { eq, desc, lt, and } from 'drizzle-orm'
-import { db } from '../../config/database.js'
-import { entities, entityVersions, syncLogs, taxonomies } from '../../db/schema.js'
-import { logger } from '../../utils/logger.js'
+import { db } from '@/config/database.js'
+import { entities, entityVersions, syncLogs, taxonomies } from '@/db/schema.js'
+import { logger } from '@/utils/logger.js'
 import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
-import type { Entity } from '../../db/schema.js'
+import type { Entity } from '@/db/schema.js'
 
 export interface SyncResult {
   success: boolean
@@ -53,12 +53,20 @@ export class EntitySyncService {
       let organizationTypeId: string | undefined
 
       if (entity.countryId) {
-        const [country] = await db.select().from(taxonomies).where(and(eq(taxonomies.taxonomyType, 'country'), eq(taxonomies.id, entity.countryId))).limit(1)
+        const [country] = await db
+          .select()
+          .from(taxonomies)
+          .where(and(eq(taxonomies.taxonomyType, 'country'), eq(taxonomies.id, entity.countryId)))
+          .limit(1)
         countryId = country.atlasId || undefined
       }
 
       if (entity.clusterTypeId) {
-        const [clusterType] = await db.select().from(taxonomies).where(and(eq(taxonomies.taxonomyType, 'cluster_type'), eq(taxonomies.id, entity.clusterTypeId))).limit(1)
+        const [clusterType] = await db
+          .select()
+          .from(taxonomies)
+          .where(and(eq(taxonomies.taxonomyType, 'cluster_type'), eq(taxonomies.id, entity.clusterTypeId)))
+          .limit(1)
         clusterTypeId = clusterType.atlasId || undefined
       }
 
@@ -73,7 +81,12 @@ export class EntitySyncService {
 
       await db.update(entities).set({ syncStatus: 'pending_push' }).where(eq(entities.id, entityId))
 
-      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity, countryId, clusterTypeId, organizationTypeId)
+      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(
+        entity,
+        countryId,
+        clusterTypeId,
+        organizationTypeId
+      )
 
       let cluster
       if (entity.atlasId) {
