@@ -4,6 +4,7 @@ import { taxonomies, syncLogs } from '../../db/schema.js'
 import { logger } from '../../utils/logger.js'
 import { atlasClient } from './client.js'
 import { jsonApiTransformer } from './transformer.js'
+import { KNOWLEDGE_DOMAIN_HIERARCHY } from './knowledge-domain-hierarchy.js'
 import type { TaxonomyType } from './types.js'
 
 const TAXONOMY_TYPES: TaxonomyType[] = [
@@ -28,8 +29,8 @@ const TAXONOMY_TYPES: TaxonomyType[] = [
   'citations_source',
 ]
 
-// NOTE: cluster_thematic_area terms are flat on ATLAS (no parent relationships returned by the API).
-// If hierarchy is ever needed, it would require a local config file mapping parent/child UUIDs.
+// cluster_thematic_area terms are flat on ATLAS (no parent relationships returned by the API).
+// The parent/child hierarchy is hardcoded in knowledge-domain-hierarchy.ts and applied during sync.
 
 export class TaxonomySyncService {
   private static readonly TYPE_DELAY_MS = 2000
@@ -92,12 +93,17 @@ export class TaxonomySyncService {
 
     const rows = terms.map((term) => {
       const data = jsonApiTransformer.toTaxonomyFromTerm(term)
+      // Apply hardcoded parent hierarchy for knowledge domains
+      let parentId = data.parentId
+      if (type === 'cluster_thematic_area' && data.atlasId && data.atlasId in KNOWLEDGE_DOMAIN_HIERARCHY) {
+        parentId = KNOWLEDGE_DOMAIN_HIERARCHY[data.atlasId]
+      }
       return {
         atlasId: data.atlasId!,
         taxonomyType: data.taxonomyType!,
         name: data.name!,
         description: data.description,
-        parentId: data.parentId,
+        parentId,
         metadata: data.metadata,
         lastSyncedAt: new Date(),
       }

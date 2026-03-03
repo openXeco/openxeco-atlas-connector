@@ -247,6 +247,8 @@ export interface AtlasConfig {
 export interface QueryParams {
   page?: number
   pageSize?: number
+  pageOffset?: number
+  pageLimit?: number
   filter?: Record<string, string>
   include?: string[]
   sort?: string

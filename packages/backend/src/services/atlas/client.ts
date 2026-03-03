@@ -66,6 +66,12 @@ export class AtlasClient {
     url.searchParams.set('api-key', this.config.apiKey)
 
     if (options?.params) {
+      if (options.params.pageOffset !== undefined) {
+        url.searchParams.set('page[offset]', String(options.params.pageOffset))
+      }
+      if (options.params.pageLimit !== undefined) {
+        url.searchParams.set('page[limit]', String(options.params.pageLimit))
+      }
       if (options.params.page) {
         url.searchParams.set('page[number]', String(options.params.page))
       }
@@ -180,13 +186,13 @@ export class AtlasClient {
     logger.info(`Fetching taxonomies of type: ${type}`)
 
     const allTerms: TaxonomyTerm[] = []
-    let page = 1
-    const pageSize = 50
+    let offset = 0
+    const limit = 50
     const pageDelayMs = 1500
 
     while (true) {
       const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}`, {
-        params: { page, pageSize },
+        params: { pageOffset: offset, pageLimit: limit },
       })
 
       if (!response.data) break
@@ -207,9 +213,9 @@ export class AtlasClient {
         })
       }
 
-      // Stop if we got fewer results than page size (last page) or no next link
-      if (resources.length < pageSize || !response.links?.next) break
-      page++
+      // Stop if we got fewer results than limit (last page) or no next link
+      if (resources.length < limit || !response.links?.next) break
+      offset += limit
 
       // Delay between pages to avoid ATLAS API rate limiting
       await new Promise((resolve) => setTimeout(resolve, pageDelayMs))
