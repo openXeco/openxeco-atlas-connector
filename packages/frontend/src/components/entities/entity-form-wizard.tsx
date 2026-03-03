@@ -18,12 +18,6 @@ import { apiClient } from '@/lib/api'
 import type { EntityFormData } from '@/types/entity'
 import type { Taxonomy } from '@/types/taxonomy'
 
-// @TODO:
-// - ignore organizationType and use clusterType
-// - show validation errors on the last page and not under the field
-// - sometimes the "submit" button is pressed without pressing it and the entity is saved automatically. check.
-// - find a way to manage cluster_thematic_area with children and parents.
-
 const entitySchema = z.object({
   // Step 1: Organisation
   nameNational: z.string().min(1, 'National name is required').max(400),
@@ -40,7 +34,7 @@ const entitySchema = z.object({
   website: z.string().url('Invalid URL'),
   phone: z.string().max(50).optional(),
   email: z.string().email('Invalid email'),
-  organizationTypeId: z.string().uuid().optional(),
+  clusterTypeId: z.string().uuid().optional(),
   hasSubsidiaries: z.boolean().optional(),
   subsidiariesDetails: z.string().optional(),
   hasMajorityShares: z.boolean().optional(),
@@ -76,7 +70,6 @@ const entitySchema = z.object({
   logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
-  clusterTypeId: z.string().uuid().optional(),
   dataShareConsent: z.boolean().optional(),
   moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
   subDomainIds: z.record(z.string(), z.array(z.string().uuid())).optional(),
@@ -114,7 +107,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
   const [currentStep, setCurrentStep] = useState<Step>('organisation')
   const [submitting, setSubmitting] = useState(false)
   const [countries, setCountries] = useState<Taxonomy[]>([])
-  const [organizationTypes, setOrganizationTypes] = useState<Taxonomy[]>([])
+  const [clusterTypes, setClusterTypes] = useState<Taxonomy[]>([])
   const [fieldsOfActivity, setFieldsOfActivity] = useState<Taxonomy[]>([])
   const [thematicAreas, setThematicAreas] = useState<Taxonomy[]>([])
   const [sectors, setSectors] = useState<Taxonomy[]>([])
@@ -144,9 +137,9 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
   useEffect(() => {
     const loadTaxonomies = async () => {
       try {
-        const [countriesRes, orgRes, fieldsRes, thematicRes, sectorsRes, techRes, useCasesRes] = await Promise.all([
+        const [countriesRes, clusterTypeRes, fieldsRes, thematicRes, sectorsRes, techRes, useCasesRes] = await Promise.all([
           apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/country'),
-          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/organization_type'),
+          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_type'),
           apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/fields_of_activity'),
           apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_thematic_area'),
           apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/sectors'),
@@ -154,7 +147,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
           apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/use_cases'),
         ])
         setCountries(countriesRes.data)
-        setOrganizationTypes(orgRes.data)
+        setClusterTypes(clusterTypeRes.data)
         setFieldsOfActivity(fieldsRes.data)
         setThematicAreas(thematicRes.data)
         setSectors(sectorsRes.data)
@@ -374,16 +367,16 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="FORM-ECCC-001-Q110">Organization type *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q110">Type of organisation (Article 8(2))</Label>
                   <Select
-                    value={formData.organizationTypeId}
-                    onValueChange={(value: string) => setValue('organizationTypeId', value)}
+                    value={formData.clusterTypeId}
+                    onValueChange={(value: string) => setValue('clusterTypeId', value)}
                   >
                     <SelectTrigger id="FORM-ECCC-001-Q110">
-                      <SelectValue placeholder="Select organization type" />
+                      <SelectValue placeholder="Select type of organisation" />
                     </SelectTrigger>
                     <SelectContent>
-                      {organizationTypes.map((type) => (
+                      {clusterTypes.map((type) => (
                         <SelectItem key={type.id} value={type.id}>
                           {type.name}
                         </SelectItem>

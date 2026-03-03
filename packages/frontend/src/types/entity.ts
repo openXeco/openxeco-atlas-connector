@@ -106,7 +106,6 @@ export interface EntityFormData {
   formCompletionConfirmed?: boolean
   countryId?: string
   clusterTypeId?: string
-  organizationTypeId?: string
   thematicAreaIds?: string[]
   sectorIds?: string[]
   technologyIds?: string[]

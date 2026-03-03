@@ -44,9 +44,7 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
       const response = await apiClient.get<{ data: Entity }>(`/api/entities/${resolvedParams.id}`)
       setEntity(response.data)
 
-      const taxIds = [response.data.countryId, response.data.clusterTypeId, response.data.organizationTypeId].filter(
-        Boolean
-      ) as string[]
+      const taxIds = [response.data.countryId, response.data.clusterTypeId].filter(Boolean) as string[]
 
       if (taxIds.length > 0) {
         const results = await Promise.all(
@@ -400,12 +398,6 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                       <div>
                         <h4 className="mb-2 text-sm font-medium text-muted-foreground">Cluster Type</h4>
                         <p className="text-sm">{taxonomies[entity.clusterTypeId].name}</p>
-                      </div>
-                    )}
-                    {entity.organizationTypeId && taxonomies[entity.organizationTypeId] && (
-                      <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Organization Type</h4>
-                        <p className="text-sm">{taxonomies[entity.organizationTypeId].name}</p>
                       </div>
                     )}
                   </CardContent>

@@ -36,7 +36,6 @@ export interface Entity {
   registrationNumber: string | null
   countryId: string | null
   clusterTypeId: string | null
-  organizationTypeId: string | null
   logoUrl: string | null
   website: string | null
   latitude: string | null

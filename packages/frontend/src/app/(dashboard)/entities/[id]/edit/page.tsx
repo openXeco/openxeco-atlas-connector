@@ -118,7 +118,6 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
     goalsToContribute: entity.goalsToContribute || undefined,
     countryId: entity.countryId || undefined,
     clusterTypeId: entity.clusterTypeId || undefined,
-    organizationTypeId: entity.organizationTypeId || undefined,
     moderationState: entity.moderationState || undefined,
   }
 
