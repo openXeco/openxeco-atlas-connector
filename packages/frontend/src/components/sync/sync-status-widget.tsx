@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { apiClient } from '@/lib/api'
-import type { Entity } from '@/types/entity'
+import type { Entity } from '@/types'
 
 interface SyncStatusWidgetProps {
   onRefresh?: () => void

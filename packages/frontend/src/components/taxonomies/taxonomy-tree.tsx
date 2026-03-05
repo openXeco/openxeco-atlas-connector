@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { ChevronRight, ChevronDown } from 'lucide-react'
-import type { Taxonomy } from '@/types/taxonomy'
+import type { Taxonomy } from '@/types'
 
 interface TaxonomyTreeProps {
   taxonomies: Taxonomy[]

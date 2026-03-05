@@ -9,7 +9,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route'
 import { EntityFormWizard } from '@/components/entities/entity-form-wizard'
 import { Button } from '@/components/ui/button'
 import { apiClient } from '@/lib/api'
-import type { Entity, EntityFormData } from '@/types/entity'
+import type { Entity, EntityFormData } from '@/types'
 
 export default function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)

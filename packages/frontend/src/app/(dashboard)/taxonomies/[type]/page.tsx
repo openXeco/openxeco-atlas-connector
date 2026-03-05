@@ -2,20 +2,19 @@
 
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, RefreshCw, Search, List, Network } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Search } from 'lucide-react'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { TaxonomyTree } from '@/components/taxonomies/taxonomy-tree'
+import { TaxonomyTree } from '@/components/taxonomies/taxonomy-tree-new'
 import { apiClient } from '@/lib/api'
-import { TAXONOMY_TYPES, type Taxonomy } from '@/types/taxonomy'
+import type { Taxonomy, TaxonomyType } from '@/types'
+import { TAXONOMY_TYPES, getTaxonomyByType } from '@/data/taxonomies'
 
-type ViewMode = 'list' | 'tree'
-
-export default function TaxonomyDetailPage({ params }: { params: Promise<{ type: string }> }) {
+export default function TaxonomyDetailPage({ params }: { params: Promise<{ type: TaxonomyType }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
   const [taxonomies, setTaxonomies] = useState<Taxonomy[]>([])
@@ -23,20 +22,19 @@ export default function TaxonomyDetailPage({ params }: { params: Promise<{ type:
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [error, setError] = useState<string | null>(null)
 
   const taxonomyInfo = TAXONOMY_TYPES.find((t) => t.type === resolvedParams.type)
-  const hasHierarchy = resolvedParams.type === 'institution' || resolvedParams.type === 'cluster_thematic_area'
+  const hasHierarchy = resolvedParams.type === 'cluster_thematic_area'
 
   const loadTaxonomies = async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const response = await apiClient.get<{ data: Taxonomy[] }>(`/api/taxonomies/${resolvedParams.type}`)
-      setTaxonomies(response.data)
-      setFilteredTaxonomies(response.data)
+      const taxonomies = await getTaxonomyByType(resolvedParams.type)
+      setTaxonomies(taxonomies)
+      setFilteredTaxonomies(taxonomies)
     } catch (_err) {
       setError('Failed to load taxonomies')
     } finally {
@@ -107,26 +105,6 @@ export default function TaxonomyDetailPage({ params }: { params: Promise<{ type:
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {hasHierarchy && (
-                  <div className="flex rounded-md border">
-                    <Button
-                      variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                      size="sm"
-                      onClick={() => setViewMode('list')}
-                      className="rounded-r-none"
-                    >
-                      <List className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant={viewMode === 'tree' ? 'secondary' : 'ghost'}
-                      size="sm"
-                      onClick={() => setViewMode('tree')}
-                      className="rounded-l-none"
-                    >
-                      <Network className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
                 <Button onClick={handleSync} disabled={syncing || loading} className="gap-2">
                   <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
                   {syncing ? 'Syncing...' : 'Sync'}
@@ -145,15 +123,17 @@ export default function TaxonomyDetailPage({ params }: { params: Promise<{ type:
                     </CardTitle>
                     <CardDescription>{searchQuery ? 'Filtered results' : 'All terms in this taxonomy'}</CardDescription>
                   </div>
-                  <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Search terms..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
+                  {!hasHierarchy ? (
+                    <div className="relative w-64">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search terms..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  ) : undefined}
                 </div>
               </CardHeader>
               <CardContent>
@@ -163,19 +143,13 @@ export default function TaxonomyDetailPage({ params }: { params: Promise<{ type:
                   <div className="py-8 text-center text-muted-foreground">
                     {searchQuery ? 'No terms match your search' : 'No terms available'}
                   </div>
-                ) : viewMode === 'tree' && hasHierarchy ? (
+                ) : hasHierarchy ? (
                   <TaxonomyTree taxonomies={filteredTaxonomies} />
                 ) : (
                   <div className="space-y-2">
                     {filteredTaxonomies.map((taxonomy) => (
                       <div key={taxonomy.id} className="rounded-md border p-3 hover:bg-accent">
                         <div className="font-medium">{taxonomy.name}</div>
-                        {taxonomy.description && (
-                          <div className="text-sm text-muted-foreground">{taxonomy.description}</div>
-                        )}
-                        {taxonomy.parentId && (
-                          <div className="mt-1 text-xs text-muted-foreground">Has parent relationship</div>
-                        )}
                       </div>
                     ))}
                   </div>

@@ -24,8 +24,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { apiClient } from '@/lib/api'
-import type { Entity, EntityVersion } from '@/types/entity'
-import type { Taxonomy } from '@/types/taxonomy'
+import type { Entity, EntityVersion } from '@/types'
 
 export default function EntityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
@@ -36,7 +35,6 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [taxonomies, setTaxonomies] = useState<Record<string, Taxonomy>>({})
 
   const loadEntity = async () => {
     setLoading(true)
@@ -45,26 +43,6 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
     try {
       const response = await apiClient.get<{ data: Entity }>(`/api/entities/${resolvedParams.id}`)
       setEntity(response.data)
-
-      const taxIds = [response.data.countryId, response.data.clusterTypeId].filter(Boolean) as string[]
-
-      if (taxIds.length > 0) {
-        const results = await Promise.all(
-          taxIds.map(async (taxId) => {
-            try {
-              const taxResponse = await apiClient.get<{ data: Taxonomy }>(`/api/taxonomies/id/${taxId}`)
-              return [taxId, taxResponse.data] as const
-            } catch (_err) {
-              return null
-            }
-          })
-        )
-        const taxMap: Record<string, Taxonomy> = {}
-        for (const result of results) {
-          if (result) taxMap[result[0]] = result[1]
-        }
-        setTaxonomies(taxMap)
-      }
     } catch (_err) {
       setError('Failed to load entity')
     } finally {
@@ -364,10 +342,10 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {entity.countryId && taxonomies[entity.countryId] && (
+                    {entity.country && (
                       <div>
                         <h4 className="mb-2 text-sm font-medium text-muted-foreground">Country</h4>
-                        <p className="text-sm">{taxonomies[entity.countryId].name}</p>
+                        <p className="text-sm">{entity.country.name}</p>
                       </div>
                     )}
                     {(entity.streetAddress || entity.city || entity.postalCode || entity.countryCode) && (
@@ -398,10 +376,18 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {entity.clusterTypeId && taxonomies[entity.clusterTypeId] && (
+                    {entity.clusterType && (
                       <div>
                         <h4 className="mb-2 text-sm font-medium text-muted-foreground">Cluster Type</h4>
-                        <p className="text-sm">{taxonomies[entity.clusterTypeId].name}</p>
+                        <p className="text-sm">{entity.clusterType.name}</p>
+                      </div>
+                    )}
+
+                    {entity.thematicAreas && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Knowledge domains and subdomains</h4>
+                        {entity.thematicAreas.map((a) =>
+                        <p key={`thematicArea_${a.id}`} className="text-sm">{a.name}</p>)}
                       </div>
                     )}
                   </CardContent>

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import type { Entity } from '@/types/entity'
+import type { Entity } from '@/types'
 import { useState } from 'react'
 
 interface EntityDataTableProps {
@@ -171,6 +171,7 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
     [onView, onEdit, onDelete]
   )
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

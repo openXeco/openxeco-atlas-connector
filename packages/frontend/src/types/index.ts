@@ -6,16 +6,48 @@ export interface User {
   updatedAt: string
 }
 
+export type TaxonomyType =
+  | 'activities_of_interest'
+  | 'applications_and_technologies'
+  | 'cluster_thematic_area'
+  | 'cluster_type'
+  | 'country'
+  | 'cybersecurity_research_projects'
+  | 'european_cybersecurity_competenc'
+  | 'fields_of_activity'
+  | 'funding_sources'
+  | 'initiatives'
+  | 'institution'
+  | 'languages'
+  | 'legal_status'
+  | 'nationality'
+  | 'position_category'
+  | 'sectors'
+  | 'technologies'
+  | 'use_cases'
+  | 'citations_source'
+
+export interface TaxonomyTypeInfo {
+  type: TaxonomyType
+  label: string
+  description: string
+  count?: number
+  lastSynced?: Date
+}
+
 export interface Taxonomy {
   id: string
   atlasId: string | null
-  taxonomyType: string
+  taxonomyType: TaxonomyType
   name: string
   description: string | null
   parentId: string | null
   metadata: Record<string, unknown> | null
   lastSyncedAt: string
 }
+
+export type EntityStatus = 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected'
+export type SyncStatus = 'local' | 'synced' | 'pending_push' | 'failed' | 'conflict'
 
 export interface Entity {
   id: string
@@ -24,9 +56,9 @@ export interface Entity {
   nameNational: string | null
   entityDepartment: string | null
   description: string | null
-  status: 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected'
-  moderationState: 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected' | null
-  syncStatus: 'local' | 'synced' | 'pending_push' | 'failed' | 'conflict'
+  status: EntityStatus
+  moderationState: EntityStatus | null
+  syncStatus: SyncStatus
   countryCode: string | null
   city: string | null
   streetAddress: string | null
@@ -36,6 +68,7 @@ export interface Entity {
   registrationNumber: string | null
   countryId: string | null
   clusterTypeId: string | null
+  organizationTypeId: string | null
   logoUrl: string | null
   website: string | null
   latitude: string | null
@@ -56,12 +89,98 @@ export interface Entity {
   expertiseDescription: string | null
   goalsToAchieve: string | null
   goalsToContribute: string | null
-  metadata: Record<string, unknown> | null
-  createdAt: string
-  updatedAt: string
-  lastSyncedAt: string | null
+  // "Other" text fields for taxonomies
+  otherSectors: string | null
+  otherTechnologies: string | null
+  otherUseCases: string | null
+  // Consent fields
+  dataProtectionConsent: boolean | null
+  formCompletionConfirmed: boolean | null
+  metadata: unknown
+  createdAt: Date
+  updatedAt: Date
+  lastSyncedAt: Date | null
   createdBy: string | null
   updatedBy: string | null
+  // Relations
+  country?: Taxonomy
+  clusterType?: Taxonomy
+  thematicAreas?: Array<Taxonomy>
+  sectors?: Array<Taxonomy>
+  technologies?: Array<Taxonomy>
+  useCases?: Array<Taxonomy>
+  subDomains?: Array<Taxonomy>
+  fieldsOfActivity?: Array<Taxonomy>
+}
+
+export interface EntityVersion {
+  id: string
+  entityId: string
+  version: string
+  data: unknown
+  changedBy: string | null
+  createdAt: Date
+}
+
+export interface EntityFormData {
+  name: string
+  nameNational?: string
+  entityDepartment?: string
+  description?: string
+  countryCode?: string
+  city?: string
+  streetAddress?: string
+  postalCode?: string
+  email?: string
+  phone?: string
+  registrationNumber?: string
+  logoUrl?: string
+  website?: string
+  latitude?: number
+  longitude?: number
+  isHeadquarter?: boolean
+  headquarterInfo?: string
+  hasSubsidiaries?: boolean
+  subsidiariesDetails?: string
+  hasMajorityShares?: boolean
+  majoritySharesDetails?: string
+  article138Compliance?: boolean
+  dataShareConsent?: boolean
+  contactFirstName?: string
+  contactLastName?: string
+  contactEmail?: string
+  contactPosition?: string
+  contactPhone?: string
+  expertiseDescription?: string
+  goalsToAchieve?: string
+  goalsToContribute?: string
+  // "Other" text fields for taxonomies
+  otherSectors?: string
+  otherTechnologies?: string
+  otherUseCases?: string
+  // Consent fields (ECCC form Step 4)
+  dataProtectionConsent?: boolean
+  formCompletionConfirmed?: boolean
+  countryId?: string
+  clusterTypeId?: string
+  thematicAreaIds?: string[]
+  sectorIds?: string[]
+  technologyIds?: string[]
+  useCaseIds?: string[]
+  fieldsOfActivityIds?: string[]
+  // Sub-domain taxonomy relationships (hierarchical - keyed by parent domain ID)
+  subDomainIds?: Record<string, string[]>
+  moderationState?: EntityStatus
+}
+
+export interface EntityListParams {
+  page?: number
+  limit?: number
+  status?: EntityStatus
+  syncStatus?: SyncStatus
+  search?: string
+  countryId?: string
+  clusterTypeId?: string
 }
 
 export interface HealthResponse {

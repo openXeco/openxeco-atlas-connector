@@ -15,8 +15,7 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { ConsentCheckbox } from '@/components/entities/consent-checkbox'
 import { ImportOpenXecoDialog } from '@/components/entities/import-openxeco-dialog'
 import { apiClient } from '@/lib/api'
-import type { EntityFormData } from '@/types/entity'
-import type { Taxonomy } from '@/types/taxonomy'
+import type { Taxonomy, EntityFormData } from '@/types'
 
 const entitySchema = z.object({
   // Step 1: Organisation

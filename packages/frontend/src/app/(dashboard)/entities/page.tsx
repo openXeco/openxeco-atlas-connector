@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { apiClient } from '@/lib/api'
-import type { Entity, EntityListParams } from '@/types/entity'
+import type { Entity, EntityListParams } from '@/types'
 
 export default function EntitiesPage() {
   const router = useRouter()

@@ -9,13 +9,16 @@ import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { apiClient } from '@/lib/api'
-import { TAXONOMY_TYPES } from '@/types/taxonomy'
+
+import { TAXONOMY_TYPES } from '@/data/taxonomies'
+import { TaxonomyType } from '@/types'
 
 export default function TaxonomiesPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [stats, setStats] = useState<Record<string, number>>({})
+  const [total, setTotal] = useState<number>(0)
   const [error, setError] = useState<string | null>(null)
 
   const loadStats = async () => {
@@ -23,20 +26,11 @@ export default function TaxonomiesPage() {
     setError(null)
 
     try {
-      const results = await Promise.all(
-        TAXONOMY_TYPES.map(async (taxonomyType) => {
-          try {
-            const response = await apiClient.get<{ data: unknown[]; meta: { count: number } }>(
-              `/api/taxonomies/${taxonomyType.type}`
-            )
-            return [taxonomyType.type, response.meta?.count || response.data?.length || 0] as const
-          } catch (_err) {
-            return [taxonomyType.type, 0] as const
-          }
-        })
-      )
-
-      setStats(Object.fromEntries(results))
+      const result = await apiClient.get<{
+        data: { total: number; taxonomies: Record<TaxonomyType, number> }
+      }>('/api/taxonomies/count')
+      setStats(result.data.taxonomies)
+      setTotal(result.data.total)
     } catch (_err) {
       setError('Failed to load taxonomy statistics')
     } finally {
@@ -61,8 +55,6 @@ export default function TaxonomiesPage() {
   useEffect(() => {
     loadStats()
   }, [])
-
-  const totalTerms = Object.values(stats).reduce((sum, count) => sum + count, 0)
 
   return (
     <ProtectedRoute>
@@ -102,7 +94,7 @@ export default function TaxonomiesPage() {
                   <Database className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{loading ? '...' : totalTerms.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">{loading ? '...' : total.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">Across all types</p>
                 </CardContent>
               </Card>

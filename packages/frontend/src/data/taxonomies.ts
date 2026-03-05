@@ -1,42 +1,6 @@
-export type TaxonomyType =
-  | 'activities_of_interest'
-  | 'applications_and_technologies'
-  | 'cluster_thematic_area'
-  | 'cluster_type'
-  | 'country'
-  | 'cybersecurity_research_projects'
-  | 'european_cybersecurity_competenc'
-  | 'fields_of_activity'
-  | 'funding_sources'
-  | 'initiatives'
-  | 'institution'
-  | 'languages'
-  | 'legal_status'
-  | 'nationality'
-  | 'position_category'
-  | 'sectors'
-  | 'technologies'
-  | 'use_cases'
-  | 'citations_source'
-
-export interface Taxonomy {
-  id: string
-  atlasId: string | null
-  taxonomyType: string
-  name: string
-  description: string | null
-  parentId: string | null
-  metadata: unknown
-  lastSyncedAt: Date | null
-}
-
-export interface TaxonomyTypeInfo {
-  type: TaxonomyType
-  label: string
-  description: string
-  count?: number
-  lastSynced?: Date
-}
+import { TaxonomyType, TaxonomyTypeInfo } from '@/types'
+import { Taxonomy } from '@/types'
+import { apiClient } from '@/lib/api'
 
 export const TAXONOMY_TYPES: TaxonomyTypeInfo[] = [
   { type: 'country', label: 'Countries', description: 'Geographic locations' },
@@ -78,4 +42,16 @@ export const TAXONOMY_TYPES: TaxonomyTypeInfo[] = [
   { type: 'position_category', label: 'Position Categories', description: 'Job position types' },
   { type: 'use_cases', label: 'Use Cases', description: 'Application use cases' },
   { type: 'citations_source', label: 'Citation Sources', description: 'Reference sources' },
-]
+] as const
+
+export const getTaxonomyByType = async (type?: TaxonomyType): Promise<Taxonomy[]> => {
+  const response = await apiClient.get<{ data: Taxonomy[] }>(`/api/taxonomies/${type}`)
+
+  return response.data
+}
+
+export const getTaxonomyById = async (id: string): Promise<Taxonomy> => {
+  const response = await apiClient.get<{data: Taxonomy}>(`/api/taxonomies/id/${id}`)
+
+  return response.data
+}

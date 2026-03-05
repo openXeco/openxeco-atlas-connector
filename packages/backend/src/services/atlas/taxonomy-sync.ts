@@ -1,4 +1,4 @@
-import { eq, and, ilike, sql } from 'drizzle-orm'
+import { eq, and, ilike, sql, count } from 'drizzle-orm'
 import { db } from '../../config/database.js'
 import { taxonomies, syncLogs } from '../../db/schema.js'
 import { logger } from '../../utils/logger.js'
@@ -143,6 +143,36 @@ export class TaxonomySyncService {
 
   async getTaxonomiesByType(type: TaxonomyType) {
     return db.select().from(taxonomies).where(eq(taxonomies.taxonomyType, type)).orderBy(taxonomies.name)
+  }
+
+  async countTaxonomies(): Promise<{
+    total: number
+    taxonomies: Record<TaxonomyType, number>
+  }> {
+    const rows = await db
+      .select({
+        taxonomyType: taxonomies.taxonomyType,
+        count: sql<number>`count(*)`,
+      })
+      .from(taxonomies)
+      .groupBy(taxonomies.taxonomyType)
+
+    const taxonomiesRecord = {} as Record<TaxonomyType, number>
+
+    for (const row of rows) {
+      taxonomiesRecord[row.taxonomyType as TaxonomyType] = row.count
+    }
+
+    const total = rows.reduce((sum, r) => sum + Number(r.count), 0)
+
+    return {
+      total,
+      taxonomies: taxonomiesRecord,
+    }
+  }
+
+  async countTaxonomiesByType(type: TaxonomyType) {
+    return db.select({ total: count() }).from(taxonomies).where(eq(taxonomies.taxonomyType, type))
   }
 
   async getTaxonomyById(id: string) {

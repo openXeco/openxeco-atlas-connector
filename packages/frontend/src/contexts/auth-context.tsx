@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { apiClient, setAccessToken, getAccessToken } from '@/lib/api'
+import { setAccessToken, getAccessToken } from '@/lib/api'
 
 interface User {
   id: string
@@ -27,8 +27,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshToken = async () => {
     try {
-      const response = await apiClient.post<{ accessToken: string }>('/api/auth/refresh', {})
-      setAccessToken(response.accessToken)
+      const response = await fetch('/api/auth/refresh', { method: 'POST' })
+
+      if (!response.ok) {
+        throw Error(response.statusText)
+      }
+
+      const { accessToken } = await response.json()
+
+      setAccessToken(accessToken)
       await fetchCurrentUser()
     } catch (error) {
       setAccessToken(null)
@@ -39,14 +46,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCurrentUser = async () => {
     try {
-      const token = getAccessToken()
-      if (!token) {
-        setUser(null)
-        return
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          Authorization: 'Bearer ' + getAccessToken(),
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw Error(response.statusText)
       }
 
-      const response = await apiClient.get<{ user: User }>('/api/auth/me')
-      setUser(response.user)
+      const { user } = await response.json()
+      setUser(user)
     } catch (_error) {
       setAccessToken(null)
       setUser(null)
@@ -54,19 +66,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const login = async (email: string, password: string) => {
-    const response = await apiClient.post<{
-      accessToken: string
-      user: User
-    }>('/api/auth/login', { email, password })
+    try {
+      const response = await fetch('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) })
 
-    setAccessToken(response.accessToken)
-    setUser(response.user)
-    router.push('/')
+      const { accessToken, user } = await response.json()
+
+      setAccessToken(accessToken)
+      setUser(user)
+      router.push('/')
+    } catch (_e) {
+      setAccessToken(null)
+      setUser(null)
+    }
   }
 
   const logout = async () => {
     try {
-      await apiClient.post('/api/auth/logout', {})
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + getAccessToken(),
+          'Content-Type': 'application/json',
+        }
+      })
     } catch (error) {
       console.error('Logout error:', error)
     } finally {

@@ -154,15 +154,22 @@ export class OpenXecoFormTransformer {
   }
 
   private parseBoolean(value: string | undefined): boolean | null {
-    if (value === undefined || value === null) return null
+    if (value === undefined || value === null) {
+      return null
+    }
 
     const normalized = value.toLowerCase().trim()
 
     const trueValues = ['true', 'yes', 'oui', 'ja', '1', 'on', 'checked']
     const falseValues = ['false', 'no', 'non', 'nein', '0', 'off', 'unchecked']
 
-    if (trueValues.includes(normalized)) return true
-    if (falseValues.includes(normalized)) return false
+    if (trueValues.includes(normalized)) {
+      return true
+    }
+
+    if (falseValues.includes(normalized)) {
+      return false
+    }
 
     return null
   }

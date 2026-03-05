@@ -10,12 +10,14 @@
     "clusters"
   ],
   "license": "MIT",
-  "packageManager": "pnpm@10.28.1",
+  "packageManager": "pnpm@10.30.3",
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
     "dev": "env-cmd -- pnpm -r --parallel dev",
+    "dev:frontend": "env-cmd -- pnpm -filter=@atlas-connector/frontend dev",
+    "dev:backend": "env-cmd -- pnpm -filter=@atlas-connector/backend dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",

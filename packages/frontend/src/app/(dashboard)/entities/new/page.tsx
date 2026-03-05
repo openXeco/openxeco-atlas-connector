@@ -9,7 +9,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route'
 import { EntityFormWizard } from '@/components/entities/entity-form-wizard'
 import { Button } from '@/components/ui/button'
 import { apiClient } from '@/lib/api'
-import type { EntityFormData } from '@/types/entity'
+import type { EntityFormData } from '@/types'
 
 export default function NewEntityPage() {
   const router = useRouter()

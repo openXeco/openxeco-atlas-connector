@@ -22,7 +22,7 @@ export function getAccessToken(): string | null {
 }
 
 class ApiClient {
-  private baseUrl: string
+  private readonly baseUrl: string
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
@@ -32,6 +32,7 @@ class ApiClient {
     const { params, ...fetchOptions } = options
 
     let url = `${this.baseUrl}${endpoint}`
+
     if (params) {
       const searchParams = new URLSearchParams(params)
       url += `?${searchParams.toString()}`
@@ -51,8 +52,7 @@ class ApiClient {
 
     if (!response.ok) {
       const error: ApiError = await response.json()
-      const message =
-        typeof error.message === 'string' ? error.message : Array.isArray(error.message) ? String(error.message) : 'An error occurred'
+      const message = Array.isArray(error.message) ? String(error.message) : error.message || 'An error has occurred'
       throw new Error(message || 'An error occurred')
     }
 
