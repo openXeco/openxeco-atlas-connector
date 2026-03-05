@@ -211,8 +211,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
 
-      console.log(entity)
-
       if (!entity) {
         return reply.status(404).send({
           error: 'Not Found',

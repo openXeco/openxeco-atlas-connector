@@ -119,6 +119,17 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
     countryId: entity.countryId || undefined,
     clusterTypeId: entity.clusterTypeId || undefined,
     moderationState: entity.moderationState || undefined,
+    thematicAreaIds: entity.thematicAreas?.map((t) => t.id) || [],
+    sectorIds: entity.sectors?.map((t) => t.id) || [],
+    technologyIds: entity.technologies?.map((t) => t.id) || [],
+    useCaseIds: entity.useCases?.map((t) => t.id) || [],
+    fieldsOfActivityIds: entity.fieldsOfActivity?.map((t) => t.id) || [],
+    subDomainIds: entity.subDomains?.reduce<Record<string, string[]>>((acc, t) => {
+      const parentKey = t.parentId || 'unknown'
+      if (!acc[parentKey]) acc[parentKey] = []
+      acc[parentKey].push(t.id)
+      return acc
+    }, {}) || {},
   }
 
   return (
