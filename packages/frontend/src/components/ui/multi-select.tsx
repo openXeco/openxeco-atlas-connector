@@ -8,6 +8,7 @@ export interface MultiSelectOption {
   id: string
   name: string
   parentId?: string | null
+  atlasId?: string | null
 }
 
 export interface MultiSelectProps {
@@ -102,7 +103,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                 const children = options.filter((o) => o.parentId)
                 return roots.map((root) => {
                   const rootSelected = value.includes(root.id)
-                  const rootChildren = children.filter((c) => c.parentId === root.id)
+                  const rootChildren = children.filter((c) => c.parentId === root.atlasId)
                   return (
                     <React.Fragment key={root.id}>
                       <div

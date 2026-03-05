@@ -102,6 +102,25 @@ const GDPR_DISCLAIMER = `<p>The NCC, to which the application will be submitted,
 <li>fields of activity/expertise</li>
 </ul>`
 
+const FIELD_LABELS: Record<string, string> = {
+  name: 'Name in English',
+  nameNational: 'Name (national language)',
+  countryId: 'Country',
+  streetAddress: 'Street Address',
+  city: 'City',
+  website: 'Website',
+  email: 'Email',
+  clusterTypeId: 'Type of organisation',
+  article138Compliance: 'Article 136 Compliance',
+  contactFirstName: 'Contact First Name',
+  contactLastName: 'Contact Surname',
+  contactEmail: 'Contact Email',
+  fieldsOfActivityIds: 'Fields of Activity',
+  expertiseDescription: 'Expertise Description',
+  dataProtectionConsent: 'Data Protection Consent',
+  formCompletionConfirmed: 'Form Completion Confirmation',
+}
+
 export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityFormWizardProps) {
   const [currentStep, setCurrentStep] = useState<Step>('organisation')
   const [submitting, setSubmitting] = useState(false)
@@ -237,7 +256,8 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
       </div>
 
       <form onSubmit={handleSubmit(onFormSubmit)} onKeyDown={(e) => {
-        if (e.key === 'Enter' && currentStep !== 'confirmation') {
+        const target = e.target as HTMLElement
+        if (e.key === 'Enter' && currentStep !== 'confirmation' && target.tagName !== 'TEXTAREA') {
           e.preventDefault()
         }
       }}>
@@ -575,7 +595,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     Expertise according to the Cybersecurity Taxonomy (Knowledge Domains)
                   </Label>
                   <MultiSelect
-                    options={thematicAreas.map((t) => ({ id: t.id, name: t.name, parentId: t.parentId }))}
+                    options={thematicAreas.map((t) => ({ id: t.id, name: t.name, parentId: t.parentId, atlasId: t.atlasId }))}
                     value={formData.thematicAreaIds || []}
                     onChange={(values) => setValue('thematicAreaIds', values)}
                     placeholder="Select knowledge domains"
@@ -675,11 +695,14 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-2">
                       <h4 className="text-sm font-semibold text-destructive">Please fix the following errors before submitting:</h4>
                       <ul className="list-disc pl-5 space-y-1">
-                        {Object.entries(errors).map(([field, error]) => (
-                          <li key={field} className="text-sm text-destructive">
-                            <span className="font-medium">{field}</span>: {(error as { message?: string })?.message || 'Invalid value'}
-                          </li>
-                        ))}
+                        {Object.entries(errors).map(([field, error]) => {
+                          const label = FIELD_LABELS[field] || field
+                          return (
+                            <li key={field} className="text-sm text-destructive">
+                              <span className="font-medium">{label}</span>: {(error as { message?: string })?.message || 'Invalid value'}
+                            </li>
+                          )
+                        })}
                       </ul>
                     </div>
                   )}
