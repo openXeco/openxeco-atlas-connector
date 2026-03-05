@@ -1,33 +1,27 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { use } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
 import { ArrowLeft } from 'lucide-react'
 import { EntityFormWizard } from '@/components/entities/entity-form-wizard'
 import { Button } from '@/components/ui/button'
 import { apiClient } from '@/lib/api'
+import { apiFetcher } from '@/lib/swr'
 import type { Entity, EntityFormData } from '@/types'
 
 export default function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
-  const [entity, setEntity] = useState<Entity | null>(null)
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const loadEntity = async () => {
-      try {
-        const response = await apiClient.get<{ data: Entity }>(`/api/entities/${resolvedParams.id}`)
-        setEntity(response.data)
-      } catch (_err) {
-        setError('Failed to load entity')
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadEntity()
-  }, [resolvedParams.id])
+  const { data, isLoading } = useSWR<{ data: Entity }>(
+    `/api/entities/${resolvedParams.id}`,
+    apiFetcher
+  )
+
+  const entity = data?.data ?? null
 
   const handleSubmit = async (data: EntityFormData) => {
     setError(null)
@@ -44,7 +38,7 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
     router.push(`/entities/${resolvedParams.id}`)
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-muted-foreground">Loading entity...</div>

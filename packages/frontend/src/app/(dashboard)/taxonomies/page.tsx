@@ -1,57 +1,40 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
 import { RefreshCw, Database, Clock, ChevronRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { apiClient } from '@/lib/api'
+import { apiFetcher } from '@/lib/swr'
 
 import { TAXONOMY_TYPES } from '@/data/taxonomies'
 import { TaxonomyType } from '@/types'
 
 export default function TaxonomiesPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [stats, setStats] = useState<Record<string, number>>({})
-  const [total, setTotal] = useState<number>(0)
-  const [error, setError] = useState<string | null>(null)
 
-  const loadStats = async () => {
-    setLoading(true)
-    setError(null)
+  const { data, error, isLoading, mutate } = useSWR<{
+    data: { total: number; taxonomies: Record<TaxonomyType, number> }
+  }>('/api/taxonomies/count', apiFetcher)
 
-    try {
-      const result = await apiClient.get<{
-        data: { total: number; taxonomies: Record<TaxonomyType, number> }
-      }>('/api/taxonomies/count')
-      setStats(result.data.taxonomies)
-      setTotal(result.data.total)
-    } catch (_err) {
-      setError('Failed to load taxonomy statistics')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const stats: Record<string, number> = data?.data.taxonomies ?? {}
+  const total = data?.data.total ?? 0
 
   const handleSyncAll = async () => {
     setSyncing(true)
-    setError(null)
 
     try {
       await apiClient.post('/api/taxonomies/sync', {})
-      await loadStats()
+      mutate()
     } catch (_err) {
-      setError('Failed to sync taxonomies from ATLAS')
+      // error shown via SWR
     } finally {
       setSyncing(false)
     }
   }
-
-  useEffect(() => {
-    loadStats()
-  }, [])
 
   return (
     <>
@@ -60,13 +43,13 @@ export default function TaxonomiesPage() {
           <h2 className="text-2xl font-bold tracking-tight">Taxonomies</h2>
           <p className="text-muted-foreground">Manage taxonomy terms from ATLAS API</p>
         </div>
-        <Button onClick={handleSyncAll} disabled={syncing || loading} className="gap-2">
+        <Button onClick={handleSyncAll} disabled={syncing || isLoading} className="gap-2">
           <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
           {syncing ? 'Syncing...' : 'Sync All from ATLAS'}
         </Button>
       </div>
 
-      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">Failed to load taxonomy statistics</div>}
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card>
@@ -86,7 +69,7 @@ export default function TaxonomiesPage() {
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? '...' : total.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{isLoading ? '...' : total.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Across all types</p>
           </CardContent>
         </Card>
@@ -121,7 +104,7 @@ export default function TaxonomiesPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Terms:</span>
                 <span className="text-lg font-semibold">
-                  {loading ? '...' : (stats[taxonomyType.type] || 0).toLocaleString()}
+                  {isLoading ? '...' : (stats[taxonomyType.type] || 0).toLocaleString()}
                 </span>
               </div>
             </CardContent>

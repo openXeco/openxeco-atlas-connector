@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { use } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
 import {
   ArrowLeft,
   Pencil,
@@ -15,53 +17,31 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react'
-import { useAuth } from '@/contexts/auth-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { apiClient } from '@/lib/api'
+import { apiFetcher } from '@/lib/swr'
 import type { Entity, EntityVersion } from '@/types'
 
 export default function EntityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
-  const [entity, setEntity] = useState<Entity | null>(null)
-  const [versions, setVersions] = useState<EntityVersion[]>([])
-  const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loadEntity = async () => {
-    setLoading(true)
-    setError(null)
+  const { data: entityData, isLoading, mutate } = useSWR<{ data: Entity }>(
+    `/api/entities/${resolvedParams.id}`,
+    apiFetcher
+  )
+  const { data: versionsData } = useSWR<{ data: EntityVersion[] }>(
+    `/api/entities/${resolvedParams.id}/versions`,
+    apiFetcher
+  )
 
-    try {
-      const response = await apiClient.get<{ data: Entity }>(`/api/entities/${resolvedParams.id}`)
-      setEntity(response.data)
-    } catch (_err) {
-      setError('Failed to load entity')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadVersions = async () => {
-    try {
-      const response = await apiClient.get<{ data: EntityVersion[] }>(`/api/entities/${resolvedParams.id}/versions`)
-      setVersions(response.data)
-    } catch (err) {
-      console.error('Failed to load versions:', err)
-    }
-  }
-
-  useEffect(() => {
-    if (!authLoading && user) {
-      loadEntity()
-      loadVersions()
-    }
-  }, [resolvedParams.id, authLoading, user])
+  const entity = entityData?.data ?? null
+  const versions = versionsData?.data ?? []
 
   const handleEdit = () => {
     router.push(`/entities/${resolvedParams.id}/edit`)
@@ -84,7 +64,7 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
 
     try {
       await apiClient.post(`/api/entities/${resolvedParams.id}/sync`, {})
-      await loadEntity()
+      mutate()
     } catch (_err) {
       setError('Failed to sync entity to ATLAS')
     } finally {
@@ -92,7 +72,7 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-muted-foreground">Loading entity...</div>

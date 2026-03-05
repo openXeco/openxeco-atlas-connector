@@ -1,6 +1,4 @@
-import { TaxonomyType, TaxonomyTypeInfo } from '@/types'
-import { Taxonomy } from '@/types'
-import { apiClient } from '@/lib/api'
+import { TaxonomyTypeInfo } from '@/types'
 
 export const TAXONOMY_TYPES: TaxonomyTypeInfo[] = [
   { type: 'country', label: 'Countries', description: 'Geographic locations' },
@@ -38,15 +36,3 @@ export const TAXONOMY_TYPES: TaxonomyTypeInfo[] = [
   { type: 'use_cases', label: 'Use Cases', description: 'Application use cases' },
   { type: 'citations_source', label: 'Citation Sources', description: 'Reference sources' },
 ] as const
-
-export const getTaxonomyByType = async (type?: TaxonomyType): Promise<Taxonomy[]> => {
-  const response = await apiClient.get<{ data: Taxonomy[] }>(`/api/taxonomies/${type}`)
-
-  return response.data
-}
-
-export const getTaxonomyById = async (id: string): Promise<Taxonomy> => {
-  const response = await apiClient.get<{data: Taxonomy}>(`/api/taxonomies/id/${id}`)
-
-  return response.data
-}

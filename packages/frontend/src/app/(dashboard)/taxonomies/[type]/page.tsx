@@ -1,73 +1,53 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useMemo, use } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
 import { ArrowLeft, RefreshCw, Search } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TaxonomyTree } from '@/components/taxonomies/taxonomy-tree-new'
 import { apiClient } from '@/lib/api'
+import { apiFetcher } from '@/lib/swr'
 import type { Taxonomy, TaxonomyType } from '@/types'
-import { TAXONOMY_TYPES, getTaxonomyByType } from '@/data/taxonomies'
+import { TAXONOMY_TYPES } from '@/data/taxonomies'
 
 export default function TaxonomyDetailPage({ params }: { params: Promise<{ type: TaxonomyType }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
-  const [taxonomies, setTaxonomies] = useState<Taxonomy[]>([])
-  const [filteredTaxonomies, setFilteredTaxonomies] = useState<Taxonomy[]>([])
-  const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [error, setError] = useState<string | null>(null)
 
   const taxonomyInfo = TAXONOMY_TYPES.find((t) => t.type === resolvedParams.type)
   const hasHierarchy = resolvedParams.type === 'cluster_thematic_area'
 
-  const loadTaxonomies = async () => {
-    setLoading(true)
-    setError(null)
+  const { data, error, isLoading, mutate } = useSWR<{ data: Taxonomy[] }>(
+    `/api/taxonomies/${resolvedParams.type}`,
+    apiFetcher
+  )
 
-    try {
-      const taxonomies = await getTaxonomyByType(resolvedParams.type)
-      setTaxonomies(taxonomies)
-      setFilteredTaxonomies(taxonomies)
-    } catch (_err) {
-      setError('Failed to load taxonomies')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const filteredTaxonomies = useMemo(() => {
+    const taxonomies = data?.data ?? []
+    if (searchQuery.trim() === '') return taxonomies
+    const query = searchQuery.toLowerCase()
+    return taxonomies.filter(
+      (taxonomy) => taxonomy.name.toLowerCase().includes(query) || taxonomy.description?.toLowerCase().includes(query)
+    )
+  }, [searchQuery, data])
 
   const handleSync = async () => {
     setSyncing(true)
-    setError(null)
 
     try {
       await apiClient.post(`/api/taxonomies/sync/${resolvedParams.type}`, {})
-      await loadTaxonomies()
+      mutate()
     } catch (_err) {
-      setError('Failed to sync taxonomy from ATLAS')
+      // error shown via SWR
     } finally {
       setSyncing(false)
     }
   }
-
-  useEffect(() => {
-    loadTaxonomies()
-  }, [resolvedParams.type])
-
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredTaxonomies(taxonomies)
-    } else {
-      const query = searchQuery.toLowerCase()
-      const filtered = taxonomies.filter(
-        (taxonomy) => taxonomy.name.toLowerCase().includes(query) || taxonomy.description?.toLowerCase().includes(query)
-      )
-      setFilteredTaxonomies(filtered)
-    }
-  }, [searchQuery, taxonomies])
 
   if (!taxonomyInfo) {
     return (
@@ -95,14 +75,14 @@ export default function TaxonomyDetailPage({ params }: { params: Promise<{ type:
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={handleSync} disabled={syncing || loading} className="gap-2">
+          <Button onClick={handleSync} disabled={syncing || isLoading} className="gap-2">
             <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
             {syncing ? 'Syncing...' : 'Sync'}
           </Button>
         </div>
       </div>
 
-      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">Failed to load taxonomies</div>}
 
       <Card>
         <CardHeader>
@@ -127,7 +107,7 @@ export default function TaxonomyDetailPage({ params }: { params: Promise<{ type:
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="py-8 text-center text-muted-foreground">Loading taxonomies...</div>
           ) : filteredTaxonomies.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">

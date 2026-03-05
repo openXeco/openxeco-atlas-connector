@@ -1,14 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import useSWR from 'swr'
 import { RefreshCw, CheckCircle2, AlertCircle, Clock, ArrowUpCircle } from 'lucide-react'
-import { useAuth } from '@/contexts/auth-context'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SyncStatusWidget } from '@/components/sync/sync-status-widget'
 import { SyncLogsTable } from '@/components/sync/sync-logs-table'
-import { apiClient } from '@/lib/api'
+import { apiFetcher } from '@/lib/swr'
 
 interface SyncStatus {
   total: number
@@ -20,34 +19,9 @@ interface SyncStatus {
 }
 
 export default function SyncPage() {
-  const { user, loading: authLoading } = useAuth()
-  const [status, setStatus] = useState<SyncStatus | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data, error, isLoading, mutate } = useSWR<{ data: SyncStatus }>('/api/sync/status', apiFetcher)
 
-  const loadStatus = async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const response = await apiClient.get<{ data: SyncStatus }>('/api/sync/status')
-      setStatus(response.data)
-    } catch (_err) {
-      setError('Failed to load sync status')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!authLoading && user) {
-      loadStatus()
-    }
-  }, [authLoading, user])
-
-  const handleRefresh = () => {
-    loadStatus()
-  }
+  const status = data?.data ?? null
 
   return (
     <>
@@ -56,12 +30,12 @@ export default function SyncPage() {
           <h2 className="text-2xl font-bold tracking-tight">Sync Management</h2>
           <p className="text-muted-foreground">Monitor and manage synchronization with ATLAS</p>
         </div>
-        <Button variant="outline" size="icon" onClick={handleRefresh} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        <Button variant="outline" size="icon" onClick={() => mutate()} disabled={isLoading}>
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
 
-      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">Failed to load sync status</div>}
 
       {status && (
         <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -122,7 +96,7 @@ export default function SyncPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <SyncStatusWidget onRefresh={loadStatus} />
+          <SyncStatusWidget onRefresh={() => mutate()} />
         </TabsContent>
 
         <TabsContent value="logs">

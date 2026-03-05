@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import useSWR from 'swr'
 import { Building2, Tags, RefreshCw, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { apiClient } from '@/lib/api'
+import { apiFetcher } from '@/lib/swr'
 
 interface SyncStatus {
   total: number
@@ -15,33 +15,14 @@ interface SyncStatus {
 }
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true)
-  const [entityTotal, setEntityTotal] = useState(0)
-  const [taxonomyTotal, setTaxonomyTotal] = useState(0)
-  const [pendingSync, setPendingSync] = useState(0)
-  const [conflicts, setConflicts] = useState(0)
+  const { data: syncData, isLoading: syncLoading } = useSWR<{ data: SyncStatus }>('/api/sync/status', apiFetcher)
+  const { data: taxData, isLoading: taxLoading } = useSWR<{ data: { total: number } }>('/api/taxonomies/count', apiFetcher)
 
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const [syncRes, taxRes] = await Promise.all([
-          apiClient.get<{ data: SyncStatus }>('/api/sync/status'),
-          apiClient.get<{ data: { total: number } }>('/api/taxonomies/count'),
-        ])
-
-        setEntityTotal(syncRes.data.total)
-        setPendingSync(syncRes.data.pendingPush)
-        setConflicts(syncRes.data.conflict)
-        setTaxonomyTotal(taxRes.data.total)
-      } catch (_error) {
-        // stats stay at 0 on failure
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadStats()
-  }, [])
+  const loading = syncLoading || taxLoading
+  const entityTotal = syncData?.data.total ?? 0
+  const pendingSync = syncData?.data.pendingPush ?? 0
+  const conflicts = syncData?.data.conflict ?? 0
+  const taxonomyTotal = taxData?.data.total ?? 0
 
   const stats = [
     { name: 'Total Entities', value: entityTotal, icon: Building2, color: 'text-blue-600' },

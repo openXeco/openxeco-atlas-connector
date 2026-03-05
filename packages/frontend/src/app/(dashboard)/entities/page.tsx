@@ -1,60 +1,40 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
 import { Plus, RefreshCw, Search } from 'lucide-react'
-import { useAuth } from '@/contexts/auth-context'
 import { EntityDataTable } from '@/components/entities/entity-data-table'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { apiClient } from '@/lib/api'
+import { apiFetcher } from '@/lib/swr'
 import type { Entity, EntityListParams } from '@/types'
 
 export default function EntitiesPage() {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
-  const [entities, setEntities] = useState<Entity[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, _setFilters] = useState<EntityListParams>({
     page: 1,
     limit: 10,
   })
 
-  const loadEntities = async () => {
-    setLoading(true)
-    setError(null)
+  const params = new URLSearchParams()
+  if (filters.page) params.append('page', filters.page.toString())
+  if (filters.limit) params.append('limit', filters.limit.toString())
+  if (filters.status) params.append('status', filters.status)
+  if (filters.syncStatus) params.append('syncStatus', filters.syncStatus)
 
-    try {
-      const params = new URLSearchParams()
-      if (filters.page) params.append('page', filters.page.toString())
-      if (filters.limit) params.append('limit', filters.limit.toString())
-      if (filters.status) params.append('status', filters.status)
-      if (filters.syncStatus) params.append('syncStatus', filters.syncStatus)
+  const { data, error, isLoading, mutate } = useSWR<{ data: Entity[] }>(
+    `/api/entities?${params.toString()}`,
+    apiFetcher
+  )
 
-      const response = await apiClient.get<{ data: Entity[] }>(`/api/entities?${params.toString()}`)
-      setEntities(response.data)
-    } catch (_err) {
-      setError('Failed to load entities')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!authLoading && user) {
-      loadEntities()
-    }
-  }, [filters, authLoading, user])
+  const entities = data?.data ?? []
 
   const handleCreateNew = () => {
     router.push('/entities/new')
-  }
-
-  const handleRefresh = () => {
-    loadEntities()
   }
 
   const handleViewEntity = (id: string) => {
@@ -70,9 +50,9 @@ export default function EntitiesPage() {
 
     try {
       await apiClient.delete(`/api/entities/${id}`)
-      await loadEntities()
+      mutate()
     } catch (_err) {
-      setError('Failed to delete entity')
+      // error handled by SWR
     }
   }
 
@@ -90,8 +70,8 @@ export default function EntitiesPage() {
           <p className="text-muted-foreground">Manage cluster entities and sync with ATLAS</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handleRefresh} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="icon" onClick={() => mutate()} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
           <Button onClick={handleCreateNew} className="gap-2">
             <Plus className="h-4 w-4" />
@@ -100,7 +80,7 @@ export default function EntitiesPage() {
         </div>
       </div>
 
-      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">Failed to load entities</div>}
 
       <Card>
         <CardHeader>
@@ -125,7 +105,7 @@ export default function EntitiesPage() {
         <CardContent>
           <EntityDataTable
             data={filteredEntities}
-            loading={loading}
+            loading={isLoading}
             onView={handleViewEntity}
             onEdit={handleEditEntity}
             onDelete={handleDeleteEntity}

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { setAccessToken, getAccessToken } from '@/lib/api'
 
@@ -25,28 +25,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  const refreshToken = async () => {
-    try {
-      const response = await fetch('/api/auth/refresh', { method: 'POST' })
-
-      if (!response.ok) {
-        throw Error(response.statusText)
-      }
-
-      const { accessToken } = await response.json()
-
-      setAccessToken(accessToken)
-      await fetchCurrentUser()
-    } catch (error) {
-      setAccessToken(null)
-      setUser(null)
-      throw error
-    }
-  }
-
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/me', {
+        credentials: 'include',
         headers: {
           Authorization: 'Bearer ' + getAccessToken(),
           'Content-Type': 'application/json',
@@ -63,11 +45,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(null)
       setUser(null)
     }
-  }
+  }, [])
 
-  const login = async (email: string, password: string) => {
+  const refreshToken = useCallback(async () => {
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) })
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw Error(response.statusText)
+      }
+
+      const { accessToken } = await response.json()
+
+      setAccessToken(accessToken)
+      await fetchCurrentUser()
+    } catch (error) {
+      setAccessToken(null)
+      setUser(null)
+      throw error
+    }
+  }, [fetchCurrentUser])
+
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        throw Error(response.statusText)
+      }
 
       const { accessToken, user } = await response.json()
 
@@ -77,17 +90,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (_e) {
       setAccessToken(null)
       setUser(null)
+      throw _e
     }
-  }
+  }, [router])
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await fetch('/api/auth/logout', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           Authorization: 'Bearer ' + getAccessToken(),
           'Content-Type': 'application/json',
-        }
+        },
       })
     } catch (error) {
       console.error('Logout error:', error)
@@ -96,13 +111,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       router.push('/login')
     }
-  }
+  }, [router])
 
   useEffect(() => {
     const initAuth = async () => {
       setLoading(true)
       try {
-        // On page load, try to restore session via refresh token cookie
         await refreshToken()
       } catch (_error) {
         // No valid refresh token — user needs to log in
@@ -112,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     initAuth()
-  }, [])
+  }, [refreshToken])
 
   useEffect(() => {
     const interval = setInterval(
@@ -130,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => clearInterval(interval)
-  }, [])
+  }, [refreshToken])
 
   return <AuthContext.Provider value={{ user, loading, login, logout, refreshToken }}>{children}</AuthContext.Provider>
 }
