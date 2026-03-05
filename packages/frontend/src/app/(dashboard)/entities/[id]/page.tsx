@@ -383,11 +383,69 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                       </div>
                     )}
 
-                    {entity.thematicAreas && (
+                    {entity.thematicAreas && entity.thematicAreas.length > 0 && (
                       <div>
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Knowledge domains and subdomains</h4>
-                        {entity.thematicAreas.map((a) =>
-                        <p key={`thematicArea_${a.id}`} className="text-sm">{a.name}</p>)}
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Knowledge Domains</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {entity.thematicAreas.map((a) => (
+                            <span key={`thematicArea_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {entity.sectors && entity.sectors.length > 0 && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Sectors</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {entity.sectors.map((a) => (
+                            <span key={`sector_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {entity.technologies && entity.technologies.length > 0 && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Technologies</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {entity.technologies.map((a) => (
+                            <span key={`technology_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {entity.useCases && entity.useCases.length > 0 && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Use Cases</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {entity.useCases.map((a) => (
+                            <span key={`useCase_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {entity.fieldsOfActivity && entity.fieldsOfActivity.length > 0 && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Fields of Activity</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {entity.fieldsOfActivity.map((a) => (
+                            <span key={`field_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {entity.subDomains && entity.subDomains.length > 0 && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">Sub-Domains</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {entity.subDomains.map((a) => (
+                            <span key={`subDomain_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </CardContent>
