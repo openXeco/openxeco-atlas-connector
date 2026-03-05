@@ -7,6 +7,7 @@ import { Check, ChevronDown, X } from 'lucide-react'
 export interface MultiSelectOption {
   id: string
   name: string
+  parentId?: string | null
 }
 
 export interface MultiSelectProps {
@@ -16,10 +17,11 @@ export interface MultiSelectProps {
   placeholder?: string
   disabled?: boolean
   className?: string
+  hierarchical?: boolean
 }
 
 const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
-  ({ options, value, onChange, placeholder = 'Select options...', disabled, className }, ref) => {
+  ({ options, value, onChange, placeholder = 'Select options...', disabled, className, hierarchical }, ref) => {
     const [isOpen, setIsOpen] = React.useState(false)
     const containerRef = React.useRef<HTMLDivElement>(null)
 
@@ -94,6 +96,55 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
           <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
             {options.length === 0 ? (
               <div className="py-2 px-3 text-sm text-muted-foreground">No options available</div>
+            ) : hierarchical ? (
+              (() => {
+                const roots = options.filter((o) => !o.parentId)
+                const children = options.filter((o) => o.parentId)
+                return roots.map((root) => {
+                  const rootSelected = value.includes(root.id)
+                  const rootChildren = children.filter((c) => c.parentId === root.id)
+                  return (
+                    <React.Fragment key={root.id}>
+                      <div
+                        role="option"
+                        aria-selected={rootSelected}
+                        className={cn(
+                          'relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm font-semibold outline-none',
+                          'hover:bg-accent hover:text-accent-foreground',
+                          rootSelected && 'bg-accent/50'
+                        )}
+                        onClick={() => toggleOption(root.id)}
+                      >
+                        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                          {rootSelected && <Check className="h-4 w-4" />}
+                        </span>
+                        {root.name}
+                      </div>
+                      {rootChildren.map((child) => {
+                        const childSelected = value.includes(child.id)
+                        return (
+                          <div
+                            key={child.id}
+                            role="option"
+                            aria-selected={childSelected}
+                            className={cn(
+                              'relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-12 pr-2 text-sm text-muted-foreground outline-none',
+                              'hover:bg-accent hover:text-accent-foreground',
+                              childSelected && 'bg-accent/50 text-foreground'
+                            )}
+                            onClick={() => toggleOption(child.id)}
+                          >
+                            <span className="absolute left-6 flex h-3.5 w-3.5 items-center justify-center">
+                              {childSelected && <Check className="h-4 w-4" />}
+                            </span>
+                            {child.name}
+                          </div>
+                        )
+                      })}
+                    </React.Fragment>
+                  )
+                })
+              })()
             ) : (
               options.map((option) => {
                 const isSelected = value.includes(option.id)

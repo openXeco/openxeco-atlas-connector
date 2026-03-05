@@ -1,7 +1,6 @@
 import { Taxonomy } from '@/types'
 
 export const TaxonomyTree = ({ taxonomies }: { taxonomies: Taxonomy[] }) => {
-  console.log(taxonomies)
   return (
     <div className={'space-y-1'}>
       {taxonomies

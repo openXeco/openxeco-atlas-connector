@@ -118,6 +118,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
     handleSubmit,
     watch,
     setValue,
+    trigger,
     formState: { errors },
   } = useForm<EntityFormData>({
     resolver: zodResolver(entitySchema),
@@ -162,9 +163,14 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
   const formData = watch()
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep)
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStepIndex < steps.length - 1) {
-      setCurrentStep(steps[currentStepIndex + 1].id)
+      const nextStep = steps[currentStepIndex + 1]
+      // Trigger validation when navigating to confirmation step
+      if (nextStep.id === 'confirmation') {
+        await trigger()
+      }
+      setCurrentStep(nextStep.id)
     }
   }
 
@@ -230,7 +236,11 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onFormSubmit)}>
+      <form onSubmit={handleSubmit(onFormSubmit)} onKeyDown={(e) => {
+        if (e.key === 'Enter' && currentStep !== 'confirmation') {
+          e.preventDefault()
+        }
+      }}>
         <Card>
           <CardHeader>
             <CardTitle>{steps[currentStepIndex].title}</CardTitle>
@@ -565,10 +575,11 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     Expertise according to the Cybersecurity Taxonomy (Knowledge Domains)
                   </Label>
                   <MultiSelect
-                    options={thematicAreas.map((t) => ({ id: t.id, name: t.name }))}
+                    options={thematicAreas.map((t) => ({ id: t.id, name: t.name, parentId: t.parentId }))}
                     value={formData.thematicAreaIds || []}
                     onChange={(values) => setValue('thematicAreaIds', values)}
                     placeholder="Select knowledge domains"
+                    hierarchical
                   />
                 </div>
 
@@ -660,6 +671,19 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
             {currentStep === 'confirmation' && (
               <>
                 <div className="space-y-6">
+                  {Object.keys(errors).length > 0 && (
+                    <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-2">
+                      <h4 className="text-sm font-semibold text-destructive">Please fix the following errors before submitting:</h4>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {Object.entries(errors).map(([field, error]) => (
+                          <li key={field} className="text-sm text-destructive">
+                            <span className="font-medium">{field}</span>: {(error as { message?: string })?.message || 'Invalid value'}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div className="rounded-lg border p-4 space-y-4">
                     <h3 className="text-lg font-semibold">Review Your Submission</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
