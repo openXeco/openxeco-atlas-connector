@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { setAccessToken, getAccessToken } from '@/lib/api'
 
@@ -25,10 +25,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  const fetchCurrentUser = useCallback(async () => {
+  const refreshToken = async () => {
+    try {
+      const response = await fetch('/api/auth/refresh', { method: 'POST' })
+
+      if (!response.ok) {
+        throw Error(response.statusText)
+      }
+
+      const { accessToken } = await response.json()
+
+      setAccessToken(accessToken)
+      await fetchCurrentUser()
+    } catch (error) {
+      setAccessToken(null)
+      setUser(null)
+      throw error
+    }
+  }
+
+  const fetchCurrentUser = async () => {
     try {
       const response = await fetch('/api/auth/me', {
-        credentials: 'include',
         headers: {
           Authorization: 'Bearer ' + getAccessToken(),
           'Content-Type': 'application/json',
@@ -45,60 +63,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(null)
       setUser(null)
     }
-  }, [])
+  }
 
-  const refreshToken = useCallback(async () => {
-    try {
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        credentials: 'include',
-      })
+  const login = async (email: string, password: string) => {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
 
-      if (!response.ok) {
-        throw Error(response.statusText)
-      }
-
-      const { accessToken } = await response.json()
-
-      setAccessToken(accessToken)
-      await fetchCurrentUser()
-    } catch (error) {
-      setAccessToken(null)
-      setUser(null)
-      throw error
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ message: 'Login failed' }))
+      throw new Error(data.message || 'Login failed')
     }
-  }, [fetchCurrentUser])
 
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
+    const { accessToken, user } = await response.json()
 
-      if (!response.ok) {
-        throw Error(response.statusText)
-      }
+    setAccessToken(accessToken)
+    setUser(user)
+    router.push('/')
+  }
 
-      const { accessToken, user } = await response.json()
-
-      setAccessToken(accessToken)
-      setUser(user)
-      router.push('/')
-    } catch (_e) {
-      setAccessToken(null)
-      setUser(null)
-      throw _e
-    }
-  }, [router])
-
-  const logout = useCallback(async () => {
+  const logout = async () => {
     try {
       await fetch('/api/auth/logout', {
         method: 'POST',
-        credentials: 'include',
         headers: {
           Authorization: 'Bearer ' + getAccessToken(),
           'Content-Type': 'application/json',
@@ -111,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       router.push('/login')
     }
-  }, [router])
+  }
 
   useEffect(() => {
     const initAuth = async () => {
@@ -126,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     initAuth()
-  }, [refreshToken])
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(
@@ -144,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => clearInterval(interval)
-  }, [refreshToken])
+  }, [])
 
   return <AuthContext.Provider value={{ user, loading, login, logout, refreshToken }}>{children}</AuthContext.Provider>
 }

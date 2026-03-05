@@ -1,7 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import { config } from '../config/index.js'
 import { db } from '../config/database.js'
 import { users } from '../db/schema.js'
 import { verifyPassword } from '../services/password.js'
@@ -43,16 +42,10 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         role: user.role || 'admin',
       })
 
-      reply.setCookie('refreshToken', tokens.refreshToken, {
-        httpOnly: true,
-        secure: config.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/api/auth',
-        maxAge: 7 * 24 * 60 * 60,
-      })
-
       return reply.send({
         accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        refreshTokenExpiresIn: 7 * 24 * 60 * 60,
         user: {
           id: user.id,
           email: user.email,
@@ -72,7 +65,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.post('/refresh', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (request, reply) => {
     try {
-      const refreshToken = (request.cookies as Record<string, string | undefined>).refreshToken
+      const { refreshToken } = z.object({ refreshToken: z.string() }).parse(request.body)
 
       if (!refreshToken) {
         return reply.status(401).send({
@@ -105,16 +98,10 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         role: user.role || 'admin',
       })
 
-      reply.setCookie('refreshToken', tokens.refreshToken, {
-        httpOnly: true,
-        secure: config.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/api/auth',
-        maxAge: 7 * 24 * 60 * 60,
-      })
-
       return reply.send({
         accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        refreshTokenExpiresIn: 7 * 24 * 60 * 60,
       })
     } catch (error) {
       logger.error('Token refresh failed', error instanceof Error ? error : { message: String(error) })
@@ -155,10 +142,6 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   fastify.post('/logout', { preHandler: authenticate }, async (_request, reply) => {
-    reply.clearCookie('refreshToken', {
-      path: '/api/auth',
-    })
-
     return reply.send({ message: 'Logged out successfully' })
   })
 }
