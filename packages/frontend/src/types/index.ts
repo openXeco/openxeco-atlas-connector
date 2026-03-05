@@ -17,7 +17,6 @@ export type TaxonomyType =
   | 'fields_of_activity'
   | 'funding_sources'
   | 'initiatives'
-  | 'institution'
   | 'languages'
   | 'legal_status'
   | 'nationality'

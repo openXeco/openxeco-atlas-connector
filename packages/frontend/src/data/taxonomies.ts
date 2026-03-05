@@ -6,11 +6,6 @@ export const TAXONOMY_TYPES: TaxonomyTypeInfo[] = [
   { type: 'country', label: 'Countries', description: 'Geographic locations' },
   { type: 'cluster_type', label: 'Cluster Types', description: 'Types of cybersecurity clusters' },
   { type: 'legal_status', label: 'Legal Status', description: 'Legal entity types' },
-  {
-    type: 'institution',
-    label: 'Institutions',
-    description: 'Educational and research institutions',
-  },
   { type: 'languages', label: 'Languages', description: 'Supported languages' },
   { type: 'sectors', label: 'Sectors', description: 'Industry sectors' },
   { type: 'technologies', label: 'Technologies', description: 'Technology categories' },

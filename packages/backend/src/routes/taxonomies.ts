@@ -16,7 +16,6 @@ const taxonomyTypeSchema = z.enum([
   'fields_of_activity',
   'funding_sources',
   'initiatives',
-  'institution',
   'languages',
   'legal_status',
   'nationality',
