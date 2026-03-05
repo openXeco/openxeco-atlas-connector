@@ -3,9 +3,6 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, RefreshCw, Search } from 'lucide-react'
-import { Sidebar } from '@/components/layout/sidebar'
-import { Header } from '@/components/layout/header'
-import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -74,91 +71,81 @@ export default function TaxonomyDetailPage({ params }: { params: Promise<{ type:
 
   if (!taxonomyInfo) {
     return (
-      <ProtectedRoute>
-        <div className="flex h-screen items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold">Taxonomy type not found</h2>
-            <Button onClick={() => router.push('/taxonomies')} className="mt-4">
-              Back to Taxonomies
-            </Button>
-          </div>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold">Taxonomy type not found</h2>
+          <Button onClick={() => router.push('/taxonomies')} className="mt-4">
+            Back to Taxonomies
+          </Button>
         </div>
-      </ProtectedRoute>
+      </div>
     )
   }
 
   return (
-    <ProtectedRoute>
-      <div className="flex h-screen">
-        <Sidebar />
-        <div className="flex flex-1 flex-col">
-          <Header />
-          <main className="flex-1 overflow-auto bg-muted/30 p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.push('/taxonomies')}>
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div>
-                  <h2 className="text-2xl font-bold tracking-tight">{taxonomyInfo.label}</h2>
-                  <p className="text-muted-foreground">{taxonomyInfo.description}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button onClick={handleSync} disabled={syncing || loading} className="gap-2">
-                  <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-                  {syncing ? 'Syncing...' : 'Sync'}
-                </Button>
-              </div>
-            </div>
-
-            {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>
-                      {filteredTaxonomies.length} {filteredTaxonomies.length === 1 ? 'Term' : 'Terms'}
-                    </CardTitle>
-                    <CardDescription>{searchQuery ? 'Filtered results' : 'All terms in this taxonomy'}</CardDescription>
-                  </div>
-                  {!hasHierarchy ? (
-                    <div className="relative w-64">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="Search terms..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9"
-                      />
-                    </div>
-                  ) : undefined}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="py-8 text-center text-muted-foreground">Loading taxonomies...</div>
-                ) : filteredTaxonomies.length === 0 ? (
-                  <div className="py-8 text-center text-muted-foreground">
-                    {searchQuery ? 'No terms match your search' : 'No terms available'}
-                  </div>
-                ) : hasHierarchy ? (
-                  <TaxonomyTree taxonomies={filteredTaxonomies} />
-                ) : (
-                  <div className="space-y-2">
-                    {filteredTaxonomies.map((taxonomy) => (
-                      <div key={taxonomy.id} className="rounded-md border p-3 hover:bg-accent">
-                        <div className="font-medium">{taxonomy.name}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </main>
+    <>
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.push('/taxonomies')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">{taxonomyInfo.label}</h2>
+            <p className="text-muted-foreground">{taxonomyInfo.description}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleSync} disabled={syncing || loading} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing...' : 'Sync'}
+          </Button>
         </div>
       </div>
-    </ProtectedRoute>
+
+      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>
+                {filteredTaxonomies.length} {filteredTaxonomies.length === 1 ? 'Term' : 'Terms'}
+              </CardTitle>
+              <CardDescription>{searchQuery ? 'Filtered results' : 'All terms in this taxonomy'}</CardDescription>
+            </div>
+            {!hasHierarchy ? (
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search terms..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            ) : undefined}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="py-8 text-center text-muted-foreground">Loading taxonomies...</div>
+          ) : filteredTaxonomies.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground">
+              {searchQuery ? 'No terms match your search' : 'No terms available'}
+            </div>
+          ) : hasHierarchy ? (
+            <TaxonomyTree taxonomies={filteredTaxonomies} />
+          ) : (
+            <div className="space-y-2">
+              {filteredTaxonomies.map((taxonomy) => (
+                <div key={taxonomy.id} className="rounded-md border p-3 hover:bg-accent">
+                  <div className="font-medium">{taxonomy.name}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </>
   )
 }

@@ -171,6 +171,7 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
     [onView, onEdit, onDelete]
   )
 
+  // @tanstack/react-table v8 does not support React Compiler; awaiting v9
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,

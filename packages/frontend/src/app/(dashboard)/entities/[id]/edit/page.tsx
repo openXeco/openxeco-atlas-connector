@@ -3,9 +3,6 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { Sidebar } from '@/components/layout/sidebar'
-import { Header } from '@/components/layout/header'
-import { ProtectedRoute } from '@/components/auth/protected-route'
 import { EntityFormWizard } from '@/components/entities/entity-form-wizard'
 import { Button } from '@/components/ui/button'
 import { apiClient } from '@/lib/api'
@@ -49,38 +46,22 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
 
   if (loading) {
     return (
-      <ProtectedRoute>
-        <div className="flex h-screen">
-          <Sidebar />
-          <div className="flex flex-1 flex-col">
-            <Header />
-            <main className="flex flex-1 items-center justify-center">
-              <div className="text-muted-foreground">Loading entity...</div>
-            </main>
-          </div>
-        </div>
-      </ProtectedRoute>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-muted-foreground">Loading entity...</div>
+      </div>
     )
   }
 
   if (!entity) {
     return (
-      <ProtectedRoute>
-        <div className="flex h-screen">
-          <Sidebar />
-          <div className="flex flex-1 flex-col">
-            <Header />
-            <main className="flex flex-1 items-center justify-center">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold">Entity not found</h2>
-                <Button onClick={() => router.push('/entities')} className="mt-4">
-                  Back to Entities
-                </Button>
-              </div>
-            </main>
-          </div>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold">Entity not found</h2>
+          <Button onClick={() => router.push('/entities')} className="mt-4">
+            Back to Entities
+          </Button>
         </div>
-      </ProtectedRoute>
+      </div>
     )
   }
 
@@ -133,28 +114,20 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <ProtectedRoute>
-      <div className="flex h-screen">
-        <Sidebar />
-        <div className="flex flex-1 flex-col">
-          <Header />
-          <main className="flex-1 overflow-auto bg-muted/30 p-6">
-            <div className="mb-6 flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => router.push(`/entities/${resolvedParams.id}`)}>
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight">Edit Entity</h2>
-                <p className="text-muted-foreground">Update entity information</p>
-              </div>
-            </div>
-
-            {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
-
-            <EntityFormWizard initialData={initialData} onSubmit={handleSubmit} onCancel={handleCancel} />
-          </main>
+    <>
+      <div className="mb-6 flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => router.push(`/entities/${resolvedParams.id}`)}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Edit Entity</h2>
+          <p className="text-muted-foreground">Update entity information</p>
         </div>
       </div>
-    </ProtectedRoute>
+
+      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+
+      <EntityFormWizard initialData={initialData} onSubmit={handleSubmit} onCancel={handleCancel} />
+    </>
   )
 }
