@@ -4,10 +4,10 @@ Manages cybersecurity cluster registrations and syncs them with the [European Cy
 
 ## Tech Stack
 
-- **Frontend**: Next.js 16.1, React 19, TailwindCSS, shadcn/ui
+- **Frontend**: Next.js 16.1, React 19, TailwindCSS, shadcn/ui, SWR
 - **Backend**: Fastify 5.7, TypeScript, Drizzle ORM
 - **Database**: PostgreSQL 17
-- **Auth**: JWT (access + refresh tokens), Argon2
+- **Auth**: JWT access tokens (in-memory) + httpOnly refresh token cookies, Argon2
 - **Deployment**: Docker Compose
 
 ## Quick Start
@@ -40,11 +40,34 @@ packages/
 │       └── middleware/ # JWT auth, admin enforcement
 └── frontend/          # Next.js (App Router)
     └── src/
-        ├── app/       # pages — login, entities, taxonomies, sync, settings
-        ├── components/ # shadcn/ui based
-        ├── contexts/  # auth context (in-memory token management)
-        └── lib/       # API client
+        ├── app/
+        │   ├── (dashboard)/  # layout with sidebar/header, all dashboard pages
+        │   └── login/        # public login page
+        ├── components/       # shadcn/ui based
+        ├── contexts/         # auth context
+        └── lib/              # API client, SWR fetcher
 ```
+
+## Architecture
+
+### Authentication Flow
+
+1. **Login**: Backend validates credentials, returns access token in body and sets refresh token as httpOnly cookie (`sameSite: strict`, `secure` in production, scoped to `/api/auth`).
+2. **Access token**: Stored in-memory (not localStorage) to prevent XSS exposure. Sent as `Authorization: Bearer` header on API requests.
+3. **Refresh**: Frontend calls `POST /api/auth/refresh` with `credentials: 'include'`. Backend reads refresh token from cookie, issues new token pair.
+4. **Auto-refresh**: Auth context refreshes tokens every 50 minutes via `setInterval`.
+
+### API Proxy
+
+In production, Next.js rewrites `/api/*` requests to the backend (`BACKEND_INTERNAL_URL`). In development, `NEXT_PUBLIC_API_URL` can point directly at the backend.
+
+### Data Fetching
+
+Frontend pages use [SWR](https://swr.vercel.app/) with a shared `apiFetcher` that includes auth headers and `credentials: 'include'`. Mutations use the `apiClient` directly and call SWR's `mutate()` to revalidate.
+
+### Taxonomy Hierarchy
+
+ATLAS taxonomies (18 types) are cached locally. Knowledge domains (thematic areas) have a parent-child hierarchy — child records store the parent's **ATLAS UUID** in their `parentId` field (not the local DB UUID). The `MultiSelect` component supports hierarchical display with root items rendered bold and children indented.
 
 ## Commands
 
@@ -60,8 +83,8 @@ pnpm --filter @atlas-connector/backend build
 pnpm --filter @atlas-connector/backend test
 pnpm --filter @atlas-connector/backend db:push       # apply schema
 pnpm --filter @atlas-connector/backend db:generate   # generate migration
-pnpm --filter @atlas-connector/backend db:migrate     # run migrations
-pnpm --filter @atlas-connector/backend db:studio      # Drizzle Studio UI
+pnpm --filter @atlas-connector/backend db:migrate    # run migrations
+pnpm --filter @atlas-connector/backend db:studio     # Drizzle Studio UI
 pnpm --filter @atlas-connector/backend seed:admin
 
 # frontend
@@ -73,12 +96,12 @@ pnpm --filter @atlas-connector/frontend build
 
 ### Auth
 
-| Method | Endpoint            | Auth | Description          |
-| ------ | ------------------- | ---- | -------------------- |
-| POST   | `/api/auth/login`   | No   | Login                |
-| POST   | `/api/auth/logout`  | Yes  | Logout               |
-| POST   | `/api/auth/refresh` | No   | Refresh access token |
-| GET    | `/api/auth/me`      | Yes  | Current user         |
+| Method | Endpoint            | Auth | Description                          |
+| ------ | ------------------- | ---- | ------------------------------------ |
+| POST   | `/api/auth/login`   | No   | Login (sets refresh token cookie)    |
+| POST   | `/api/auth/logout`  | Yes  | Logout (clears refresh token cookie) |
+| POST   | `/api/auth/refresh` | Cookie | Refresh access token               |
+| GET    | `/api/auth/me`      | Yes  | Current user                         |
 
 ### Entities
 
@@ -114,6 +137,7 @@ pnpm --filter @atlas-connector/frontend build
 | POST   | `/api/taxonomies/sync/:type` | Sync one type            |
 | GET    | `/api/taxonomies/:type`      | List by type             |
 | GET    | `/api/taxonomies/id/:id`     | Get by ID                |
+| GET    | `/api/taxonomies/count`      | Count by type            |
 | GET    | `/api/taxonomies/search`     | Search by name           |
 
 ### Health
@@ -135,7 +159,7 @@ The entity model covers the full ECCC membership registration form:
 - **Compliance**: Article 138 compliance, data sharing consent
 - **Structure**: headquarters flag, subsidiaries, majority shares
 - **Expertise**: description (800 char limit), goals to achieve/contribute
-- **JRC taxonomy dimensions**: thematic areas, sectors, technologies, use cases, fields of activity
+- **Taxonomy dimensions**: thematic areas (knowledge domains), sectors, technologies, use cases, fields of activity, sub-domains
 
 Conditional validation applies (e.g. `headquarterInfo` required when `isHeadquarter` is false). See the entity creation endpoint for the full schema.
 
@@ -160,7 +184,8 @@ See `.env.example` for all variables. Key ones:
 | `ATLAS_USERNAME` | ATLAS API username |
 | `ATLAS_PASSWORD` | ATLAS API password |
 | `HTTPS_PROXY` | Optional proxy for ATLAS requests |
-| `NEXT_PUBLIC_API_URL` | Backend URL for frontend |
+| `BACKEND_INTERNAL_URL` | Backend URL for Next.js rewrites (production) |
+| `NEXT_PUBLIC_API_URL` | Backend URL for frontend (development) |
 
 ## License
 
