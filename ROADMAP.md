@@ -1,7 +1,7 @@
 # Urgent TODO
 **Frontend**
 - [ ] Fix the automatic "Submit" button when everything is ok. Wait for the user
-- [ ] (wait for response from JRC). Remove "Other sectors," "Other technologies," "Other use cases"
+- [ ] Remove "Other sectors," "Other technologies," "Other use cases" (not needed)
 - [x] Fix the entity edit to display taxonomies that are associated (currently the route returns all relations)
 - [x] Fix the entity view to display associated taxonomies (inside `Classification` card)
 - [x] In the Thematic Area (called "knowledge domains" in the edit form) dropdown make the UI different if it's a root taxonomy or it has parent (see the taxonomy-tree-new.tsx)
