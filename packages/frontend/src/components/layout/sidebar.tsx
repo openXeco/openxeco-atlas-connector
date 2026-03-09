@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Building2, Tags, RefreshCw, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import oxeLogo from '@/assets/openxeco-logo-compact.svg'
+import Image from 'next/image'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -20,9 +22,7 @@ export function Sidebar() {
     <aside className="flex h-screen w-64 flex-col border-r bg-card">
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Building2 className="h-5 w-5" />
-          </div>
+          <Image src={oxeLogo} className="m-0 p-0 w-10" alt={'openXeco logo'} />
           <span className="text-lg font-semibold">ATLAS Connector</span>
         </Link>
       </div>

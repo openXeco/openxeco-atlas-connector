@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Building2 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoginForm } from '@/components/auth/login-form'
+import oxeLogo from '@/assets/openxeco-logo.svg'
+import Image from 'next/image'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -41,10 +42,10 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Building2 className="h-6 w-6" />
-          </div>
-          <CardTitle className="text-2xl">ATLAS Connector</CardTitle>
+          <CardTitle className="text-2xl">
+            <Image src={oxeLogo} className="w-8/12 m-auto my-0 p-0" alt={'openXeco logo'} />
+            ATLAS Connector
+          </CardTitle>
           <CardDescription>Sign in to your account to continue</CardDescription>
         </CardHeader>
         <CardContent>
