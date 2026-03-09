@@ -14,7 +14,7 @@ import type {
   PaginatedResponse,
 } from './types.js'
 
-export class AtlasClient {
+class AtlasClient {
   private config: AtlasConfig
   private authToken?: string
   private tokenExpiry?: Date
@@ -330,7 +330,7 @@ export class AtlasClient {
           field_question_subsidiaries: data.hasSubsidiaries, // *
           field_subsidiaries_eu: data.subsidiariesDetails,
           field_question_majority: data.hasMajorityShares, // *
-          field_majority_shares_noneu: data.majoritySharesDetails,
+          field_majority_shares_noneu: data.hasMajorityShares ? data.majoritySharesDetails || undefined : undefined,
 
           // Compliance
           field_article_136_compliance: data.article138Compliance, // *
@@ -370,10 +370,18 @@ export class AtlasClient {
     const attributes: Record<string, unknown> = {}
 
     // Basic information
-    if (data.name) attributes.title = data.name
-    if (data.nameNational !== undefined) attributes.field_institution_name_in_nation = data.nameNational
-    if (data.entityDepartment !== undefined) attributes.field_entity_department = data.entityDepartment
-    if (data.description !== undefined) attributes.body = data.description
+    if (data.name) {
+      attributes.title = data.name
+    }
+    if (data.nameNational !== undefined) {
+      attributes.field_institution_name_in_nation = data.nameNational
+    }
+    if (data.entityDepartment !== undefined) {
+      attributes.field_entity_department = data.entityDepartment
+    }
+    if (data.description !== undefined) {
+      attributes.body = data.description
+    }
 
     // Address (structured)
     if (data.countryCode || data.city || data.streetAddress || data.postalCode) {
@@ -384,44 +392,94 @@ export class AtlasClient {
         ...(data.postalCode && { postal_code: data.postalCode }),
       }
     }
-    if (data.latitude !== undefined) attributes.field_latitude = data.latitude
-    if (data.longitude !== undefined) attributes.field_longitude = data.longitude
+    if (data.latitude !== undefined) {
+      attributes.field_latitude = data.latitude
+    }
+    if (data.longitude !== undefined) {
+      attributes.field_longitude = data.longitude
+    }
 
     // Organization details
-    if (data.email !== undefined) attributes.field_general_contact_e_mail = data.email
-    if (data.phone !== undefined) attributes.field_phone_number = data.phone
-    if (data.website !== undefined) attributes.field_url = { uri: data.website }
-    if (data.registrationNumber !== undefined) attributes.field_registration_number = data.registrationNumber
-    if (data.logoUrl !== undefined) attributes.field_logo = data.logoUrl
+    if (data.email !== undefined) {
+      attributes.field_general_contact_e_mail = data.email
+    }
+    if (data.phone !== undefined) {
+      attributes.field_phone_number = data.phone
+    }
+    if (data.website !== undefined) {
+      attributes.field_url = { uri: data.website }
+    }
+    if (data.registrationNumber !== undefined) {
+      attributes.field_registration_number = data.registrationNumber
+    }
+    if (data.logoUrl !== undefined) {
+      attributes.field_logo = data.logoUrl
+    }
 
     // Headquarters
-    if (data.isHeadquarter !== undefined) attributes.field_question_headquarter = data.isHeadquarter
-    if (data.headquarterInfo !== undefined) attributes.field_headquarter = data.headquarterInfo
+    if (data.isHeadquarter !== undefined) {
+      attributes.field_question_headquarter = data.isHeadquarter
+    }
+    if (data.headquarterInfo !== undefined) {
+      attributes.field_headquarter = data.headquarterInfo
+    }
 
     // Subsidiaries
-    if (data.hasSubsidiaries !== undefined) attributes.field_question_subsidiaries = data.hasSubsidiaries
-    if (data.subsidiariesDetails !== undefined) attributes.field_subsidiaries_eu = data.subsidiariesDetails
-    if (data.hasMajorityShares !== undefined) attributes.field_question_majority = data.hasMajorityShares
-    if (data.majoritySharesDetails !== undefined) attributes.field_majority_shares_noneu = data.majoritySharesDetails
+    if (data.hasSubsidiaries !== undefined) {
+      attributes.field_question_subsidiaries = data.hasSubsidiaries
+    }
+    if (data.subsidiariesDetails !== undefined) {
+      attributes.field_subsidiaries_eu = data.subsidiariesDetails
+    }
+    if (data.hasMajorityShares !== undefined) {
+      attributes.field_question_majority = data.hasMajorityShares
+    }
+    if (data.majoritySharesDetails !== undefined && data.hasMajorityShares) {
+      attributes.field_majority_shares_noneu = data.majoritySharesDetails
+    } else {
+      attributes.field_majority_shares_noneu = null
+    }
 
     // Compliance
-    if (data.article138Compliance !== undefined) attributes.field_article_136_compliance = data.article138Compliance
-    if (data.dataShareConsent !== undefined) attributes.field_data_sharing_consent = data.dataShareConsent
+    if (data.article138Compliance !== undefined) {
+      attributes.field_article_136_compliance = data.article138Compliance
+    }
+    if (data.dataShareConsent !== undefined) {
+      attributes.field_data_sharing_consent = data.dataShareConsent
+    }
 
     // Contact person
-    if (data.contactFirstName !== undefined) attributes.field_first_name = data.contactFirstName
-    if (data.contactLastName !== undefined) attributes.field_family_name = data.contactLastName
-    if (data.contactEmail !== undefined) attributes.field_e_mail = data.contactEmail
-    if (data.contactPosition !== undefined) attributes.field_position = data.contactPosition
-    if (data.contactPhone !== undefined) attributes.field_representative_phone_numbe = data.contactPhone
+    if (data.contactFirstName !== undefined) {
+      attributes.field_first_name = data.contactFirstName
+    }
+    if (data.contactLastName !== undefined) {
+      attributes.field_family_name = data.contactLastName
+    }
+    if (data.contactEmail !== undefined) {
+      attributes.field_e_mail = data.contactEmail
+    }
+    if (data.contactPosition !== undefined) {
+      attributes.field_position = data.contactPosition
+    }
+    if (data.contactPhone !== undefined) {
+      attributes.field_representative_phone_numbe = data.contactPhone
+    }
 
     // Expertise
-    if (data.expertiseDescription !== undefined) attributes.field_field_of_activity_descr = data.expertiseDescription
-    if (data.goalsToAchieve !== undefined) attributes.field_goals_to_achieve = data.goalsToAchieve
-    if (data.goalsToContribute !== undefined) attributes.field_goals_to_contribute = data.goalsToContribute
+    if (data.expertiseDescription !== undefined) {
+      attributes.field_field_of_activity_descr = data.expertiseDescription
+    }
+    if (data.goalsToAchieve !== undefined) {
+      attributes.field_goals_to_achieve = data.goalsToAchieve
+    }
+    if (data.goalsToContribute !== undefined) {
+      attributes.field_goals_to_contribute = data.goalsToContribute
+    }
 
     // Workflow
-    if (data.moderationState !== undefined) attributes.moderation_state = data.moderationState
+    if (data.moderationState !== undefined) {
+      attributes.moderation_state = data.moderationState
+    }
 
     const body = {
       data: {
@@ -504,5 +562,7 @@ export class AtlasClient {
     return relationships
   }
 }
+
+export default AtlasClient
 
 export const atlasClient = new AtlasClient()

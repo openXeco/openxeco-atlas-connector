@@ -284,7 +284,7 @@ export class JsonApiTransformer {
       hasSubsidiaries: entity.hasSubsidiaries ?? undefined,
       subsidiariesDetails: entity.subsidiariesDetails || undefined,
       hasMajorityShares: entity.hasMajorityShares ?? undefined,
-      majoritySharesDetails: entity.majoritySharesDetails || undefined,
+      majoritySharesDetails: (entity.hasMajorityShares && entity.majoritySharesDetails) ? entity.majoritySharesDetails : undefined,
 
       // Compliance
       article138Compliance: entity.article138Compliance ?? undefined,
