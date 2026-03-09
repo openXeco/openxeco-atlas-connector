@@ -64,7 +64,7 @@ export const entities = pgTable(
     latitude: decimal('latitude', { precision: 10, scale: 8 }),
     longitude: decimal('longitude', { precision: 11, scale: 8 }),
 
-    // Organization details (mandatory)
+    // Organisation details (mandatory)
     email: varchar('email', { length: 255 }), // field_general_contact_e_mail *
     phone: varchar('phone', { length: 50 }), // field_phone_number
     website: varchar('website', { length: 500 }), // field_url.uri *

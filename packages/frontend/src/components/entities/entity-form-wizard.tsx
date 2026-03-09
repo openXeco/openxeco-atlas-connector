@@ -80,7 +80,7 @@ interface EntityFormWizardProps {
 type Step = 'organisation' | 'contact' | 'expertise' | 'confirmation'
 
 const steps: { id: Step; title: string; description: string }[] = [
-  { id: 'organisation', title: 'Organisation', description: 'Organization details and address' },
+  { id: 'organisation', title: 'Organisation', description: 'Organisation details and address' },
   { id: 'contact', title: 'Contact Person', description: 'Representative information' },
   { id: 'expertise', title: 'Expertise/Taxonomy', description: 'Fields of activity and expertise' },
   { id: 'confirmation', title: 'Disclaimer & Confirmation', description: 'Review and consent' },
@@ -108,7 +108,7 @@ const FIELD_LABELS: Record<string, string> = {
   website: 'Website',
   email: 'Email',
   clusterTypeId: 'Type of organisation',
-  article138Compliance: 'Article 136 Compliance',
+  article138Compliance: 'Article 138 Compliance',
   contactFirstName: 'Contact First Name',
   contactLastName: 'Contact Surname',
   contactEmail: 'Contact Email',
@@ -394,7 +394,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="FORM-ECCC-001-Q110">Type of organisation (Article 8(2)) *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q110">Type of organisation (Article 8(3)) *</Label>
                   <Select
                     value={formData.clusterTypeId}
                     onValueChange={(value: string) => setValue('clusterTypeId', value)}
@@ -478,7 +478,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="FORM-ECCC-001-Q113">Article 136 Compliance *</Label>
+                  <Label htmlFor="FORM-ECCC-001-Q113">Article 138 Compliance *</Label>
                   <p className="text-sm text-muted-foreground mb-2">
                     Does your organization comply with the requirements described in Article 136 of the EU Financial
                     Regulation?
@@ -678,7 +678,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     <h3 className="text-lg font-semibold">Review Your Submission</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="font-medium">Organization Name:</span> {formData.name}
+                        <span className="font-medium">Organisation Name:</span> {formData.name}
                       </div>
                       <div>
                         <span className="font-medium">National Name:</span> {formData.nameNational}

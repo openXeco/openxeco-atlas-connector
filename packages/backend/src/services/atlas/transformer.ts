@@ -46,7 +46,7 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
     latitude: attrs.field_latitude as number | undefined,
     longitude: attrs.field_longitude as number | undefined,
 
-    // Organization details
+    // Organisation details
     email: attrs.field_general_contact_e_mail as string | undefined,
     phone: attrs.field_phone_number as string | undefined,
     website,
@@ -195,7 +195,7 @@ export class JsonApiTransformer {
       latitude: cluster.latitude?.toString(),
       longitude: cluster.longitude?.toString(),
 
-      // Organization details
+      // Organisation details
       email: cluster.email,
       phone: cluster.phone,
       website: cluster.website,
@@ -269,7 +269,7 @@ export class JsonApiTransformer {
       latitude: entity.latitude ? parseFloat(entity.latitude) : undefined,
       longitude: entity.longitude ? parseFloat(entity.longitude) : undefined,
 
-      // Organization details
+      // Organisation details
       email: entity.email || undefined,
       phone: entity.phone || undefined,
       website: entity.website || undefined,

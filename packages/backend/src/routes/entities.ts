@@ -32,7 +32,7 @@ const baseEntitySchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
 
-  // Organization details (mandatory)
+  // Organisation details (mandatory)
   email: z.string().email().optional(), // field_general_contact_e_mail *
   phone: z.string().max(50).optional(),
   website: z.string().url().optional(), // field_url.uri *
@@ -251,7 +251,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             latitude: body.latitude?.toString(),
             longitude: body.longitude?.toString(),
 
-            // Organization details
+            // Organisation details
             email: body.email,
             phone: body.phone,
             website: body.website,
@@ -434,7 +434,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             ...(body.latitude !== undefined && { latitude: body.latitude.toString() }),
             ...(body.longitude !== undefined && { longitude: body.longitude.toString() }),
 
-            // Organization details
+            // Organisation details
             ...(body.email !== undefined && { email: body.email }),
             ...(body.phone !== undefined && { phone: body.phone }),
             ...(body.website !== undefined && { website: body.website }),

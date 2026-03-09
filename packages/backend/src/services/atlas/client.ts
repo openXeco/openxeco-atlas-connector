@@ -315,7 +315,7 @@ class AtlasClient {
           field_latitude: data.latitude,
           field_longitude: data.longitude,
 
-          // Organization details
+          // Organisation details
           field_general_contact_e_mail: data.email, // *
           field_phone_number: data.phone,
           field_url: data.website ? { uri: data.website } : undefined, // *
@@ -399,7 +399,7 @@ class AtlasClient {
       attributes.field_longitude = data.longitude
     }
 
-    // Organization details
+    // Organisation details
     if (data.email !== undefined) {
       attributes.field_general_contact_e_mail = data.email
     }
@@ -502,7 +502,7 @@ class AtlasClient {
   private buildRelationships(data: Partial<ClusterInput>): Record<string, unknown> {
     const relationships: Record<string, unknown> = {}
 
-    // Organization type (cluster_type) *
+    // Organisation type (cluster_type) *
     if (data.clusterTypeId) {
       relationships.field_cluster_type = {
         data: { type: 'taxonomy_term--cluster_type', id: data.clusterTypeId },

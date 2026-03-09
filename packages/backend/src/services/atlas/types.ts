@@ -118,7 +118,7 @@ export interface Cluster {
   latitude?: number
   longitude?: number
 
-  // Organization details
+  // Organisation details
   email?: string
   phone?: string
   website?: string
@@ -188,7 +188,7 @@ export interface ClusterInput {
   latitude?: number
   longitude?: number
 
-  // Organization details
+  // Organisation details
   email?: string
   phone?: string
   website?: string

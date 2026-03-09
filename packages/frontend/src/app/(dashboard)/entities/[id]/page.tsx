@@ -165,11 +165,7 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
             <Pencil className="h-4 w-4" />
             Edit
           </Button>
-          <Button
-            variant="outline"
-            onClick={handleDelete}
-            className="gap-2 text-destructive hover:bg-destructive/10"
-          >
+          <Button variant="outline" onClick={handleDelete} className="gap-2 text-destructive hover:bg-destructive/10">
             <Trash2 className="h-4 w-4" />
             Delete
           </Button>
@@ -185,228 +181,6 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
         </TabsList>
 
         <TabsContent value="details" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Basic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {entity.nameNational && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Name (National Language)</h4>
-                  <p className="text-sm">{entity.nameNational}</p>
-                </div>
-              )}
-              {entity.entityDepartment && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Department</h4>
-                  <p className="text-sm">{entity.entityDepartment}</p>
-                </div>
-              )}
-              {entity.description && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Description</h4>
-                  <p className="text-sm">{entity.description}</p>
-                </div>
-              )}
-              {entity.website && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Website</h4>
-                  <a
-                    href={entity.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-primary hover:underline"
-                  >
-                    <Globe className="h-4 w-4" />
-                    {entity.website}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              )}
-              {entity.email && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Organization Email</h4>
-                  <p className="text-sm">{entity.email}</p>
-                </div>
-              )}
-              {entity.phone && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Organization Phone</h4>
-                  <p className="text-sm">{entity.phone}</p>
-                </div>
-              )}
-              {entity.registrationNumber && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Registration Number</h4>
-                  <p className="text-sm">{entity.registrationNumber}</p>
-                </div>
-              )}
-              {entity.logoUrl && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Logo</h4>
-                  <img
-                    src={entity.logoUrl}
-                    alt={entity.name}
-                    className="h-16 w-16 rounded-md border object-contain"
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Contact & Compliance
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(entity.contactFirstName || entity.contactLastName) && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Contact Person</h4>
-                  <p className="text-sm">
-                    {[entity.contactFirstName, entity.contactLastName].filter(Boolean).join(' ')}
-                  </p>
-                  {entity.contactEmail && <p className="text-sm text-muted-foreground">{entity.contactEmail}</p>}
-                </div>
-              )}
-              {(entity.article138Compliance !== null || entity.dataShareConsent !== null) && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Compliance</h4>
-                  <p className="text-sm">Article 138 Compliance: {entity.article138Compliance ? 'Yes' : 'No'}</p>
-                  <p className="text-sm">Data Sharing Consent: {entity.dataShareConsent ? 'Yes' : 'No'}</p>
-                </div>
-              )}
-              {entity.expertiseDescription && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Expertise Description</h4>
-                  <p className="text-sm">{entity.expertiseDescription}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Location
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {entity.country && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Country</h4>
-                  <p className="text-sm">{entity.country.name}</p>
-                </div>
-              )}
-              {(entity.streetAddress || entity.city || entity.postalCode || entity.countryCode) && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Address</h4>
-                  <p className="text-sm">
-                    {[entity.streetAddress, entity.postalCode, entity.city].filter(Boolean).join(', ')}
-                    {entity.countryCode ? ` (${entity.countryCode})` : ''}
-                  </p>
-                </div>
-              )}
-              {entity.latitude && entity.longitude && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Coordinates</h4>
-                  <p className="text-sm">
-                    {entity.latitude}, {entity.longitude}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Classification
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {entity.clusterType && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Cluster Type</h4>
-                  <p className="text-sm">{entity.clusterType.name}</p>
-                </div>
-              )}
-
-              {entity.thematicAreas && entity.thematicAreas.length > 0 && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Knowledge Domains</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {entity.thematicAreas.map((a) => (
-                      <span key={`thematicArea_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {entity.sectors && entity.sectors.length > 0 && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Sectors</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {entity.sectors.map((a) => (
-                      <span key={`sector_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {entity.technologies && entity.technologies.length > 0 && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Technologies</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {entity.technologies.map((a) => (
-                      <span key={`technology_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {entity.useCases && entity.useCases.length > 0 && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Use Cases</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {entity.useCases.map((a) => (
-                      <span key={`useCase_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {entity.fieldsOfActivity && entity.fieldsOfActivity.length > 0 && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Fields of Activity</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {entity.fieldsOfActivity.map((a) => (
-                      <span key={`field_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {entity.subDomains && entity.subDomains.length > 0 && (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Sub-Domains</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {entity.subDomains.map((a) => (
-                      <span key={`subDomain_${a.id}`} className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{a.name}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -437,6 +211,283 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
               )}
             </CardContent>
           </Card>
+          <div className={'grid grid-cols-1 xl:grid-cols-2 gap-4'}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Basic Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {entity.nameNational && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Name (National Language)</h4>
+                    <p className="text-sm">{entity.nameNational}</p>
+                  </div>
+                )}
+                {entity.entityDepartment && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Department</h4>
+                    <p className="text-sm">{entity.entityDepartment}</p>
+                  </div>
+                )}
+                {entity.description && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Description</h4>
+                    <p className="text-sm">{entity.description}</p>
+                  </div>
+                )}
+                {entity.website && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Website</h4>
+                    <a
+                      href={entity.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    >
+                      <Globe className="h-4 w-4" />
+                      {entity.website}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                )}
+                {entity.email && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Organisation Email</h4>
+                    <p className="text-sm">{entity.email}</p>
+                  </div>
+                )}
+                {entity.phone && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Organisation Phone</h4>
+                    <p className="text-sm">{entity.phone}</p>
+                  </div>
+                )}
+                {entity.registrationNumber && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Registration Number</h4>
+                    <p className="text-sm">{entity.registrationNumber}</p>
+                  </div>
+                )}
+                {entity.logoUrl && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Logo</h4>
+                    <img
+                      src={entity.logoUrl}
+                      alt={entity.name}
+                      className="h-16 w-16 rounded-md border object-contain"
+                    />
+                  </div>
+                )}
+                {entity.clusterType && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Organisation Type</h4>
+                    <p className="text-sm">{entity.clusterType.name}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Contact & Compliance
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(entity.contactFirstName || entity.contactLastName) && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Contact Person</h4>
+                    <p className="text-sm">
+                      {[entity.contactFirstName, entity.contactLastName].filter(Boolean).join(' ')}
+                    </p>
+                    {entity.contactEmail && <p className="text-sm text-muted-foreground">{entity.contactEmail}</p>}
+                  </div>
+                )}
+                {(entity.article138Compliance !== null || entity.dataShareConsent !== null) && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Compliance</h4>
+                    <p className="text-sm">Article 138 Compliance: {entity.article138Compliance ? 'Yes' : 'No'}</p>
+                    <p className="text-sm">Data Sharing Consent: {entity.dataShareConsent ? 'Yes' : 'No'}</p>
+                  </div>
+                )}
+                {entity.hasSubsidiaries !== null && (
+                  <>
+                    <div>
+                      <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                        Has subsidiaries in EU Member States?
+                      </h4>
+                      <p className="text-sm">{entity.hasSubsidiaries ? 'Yes' : 'No'}</p>
+                      {entity.hasSubsidiaries && <p className="text-sm">{entity.subsidiariesDetails}</p>}
+                    </div>
+                  </>
+                )}
+                {entity.hasMajorityShares !== null && (
+                  <>
+                    <div>
+                      <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                        Holds majority shares outside Member States?
+                      </h4>
+                      <p className="text-sm">{entity.hasSubsidiaries ? 'Yes' : 'No'}</p>
+                      {entity.majoritySharesDetails && <p className="text-sm">{entity.majoritySharesDetails}</p>}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Location
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {entity.country && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Country</h4>
+                    <p className="text-sm">{entity.country.name}</p>
+                  </div>
+                )}
+                {(entity.streetAddress || entity.city || entity.postalCode || entity.countryCode) && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Address</h4>
+                    <p className="text-sm">
+                      {[entity.streetAddress, entity.postalCode, entity.city].filter(Boolean).join(', ')}
+                      {entity.countryCode ? ` (${entity.countryCode})` : ''}
+                    </p>
+                  </div>
+                )}
+                {entity.latitude && entity.longitude && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Coordinates</h4>
+                    <p className="text-sm">
+                      {entity.latitude}, {entity.longitude}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Field of Activity / Expertise
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {entity.fieldsOfActivity && entity.fieldsOfActivity.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                      Organisation&#39;s expertise - Article 8 (3)
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      {entity.fieldsOfActivity.map((a) => (
+                        <span
+                          key={`field_${a.id}`}
+                          className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium"
+                        >
+                          {a.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {entity.expertiseDescription && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Expertise Description</h4>
+                    <p className="text-sm">{entity.expertiseDescription}</p>
+                  </div>
+                )}
+
+                {entity.thematicAreas && entity.thematicAreas.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Knowledge Domains</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {entity.thematicAreas.map((a) => (
+                        <span
+                          key={`thematicArea_${a.id}`}
+                          className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium"
+                        >
+                          {a.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {entity.sectors && entity.sectors.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Sectors</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {entity.sectors.map((a) => (
+                        <span
+                          key={`sector_${a.id}`}
+                          className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium"
+                        >
+                          {a.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {entity.technologies && entity.technologies.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Technologies</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {entity.technologies.map((a) => (
+                        <span
+                          key={`technology_${a.id}`}
+                          className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium"
+                        >
+                          {a.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {entity.useCases && entity.useCases.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Use Cases</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {entity.useCases.map((a) => (
+                        <span
+                          key={`useCase_${a.id}`}
+                          className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium"
+                        >
+                          {a.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {entity.subDomains && entity.subDomains.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Sub-Domains</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {entity.subDomains.map((a) => (
+                        <span
+                          key={`subDomain_${a.id}`}
+                          className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium"
+                        >
+                          {a.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="history">
