@@ -97,11 +97,6 @@ export const entities = pgTable(
     goalsToAchieve: text('goals_to_achieve'), // field_goals_to_achieve
     goalsToContribute: text('goals_to_contribute'), // field_goals_to_contribute
 
-    // "Other" text fields for taxonomies not in predefined list
-    otherSectors: text('other_sectors'),
-    otherTechnologies: text('other_technologies'),
-    otherUseCases: text('other_use_cases'),
-
     // Consent fields (ECCC form Step 4)
     dataProtectionConsent: boolean('data_protection_consent'), // GDPR disclaimer acceptance
     formCompletionConfirmed: boolean('form_completion_confirmed'), // Final submission confirmation

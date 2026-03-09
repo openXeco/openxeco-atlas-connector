@@ -65,11 +65,6 @@ const baseEntitySchema = z.object({
   goalsToAchieve: z.string().max(800).optional(),
   goalsToContribute: z.string().max(800).optional(),
 
-  // "Other" text fields for taxonomies
-  otherSectors: z.string().max(800).optional(),
-  otherTechnologies: z.string().max(800).optional(),
-  otherUseCases: z.string().max(800).optional(),
-
   // Consent fields (ECCC form Step 4)
   dataProtectionConsent: z.boolean().optional(), // GDPR disclaimer acceptance
   formCompletionConfirmed: z.boolean().optional(), // Final submission confirmation
@@ -289,11 +284,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             goalsToAchieve: body.goalsToAchieve,
             goalsToContribute: body.goalsToContribute,
 
-            // "Other" text fields
-            otherSectors: body.otherSectors,
-            otherTechnologies: body.otherTechnologies,
-            otherUseCases: body.otherUseCases,
-
             // Consent fields
             dataProtectionConsent: body.dataProtectionConsent,
             formCompletionConfirmed: body.formCompletionConfirmed,
@@ -490,13 +480,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             ...(body.goalsToContribute !== undefined && {
               goalsToContribute: body.goalsToContribute,
             }),
-
-            // "Other" text fields
-            ...(body.otherSectors !== undefined && { otherSectors: body.otherSectors }),
-            ...(body.otherTechnologies !== undefined && {
-              otherTechnologies: body.otherTechnologies,
-            }),
-            ...(body.otherUseCases !== undefined && { otherUseCases: body.otherUseCases }),
 
             // Consent fields
             ...(body.dataProtectionConsent !== undefined && {
