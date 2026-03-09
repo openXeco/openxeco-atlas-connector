@@ -13,7 +13,7 @@
 
 # Tech Debt TODO
 **Frontend**
-- [ ] Refactor layout.tsx (multiple files) to avoid duplication of <Sidebar />, <Header /> etc inclusion
+- [x] Refactor layout.tsx (multiple files) to avoid duplication of <Sidebar />, <Header /> etc inclusion
 - [ ] Refactor authentication to manage tokens and sessions in the backend (using session cookies). https://nextjs.org/docs/app/guides/authentication
 - [ ] Use ApiClientBackend for all backend related calls and server components when needed
 - [ ] Fix the incompatible library error (useReactTable) in entity-data-table.tsx

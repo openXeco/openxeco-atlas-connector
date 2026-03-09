@@ -52,11 +52,8 @@ const entitySchema = z.object({
   expertiseDescription: z.string().min(1, 'Expertise description is required').max(800),
   thematicAreaIds: z.array(z.string().uuid()).optional(),
   sectorIds: z.array(z.string().uuid()).optional(),
-  otherSectors: z.string().max(800).optional(),
   technologyIds: z.array(z.string().uuid()).optional(),
-  otherTechnologies: z.string().max(800).optional(),
   useCaseIds: z.array(z.string().uuid()).optional(),
-  otherUseCases: z.string().max(800).optional(),
   goalsToAchieve: z.string().max(800).optional(),
   goalsToContribute: z.string().max(800).optional(),
 
@@ -613,16 +610,6 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="FORM-ECCC-001-Q303-4">Other sectors</Label>
-                  <Textarea
-                    id="FORM-ECCC-001-Q303-4"
-                    {...register('otherSectors')}
-                    placeholder="Specify other sectors not listed above"
-                    rows={2}
-                  />
-                </div>
-
                 <div className="space-y-2" id="FORM-ECCC-001-Q303-5-container">
                   <Label htmlFor="FORM-ECCC-001-Q303-5">Technologies according to the Cybersecurity Taxonomy</Label>
                   <MultiSelect
@@ -633,16 +620,6 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="FORM-ECCC-001-Q303-6">Other technologies</Label>
-                  <Textarea
-                    id="FORM-ECCC-001-Q303-6"
-                    {...register('otherTechnologies')}
-                    placeholder="Specify other technologies not listed above"
-                    rows={2}
-                  />
-                </div>
-
                 <div className="space-y-2" id="FORM-ECCC-001-Q303-7-container">
                   <Label htmlFor="FORM-ECCC-001-Q303-7">Use cases according to the Cybersecurity Taxonomy</Label>
                   <MultiSelect
@@ -650,16 +627,6 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     value={formData.useCaseIds || []}
                     onChange={(values) => setValue('useCaseIds', values)}
                     placeholder="Select use cases"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="FORM-ECCC-001-Q303-8">Other use cases</Label>
-                  <Textarea
-                    id="FORM-ECCC-001-Q303-8"
-                    {...register('otherUseCases')}
-                    placeholder="Specify other use cases not listed above"
-                    rows={2}
                   />
                 </div>
 
