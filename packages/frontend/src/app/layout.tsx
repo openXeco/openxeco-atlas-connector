@@ -1,8 +1,9 @@
-import type { Metadata } from 'next'
 import React from 'react'
+import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
-import { AuthProvider } from '@/contexts/auth-context'
+import { getUserInfo } from '@/data/auth'
+import { LoginForm } from '@/components/auth/login-form'
 
 const inter = localFont({
   src: [
@@ -24,11 +25,13 @@ export const metadata: Metadata = {
   description: 'OpenXeco ATLAS Connector - Manage clusters with the ATLAS API',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await getUserInfo()
+
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
+        {user ? (children) : <LoginForm />}
       </body>
     </html>
   )

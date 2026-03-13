@@ -1,131 +1,39 @@
-'use client'
-
-import { useState, useMemo, use } from 'react'
-import { useRouter } from 'next/navigation'
-import useSWR from 'swr'
-import { ArrowLeft, RefreshCw, Search } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { TaxonomyTree } from '@/components/taxonomies/taxonomy-tree-new'
-import { apiClient } from '@/lib/api'
-import { apiFetcher } from '@/lib/swr'
-import type { Taxonomy, TaxonomyType } from '@/types'
+import type { TaxonomyType } from '@/types'
 import { TAXONOMY_TYPES } from '@/data/taxonomies'
+import { ArrowLeft } from 'lucide-react'
+import { SyncTypeButton } from '@/components/taxonomies/sync-type-button'
+import { TaxonomyList } from '@/components/taxonomies/taxonomy-list'
+import { Suspense } from 'react'
+import { Link } from '@/components/ui/link'
 
-export default function TaxonomyDetailPage({ params }: { params: Promise<{ type: TaxonomyType }> }) {
-  const resolvedParams = use(params)
-  const router = useRouter()
-  const [syncing, setSyncing] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+export default async function TaxonomyDetailsPage({ params }: { params: Promise<{ type: TaxonomyType }> }) {
+  const { type } = await params
 
-  const taxonomyInfo = TAXONOMY_TYPES.find((t) => t.type === resolvedParams.type)
-  const hasHierarchy = resolvedParams.type === 'cluster_thematic_area'
-
-  const { data, error, isLoading, mutate } = useSWR<{ data: Taxonomy[] }>(
-    `/api/taxonomies/${resolvedParams.type}`,
-    apiFetcher
-  )
-
-  const filteredTaxonomies = useMemo(() => {
-    const taxonomies = data?.data ?? []
-    if (searchQuery.trim() === '') return taxonomies
-    const query = searchQuery.toLowerCase()
-    return taxonomies.filter(
-      (taxonomy) => taxonomy.name.toLowerCase().includes(query) || taxonomy.description?.toLowerCase().includes(query)
-    )
-  }, [searchQuery, data])
-
-  const handleSync = async () => {
-    setSyncing(true)
-
-    try {
-      await apiClient.post(`/api/taxonomies/sync/${resolvedParams.type}`, {})
-      mutate()
-    } catch (_err) {
-      // error shown via SWR
-    } finally {
-      setSyncing(false)
-    }
-  }
-
-  if (!taxonomyInfo) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Taxonomy type not found</h2>
-          <Button onClick={() => router.push('/taxonomies')} className="mt-4">
-            Back to Taxonomies
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  const taxonomyInfo = TAXONOMY_TYPES.find((t) => t.type === type)
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/taxonomies')}>
+          <Link
+            href={`/taxonomies`}
+            variant={'ghost'}
+          >
             <ArrowLeft className="h-5 w-5" />
-          </Button>
+          </Link>
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">{taxonomyInfo.label}</h2>
-            <p className="text-muted-foreground">{taxonomyInfo.description}</p>
+            <h2 className="text-2xl font-bold tracking-tight">
+              {taxonomyInfo ? taxonomyInfo.label : 'Taxonomy type not found.'}
+            </h2>
+            {taxonomyInfo && <p className="text-muted-foreground">{taxonomyInfo.description}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleSync} disabled={syncing || isLoading} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Syncing...' : 'Sync'}
-          </Button>
-        </div>
+        {taxonomyInfo && <SyncTypeButton type={type} />}
       </div>
 
-      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">Failed to load taxonomies</div>}
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>
-                {filteredTaxonomies.length} {filteredTaxonomies.length === 1 ? 'Term' : 'Terms'}
-              </CardTitle>
-              <CardDescription>{searchQuery ? 'Filtered results' : 'All terms in this taxonomy'}</CardDescription>
-            </div>
-            {!hasHierarchy ? (
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search terms..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            ) : undefined}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading taxonomies...</div>
-          ) : filteredTaxonomies.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
-              {searchQuery ? 'No terms match your search' : 'No terms available'}
-            </div>
-          ) : hasHierarchy ? (
-            <TaxonomyTree taxonomies={filteredTaxonomies} />
-          ) : (
-            <div className="space-y-2">
-              {filteredTaxonomies.map((taxonomy) => (
-                <div key={taxonomy.id} className="rounded-md border p-3 hover:bg-accent">
-                  <div className="font-medium">{taxonomy.name}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Suspense fallback={<>Loading...</>}>
+        <TaxonomyList type={type} />
+      </Suspense>
     </>
   )
 }

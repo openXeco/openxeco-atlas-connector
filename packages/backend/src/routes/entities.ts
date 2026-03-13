@@ -10,7 +10,6 @@ import {
   entityTechnologies,
   entityUseCases,
   entityFieldsOfActivity,
-  entitySubDomains,
 } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { logger } from '../utils/logger.js'
@@ -80,9 +79,6 @@ const baseEntitySchema = z.object({
   technologyIds: z.array(z.string().uuid()).optional(),
   useCaseIds: z.array(z.string().uuid()).optional(),
   fieldsOfActivityIds: z.array(z.string().uuid()).optional(), // Article 8(3) expertise *
-
-  // Sub-domain taxonomy relationships (hierarchical - keyed by parent domain ID)
-  subDomainIds: z.record(z.string().uuid(), z.array(z.string().uuid())).optional(),
 
   // Workflow
   moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
@@ -201,7 +197,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           sectors: true,
           technologies: true,
           useCases: true,
-          subDomains: true,
           fieldsOfActivity: true,
         },
       })
@@ -348,23 +343,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           )
         }
 
-        // Handle sub-domain taxonomy relationships (hierarchical)
-        if (body.subDomainIds) {
-          const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = []
-          for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
-            for (const taxonomyId of subDomainIdList) {
-              subDomainInserts.push({
-                entityId: entity.id,
-                taxonomyId,
-                parentDomainId,
-              })
-            }
-          }
-          if (subDomainInserts.length > 0) {
-            await tx.insert(entitySubDomains).values(subDomainInserts)
-          }
-        }
-
         await tx.insert(entityVersions).values({
           entityId: entity.id,
           version: '1.0',
@@ -375,7 +353,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             technologyIds: body.technologyIds || [],
             useCaseIds: body.useCaseIds || [],
             fieldsOfActivityIds: body.fieldsOfActivityIds || [],
-            subDomainIds: body.subDomainIds || {},
           },
           changedBy: request.currentUser?.userId,
         })
@@ -562,24 +539,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
                 taxonomyId,
               }))
             )
-          }
-        }
-
-        // Handle sub-domain taxonomy relationships (hierarchical)
-        if (body.subDomainIds) {
-          await tx.delete(entitySubDomains).where(eq(entitySubDomains.entityId, id))
-          const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = []
-          for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
-            for (const taxonomyId of subDomainIdList) {
-              subDomainInserts.push({
-                entityId: id,
-                taxonomyId,
-                parentDomainId,
-              })
-            }
-          }
-          if (subDomainInserts.length > 0) {
-            await tx.insert(entitySubDomains).values(subDomainInserts)
           }
         }
 

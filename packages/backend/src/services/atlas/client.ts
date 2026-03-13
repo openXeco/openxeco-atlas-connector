@@ -134,9 +134,10 @@ class AtlasClient {
 
           const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument
           const apiErrors = errorData.errors || []
-          const errorDetail = apiErrors.length > 0
-            ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
-            : response.statusText
+          const errorDetail =
+            apiErrors.length > 0
+              ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
+              : response.statusText
           logger.error('ATLAS API error:', {
             status: response.status,
             statusText: response.statusText,
@@ -300,7 +301,7 @@ class AtlasClient {
           title: data.name, // English name *
           field_institution_name_in_nation: data.nameNational, // National language name *
           field_entity_department: data.entityDepartment,
-          body: data.description,
+          // body: data.description,
 
           // Address (structured) *
           field_address:
@@ -309,11 +310,11 @@ class AtlasClient {
                   country_code: data.countryCode,
                   locality: data.city,
                   address_line1: data.streetAddress,
-                  postal_code: data.postalCode,
+                  // postal_code: data.postalCode,
                 }
               : undefined,
-          field_latitude: data.latitude,
-          field_longitude: data.longitude,
+          // field_latitude: data.latitude,
+          // field_longitude: data.longitude,
 
           // Organisation details
           field_general_contact_e_mail: data.email, // *
@@ -324,11 +325,11 @@ class AtlasClient {
 
           // Headquarters
           field_question_headquarter: data.isHeadquarter, // *
-          field_headquarter: data.headquarterInfo,
+          field_headquarter: data.isHeadquarter ? undefined : data.headquarterInfo || undefined,
 
           // Subsidiaries
           field_question_subsidiaries: data.hasSubsidiaries, // *
-          field_subsidiaries_eu: data.subsidiariesDetails,
+          field_subsidiaries_eu: data.hasSubsidiaries ? data.subsidiariesDetails || undefined : undefined,
           field_question_majority: data.hasMajorityShares, // *
           field_majority_shares_noneu: data.hasMajorityShares ? data.majoritySharesDetails || undefined : undefined,
 
@@ -379,9 +380,9 @@ class AtlasClient {
     if (data.entityDepartment !== undefined) {
       attributes.field_entity_department = data.entityDepartment
     }
-    if (data.description !== undefined) {
-      attributes.body = data.description
-    }
+    // if (data.description !== undefined) {
+    //   attributes.body = data.description
+    // }
 
     // Address (structured)
     if (data.countryCode || data.city || data.streetAddress || data.postalCode) {
@@ -389,15 +390,15 @@ class AtlasClient {
         ...(data.countryCode && { country_code: data.countryCode }),
         ...(data.city && { locality: data.city }),
         ...(data.streetAddress && { address_line1: data.streetAddress }),
-        ...(data.postalCode && { postal_code: data.postalCode }),
+        // ...(data.postalCode && { postal_code: data.postalCode }),
       }
     }
-    if (data.latitude !== undefined) {
-      attributes.field_latitude = data.latitude
-    }
-    if (data.longitude !== undefined) {
-      attributes.field_longitude = data.longitude
-    }
+    // if (data.latitude !== undefined) {
+    //   attributes.field_latitude = data.latitude
+    // }
+    // if (data.longitude !== undefined) {
+    //   attributes.field_longitude = data.longitude
+    // }
 
     // Organisation details
     if (data.email !== undefined) {
@@ -420,20 +421,28 @@ class AtlasClient {
     if (data.isHeadquarter !== undefined) {
       attributes.field_question_headquarter = data.isHeadquarter
     }
-    if (data.headquarterInfo !== undefined) {
+
+    if (data.headquarterInfo !== undefined && !data.isHeadquarter) {
       attributes.field_headquarter = data.headquarterInfo
+    } else {
+      attributes.field_headquarter = null
     }
 
     // Subsidiaries
     if (data.hasSubsidiaries !== undefined) {
       attributes.field_question_subsidiaries = data.hasSubsidiaries
     }
-    if (data.subsidiariesDetails !== undefined) {
+
+    if (data.subsidiariesDetails !== undefined && data.hasSubsidiaries) {
       attributes.field_subsidiaries_eu = data.subsidiariesDetails
+    } else {
+      attributes.field_subsidiaries_eu = null
     }
+
     if (data.hasMajorityShares !== undefined) {
       attributes.field_question_majority = data.hasMajorityShares
     }
+
     if (data.majoritySharesDetails !== undefined && data.hasMajorityShares) {
       attributes.field_majority_shares_noneu = data.majoritySharesDetails
     } else {

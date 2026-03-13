@@ -1,3 +1,5 @@
+import { getAccessToken } from '@/app/actions/auth'
+
 interface ApiOptions extends RequestInit {
   params?: Record<string, string>
   accessToken?: string
@@ -39,6 +41,15 @@ class ApiClientBackend {
   private async request<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     const { params, ...fetchOptions } = options
 
+    let accessToken
+    if (fetchOptions.credentials === 'include') {
+      accessToken = await getAccessToken()
+
+      if (!accessToken) {
+        throw new Error('Access token not found.')
+      }
+    }
+
     let url = `${this.baseUrl}${endpoint}`
 
     if (params) {
@@ -49,14 +60,15 @@ class ApiClientBackend {
     const response = await fetch(url, {
       ...fetchOptions,
       headers: {
-        'Content-Type': 'application/json',
-        ...(options.accessToken && { Authorization: `Bearer ${options.accessToken}` }),
+        ...(fetchOptions.method !== 'DELETE' && {'Content-Type': 'application/json'}),
+        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         ...fetchOptions.headers,
       },
     })
 
     if (!response.ok) {
       const error: ApiError = await response.json()
+      console.error(error)
       const message = Array.isArray(error.message) ? String(error.message) : error.message || 'An error has occurred'
       throw new Error(message || 'An error occurred')
     }

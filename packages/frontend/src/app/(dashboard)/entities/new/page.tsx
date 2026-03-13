@@ -1,47 +1,27 @@
-'use client'
-
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { EntityFormWizard } from '@/components/entities/entity-form-wizard'
-import { Button } from '@/components/ui/button'
-import { apiClient } from '@/lib/api'
-import type { EntityFormData } from '@/types'
+import { getTaxonomies } from '@/data/taxonomies'
+import { CreateEntity } from '@/components/entities/create-entity'
+import { Link } from '@/components/ui/link'
 
-export default function NewEntityPage() {
-  const router = useRouter()
-  const [error, setError] = useState<string | null>(null)
-
-  const handleSubmit = async (data: EntityFormData) => {
-    setError(null)
-    try {
-      const response = await apiClient.post<{ data: { id: string } }>('/api/entities', data)
-      router.push(`/entities/${response.data.id}`)
-    } catch (err) {
-      setError('Failed to create entity')
-      throw err
-    }
-  }
-
-  const handleCancel = () => {
-    router.push('/entities')
-  }
+export default async function CreateEntityPage() {
+  const taxonomies = await getTaxonomies()
 
   return (
     <>
       <div className="mb-6 flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/entities')}>
+        <Link
+          href={`/entities`}
+          variant={'ghost'}
+        >
           <ArrowLeft className="h-5 w-5" />
-        </Button>
+        </Link>
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Create New Entity</h2>
           <p className="text-muted-foreground">Add a new cluster entity to the system</p>
         </div>
       </div>
 
-      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
-
-      <EntityFormWizard onSubmit={handleSubmit} onCancel={handleCancel} />
+      <CreateEntity taxonomies={taxonomies} />
     </>
   )
 }

@@ -1,93 +1,38 @@
-'use client'
-
-import { use } from 'react'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import useSWR from 'swr'
-import {
-  ArrowLeft,
-  Pencil,
-  Trash2,
-  RefreshCw,
-  ExternalLink,
-  MapPin,
-  Globe,
-  Building2,
-  FileText,
-  Clock,
-  AlertCircle,
-} from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { apiClient } from '@/lib/api'
-import { apiFetcher } from '@/lib/swr'
 import type { Entity, EntityVersion } from '@/types'
+import { apiClientBackend } from '@/lib/api-backend'
+import { ArrowLeft, Clock, FileText, Globe, ExternalLink, MapPin, Building2, Pencil } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
+import { SyncEntityButton } from '@/components/entities/sync-entity-button'
+import { DeleteEntityButton } from '@/components/entities/delete-entity-button'
+import { Link } from '@/components/ui/link'
 
-export default function EntityDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params)
-  const router = useRouter()
-  const [syncing, setSyncing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export default async function ViewEntityPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  let entity: Entity
+  let versions: EntityVersion[]
 
-  const { data: entityData, isLoading, mutate } = useSWR<{ data: Entity }>(
-    `/api/entities/${resolvedParams.id}`,
-    apiFetcher
-  )
-  const { data: versionsData } = useSWR<{ data: EntityVersion[] }>(
-    `/api/entities/${resolvedParams.id}/versions`,
-    apiFetcher
-  )
+  try {
+    const [entityRes, versionsRes] = await Promise.all([
+      apiClientBackend.get<{ data: Entity }>(`/api/entities/${id}`, { credentials: 'include' }),
+      apiClientBackend.get<{ data: EntityVersion[] }>(`/api/entities/${id}/versions`, { credentials: 'include' })
+    ])
 
-  const entity = entityData?.data ?? null
-  const versions = versionsData?.data ?? []
+    entity = entityRes.data
+    versions = versionsRes.data
 
-  const handleEdit = () => {
-    router.push(`/entities/${resolvedParams.id}/edit`)
-  }
-
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this entity?')) return
-
-    try {
-      await apiClient.delete(`/api/entities/${resolvedParams.id}`)
-      router.push('/entities')
-    } catch (_err) {
-      setError('Failed to delete entity')
-    }
-  }
-
-  const handleSync = async () => {
-    setSyncing(true)
-    setError(null)
-
-    try {
-      await apiClient.post(`/api/entities/${resolvedParams.id}/sync`, {})
-      mutate()
-    } catch (_err) {
-      setError('Failed to sync entity to ATLAS')
-    } finally {
-      setSyncing(false)
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-muted-foreground">Loading entity...</div>
-      </div>
-    )
-  }
-
-  if (!entity) {
+  } catch (_e) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold">Entity not found</h2>
-          <Button onClick={() => router.push('/entities')} className="mt-4">
+          <Link
+            href={'/entities'}
+            variant="ghost"
+          >
             Back to Entities
-          </Button>
+          </Link>
         </div>
       </div>
     )
@@ -131,9 +76,9 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
     <>
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/entities')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <Link href={'/entities'} variant={'ghost'}>
+            <ArrowLeft className={'h-5 w-5'} />
+          </Link>
           <div>
             <h2 className="text-2xl font-bold tracking-tight">{entity.name}</h2>
             <div className="mt-1 flex items-center gap-2">
@@ -147,32 +92,16 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {entity.syncStatus === 'conflict' && (
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/entities/${resolvedParams.id}/resolve`)}
-              className="gap-2 border-orange-200 text-orange-700 hover:bg-orange-50"
-            >
-              <AlertCircle className="h-4 w-4" />
-              Resolve Conflict
-            </Button>
-          )}
-          <Button variant="outline" onClick={handleSync} disabled={syncing} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Pushing...' : 'Push to ATLAS'}
-          </Button>
-          <Button variant="outline" onClick={handleEdit} className="gap-2">
+          <SyncEntityButton id={id} />
+          <Link href={`/entities/${id}/edit`} variant={'outline'}>
             <Pencil className="h-4 w-4" />
             Edit
-          </Button>
-          <Button variant="outline" onClick={handleDelete} className="gap-2 text-destructive hover:bg-destructive/10">
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
+          </Link>
+          <DeleteEntityButton id={id} />
         </div>
       </div>
 
-      {error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+      {/*{error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}*/}
 
       <Tabs defaultValue="details" className="space-y-6">
         <TabsList>
@@ -191,11 +120,11 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
             <CardContent className="space-y-4">
               <div>
                 <h4 className="mb-2 text-sm font-medium text-muted-foreground">Created</h4>
-                <p className="text-sm">{new Date(entity.createdAt).toLocaleString()}</p>
+                <p className="text-sm">{new Date(entity.createdAt).toLocaleString('en-UK')}</p>
               </div>
               <div>
                 <h4 className="mb-2 text-sm font-medium text-muted-foreground">Last Updated</h4>
-                <p className="text-sm">{new Date(entity.updatedAt).toLocaleString()}</p>
+                <p className="text-sm">{new Date(entity.updatedAt).toLocaleString('en-UK')}</p>
               </div>
               {entity.lastSyncedAt && (
                 <div>
@@ -362,14 +291,6 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                     </p>
                   </div>
                 )}
-                {entity.latitude && entity.longitude && (
-                  <div>
-                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Coordinates</h4>
-                    <p className="text-sm">
-                      {entity.latitude}, {entity.longitude}
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
@@ -469,22 +390,6 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                     </div>
                   </div>
                 )}
-
-                {entity.subDomains && entity.subDomains.length > 0 && (
-                  <div>
-                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Sub-Domains</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {entity.subDomains.map((a) => (
-                        <span
-                          key={`subDomain_${a.id}`}
-                          className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium"
-                        >
-                          {a.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
@@ -510,7 +415,7 @@ export default function EntityDetailPage({ params }: { params: Promise<{ id: str
                         <div className="flex items-center justify-between">
                           <div className="font-medium">Version {version.version}</div>
                           <div className="text-sm text-muted-foreground">
-                            {new Date(version.createdAt).toLocaleString()}
+                            {new Date(version.createdAt).toLocaleString('en-UK')}
                           </div>
                         </div>
                         <div className="mt-1 text-sm text-muted-foreground">Changes recorded</div>

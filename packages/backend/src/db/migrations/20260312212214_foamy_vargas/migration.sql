@@ -1,0 +1,1 @@
+DROP TABLE "entity_sub_domains";

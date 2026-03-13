@@ -12,7 +12,8 @@ services:
       - /app/packages/frontend/.next
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:3001
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
     depends_on:
       - backend
     networks:
@@ -35,7 +36,7 @@ services:
       - JWT_SECRET=dev-secret-key-min-32-chars-for-development
       - JWT_EXPIRES_IN=1h
       - JWT_REFRESH_EXPIRES_IN=7d
-      - ATLAS_BASE_URL=${ATLAS_BASE_URL:-https://dg-cnect-cybersecurity-atlas.acc.fpfis.tech.ec.europa.eu/jsonapi}
+      - ATLAS_BASE_URL=${ATLAS_BASE_URL:-https://dg-cnect-cybersecurity-atlas.acc.dhs.tech.ec.europa.eu/jsonapi}
       - ATLAS_API_KEY=${ATLAS_API_KEY:-}
       - ATLAS_USERNAME=${ATLAS_USERNAME:-}
       - ATLAS_PASSWORD=${ATLAS_PASSWORD:-}

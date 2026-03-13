@@ -1,5 +1,5 @@
 {
-  "name": "openxeco-atlas-connector",
+  "name": "@openxeco/atlas-connector",
   "version": "0.1.0",
   "private": true,
   "description": "OpenXeco ATLAS Connector - A connector for managing clusters with the ATLAS API",
@@ -10,14 +10,14 @@
     "clusters"
   ],
   "license": "MIT",
-  "packageManager": "pnpm@10.30.3",
+  "packageManager": "pnpm@10.32.0",
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
     "dev": "env-cmd -- pnpm -r --parallel dev",
-    "dev:frontend": "env-cmd -- pnpm -filter=@atlas-connector/frontend dev",
-    "dev:backend": "env-cmd -- pnpm -filter=@atlas-connector/backend dev",
+    "dev:frontend": "env-cmd -- pnpm -filter=@openxeco/atlas-connector-frontend dev",
+    "dev:backend": "env-cmd -- pnpm -filter=@openxeco/atlas-connector-backend dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
@@ -28,13 +28,13 @@
     "clean": "pnpm -r clean && rimraf node_modules"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "@types/node": "^22.10.0",
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^22.19.15",
     "env-cmd": "^11.0.0",
-    "eslint": "^9.18.0",
+    "eslint": "^9.39.4",
     "prettier": "^3.4.2",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.7.3",
-    "typescript-eslint": "^8.54.0"
+    "rimraf": "^6.1.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.0"
   }
 }

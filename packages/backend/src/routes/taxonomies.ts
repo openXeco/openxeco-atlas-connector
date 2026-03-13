@@ -23,7 +23,6 @@ const taxonomyTypeSchema = z.enum([
   'sectors',
   'technologies',
   'use_cases',
-  'citations_source',
 ])
 
 export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {

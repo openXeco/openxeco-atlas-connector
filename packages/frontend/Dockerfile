@@ -8,7 +8,7 @@ FROM base AS development
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/frontend/package.json ./packages/frontend/
 COPY packages/backend/package.json ./packages/backend/
-RUN pnpm install --filter @atlas-connector/frontend...
+RUN pnpm install --filter @openxeco/atlas-connector-frontend...
 COPY packages/frontend/ ./packages/frontend/
 WORKDIR /app/packages/frontend
 CMD ["pnpm", "dev"]
@@ -18,7 +18,7 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/frontend/package.json ./packages/frontend/
 COPY packages/backend/package.json ./packages/backend/
-RUN pnpm install --frozen-lockfile --filter @atlas-connector/frontend...
+RUN pnpm install --frozen-lockfile --filter @openxeco/atlas-connector-frontend...
 
 # ---- Builder ----
 FROM deps AS builder

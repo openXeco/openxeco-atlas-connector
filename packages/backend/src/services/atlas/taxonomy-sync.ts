@@ -1,7 +1,7 @@
 import { eq, and, ilike, sql, count } from 'drizzle-orm'
-import { db } from '../../config/database.js'
-import { taxonomies, syncLogs } from '../../db/schema.js'
-import { logger } from '../../utils/logger.js'
+import { db } from '@/config/database.js'
+import { taxonomies, syncLogs } from '@/db/schema.js'
+import { logger } from '@/utils/logger.js'
 import { atlasClient } from './client.js'
 import { jsonApiTransformer } from './transformer.js'
 import { KNOWLEDGE_DOMAIN_HIERARCHY } from './knowledge-domain-hierarchy.js'
@@ -25,7 +25,6 @@ const TAXONOMY_TYPES: TaxonomyType[] = [
   'sectors',
   'technologies',
   'use_cases',
-  'citations_source',
 ]
 
 // cluster_thematic_area terms are flat on ATLAS (no parent relationships returned by the API).

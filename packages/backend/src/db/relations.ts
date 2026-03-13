@@ -7,7 +7,6 @@ import {
   entityThematicAreas,
   entitySectors,
   entityTechnologies,
-  entitySubDomains,
   entityUseCases,
 } from '@/db/schema.js'
 
@@ -20,7 +19,6 @@ export const relations = defineRelations(
     entityThematicAreas,
     entitySectors,
     entityTechnologies,
-    entitySubDomains,
     entityUseCases,
   },
   (r) => ({
@@ -54,10 +52,6 @@ export const relations = defineRelations(
       useCases: r.many.taxonomies({
         from: r.entities.id.through(r.entityUseCases.entityId),
         to: r.taxonomies.id.through(r.entityUseCases.taxonomyId),
-      }),
-      subDomains: r.many.taxonomies({
-        from: r.entities.id.through(r.entitySubDomains.entityId),
-        to: r.taxonomies.id.through(r.entitySubDomains.taxonomyId),
       }),
       fieldsOfActivity: r.many.taxonomies({
         from: r.entities.id.through(r.entityFieldsOfActivity.entityId),

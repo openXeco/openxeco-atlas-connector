@@ -24,7 +24,6 @@ export type TaxonomyType =
   | 'sectors'
   | 'technologies'
   | 'use_cases'
-  | 'citations_source'
 
 export interface TaxonomyTypeInfo {
   type: TaxonomyType
@@ -47,6 +46,14 @@ export interface Taxonomy {
 
 export type EntityStatus = 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected'
 export type SyncStatus = 'local' | 'synced' | 'pending_push' | 'failed' | 'conflict'
+export type SyncRecap =  {
+  total: number
+  local: number
+  synced: number
+  conflict: number
+  failed: number
+  pendingPush: number
+}
 
 export interface Entity {
   id: string
@@ -105,7 +112,6 @@ export interface Entity {
   sectors?: Array<Taxonomy>
   technologies?: Array<Taxonomy>
   useCases?: Array<Taxonomy>
-  subDomains?: Array<Taxonomy>
   fieldsOfActivity?: Array<Taxonomy>
 }
 
@@ -118,7 +124,7 @@ export interface EntityVersion {
   createdAt: Date
 }
 
-export interface EntityFormData {
+export type EntityFormData = {
   name: string
   nameNational?: string
   entityDepartment?: string
@@ -160,8 +166,6 @@ export interface EntityFormData {
   technologyIds?: string[]
   useCaseIds?: string[]
   fieldsOfActivityIds?: string[]
-  // Sub-domain taxonomy relationships (hierarchical - keyed by parent domain ID)
-  subDomainIds?: Record<string, string[]>
   moderationState?: EntityStatus
 }
 
@@ -175,6 +179,16 @@ export interface EntityListParams {
   clusterTypeId?: string
 }
 
+export type EntityTaxonomies = {
+  countries: Taxonomy[]
+  clusterTypes: Taxonomy[]
+  fieldsOfActivity: Taxonomy[]
+  thematicAreas: Taxonomy[]
+  sectors: Taxonomy[]
+  technologies: Taxonomy[]
+  useCases: Taxonomy[]
+}
+
 export interface HealthResponse {
   status: 'ok' | 'error'
   timestamp: string
@@ -182,3 +196,6 @@ export interface HealthResponse {
     database: 'ok' | 'error'
   }
 }
+
+// Next.js UI related types
+export type ActionState = { success: true; message: string } | { success: false; error: string }

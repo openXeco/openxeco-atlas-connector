@@ -13,12 +13,12 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { ConsentCheckbox } from '@/components/entities/consent-checkbox'
-import { ImportOpenXecoDialog } from '@/components/entities/import-openxeco-dialog'
 import { apiClient } from '@/lib/api'
 import type { Taxonomy, EntityFormData } from '@/types'
 
 const entitySchema = z.object({
   // Step 1: Organisation
+  atlasId: z.string().uuid().optional(),
   nameNational: z.string().min(1, 'National name is required').max(400),
   name: z.string().min(1, 'Name is required').max(400),
   entityDepartment: z.string().max(400).optional(),
@@ -63,12 +63,8 @@ const entitySchema = z.object({
 
   // Additional fields (not in form steps but needed)
   description: z.string().optional(),
-  logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
   dataShareConsent: z.boolean().optional(),
   moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
-  subDomainIds: z.record(z.string(), z.array(z.string().uuid())).optional(),
 })
 
 interface EntityFormWizardProps {
@@ -153,15 +149,16 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
   useEffect(() => {
     const loadTaxonomies = async () => {
       try {
-        const [countriesRes, clusterTypeRes, fieldsRes, thematicRes, sectorsRes, techRes, useCasesRes] = await Promise.all([
-          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/country'),
-          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_type'),
-          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/fields_of_activity'),
-          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_thematic_area'),
-          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/sectors'),
-          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/technologies'),
-          apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/use_cases'),
-        ])
+        const [countriesRes, clusterTypeRes, fieldsRes, thematicRes, sectorsRes, techRes, useCasesRes] =
+          await Promise.all([
+            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/country'),
+            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_type'),
+            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/fields_of_activity'),
+            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_thematic_area'),
+            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/sectors'),
+            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/technologies'),
+            apiClient.get<{ data: Taxonomy[] }>('/api/taxonomies/use_cases'),
+          ])
         setCountries(countriesRes.data)
         setClusterTypes(clusterTypeRes.data)
         setFieldsOfActivity(fieldsRes.data)
@@ -207,7 +204,7 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
     }
   }
 
-  const handleImportData = (importedData: Partial<EntityFormData>) => {
+  const _handleImportData = (importedData: Partial<EntityFormData>) => {
     // Apply imported data to form fields
     Object.entries(importedData).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -220,13 +217,13 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
 
   return (
     <div className="mx-auto max-w-4xl">
+      {/* @TODO hidden for now. */}
       {/* Import button - only show when creating new entity */}
-      {!initialData?.name && (
-        <div className="mb-6 flex justify-end">
-          <ImportOpenXecoDialog onImport={handleImportData} />
-        </div>
-      )}
-
+      {/*{!initialData?.name && (*/}
+      {/*  <div className="mb-6 flex justify-end">*/}
+      {/*    <ImportOpenXecoDialog onImport={handleImportData} />*/}
+      {/*  </div>*/}
+      {/*)}*/}
       <div className="mb-8 flex items-center justify-between">
         {steps.map((step, index) => (
           <div key={step.id} className="flex flex-1 items-center">
@@ -592,7 +589,12 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                     Expertise according to the Cybersecurity Taxonomy (Knowledge Domains)
                   </Label>
                   <MultiSelect
-                    options={thematicAreas.map((t) => ({ id: t.id, name: t.name, parentId: t.parentId, atlasId: t.atlasId }))}
+                    options={thematicAreas.map((t) => ({
+                      id: t.id,
+                      name: t.name,
+                      parentId: t.parentId,
+                      atlasId: t.atlasId,
+                    }))}
                     value={formData.thematicAreaIds || []}
                     onChange={(values) => setValue('thematicAreaIds', values)}
                     placeholder="Select knowledge domains"
@@ -660,13 +662,16 @@ export function EntityFormWizard({ initialData, onSubmit, onCancel }: EntityForm
                 <div className="space-y-6">
                   {Object.keys(errors).length > 0 && (
                     <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-2">
-                      <h4 className="text-sm font-semibold text-destructive">Please fix the following errors before submitting:</h4>
+                      <h4 className="text-sm font-semibold text-destructive">
+                        Please fix the following errors before submitting:
+                      </h4>
                       <ul className="list-disc pl-5 space-y-1">
                         {Object.entries(errors).map(([field, error]) => {
                           const label = FIELD_LABELS[field] || field
                           return (
                             <li key={field} className="text-sm text-destructive">
-                              <span className="font-medium">{label}</span>: {(error as { message?: string })?.message || 'Invalid value'}
+                              <span className="font-medium">{label}</span>:{' '}
+                              {(error as { message?: string })?.message || 'Invalid value'}
                             </li>
                           )
                         })}

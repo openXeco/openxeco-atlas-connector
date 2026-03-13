@@ -238,28 +238,6 @@ export const entityFieldsOfActivity = pgTable(
   ]
 )
 
-// Sub-domain taxonomy relationships (hierarchical - children of thematic areas)
-export const entitySubDomains = pgTable(
-  'entity_sub_domains',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    entityId: uuid('entity_id')
-      .notNull()
-      .references(() => entities.id, { onDelete: 'cascade' }),
-    taxonomyId: uuid('taxonomy_id')
-      .notNull()
-      .references(() => taxonomies.id, { onDelete: 'cascade' }),
-    parentDomainId: uuid('parent_domain_id').references(() => taxonomies.id), // Links to the parent thematic area
-    createdAt: timestamp('created_at').defaultNow(),
-  },
-  (table) => [
-    uniqueIndex('entity_sub_domain_unique_idx').on(table.entityId, table.taxonomyId),
-    index('entity_sub_domain_entity_id_idx').on(table.entityId),
-    index('entity_sub_domain_taxonomy_id_idx').on(table.taxonomyId),
-    index('entity_sub_domain_parent_id_idx').on(table.parentDomainId),
-  ]
-)
-
 export const syncLogs = pgTable(
   'sync_logs',
   {
@@ -304,7 +282,5 @@ export type EntityUseCase = typeof entityUseCases.$inferSelect
 export type NewEntityUseCase = typeof entityUseCases.$inferInsert
 export type EntityFieldOfActivity = typeof entityFieldsOfActivity.$inferSelect
 export type NewEntityFieldOfActivity = typeof entityFieldsOfActivity.$inferInsert
-export type EntitySubDomain = typeof entitySubDomains.$inferSelect
-export type NewEntitySubDomain = typeof entitySubDomains.$inferInsert
 export type SyncLog = typeof syncLogs.$inferSelect
 export type NewSyncLog = typeof syncLogs.$inferInsert

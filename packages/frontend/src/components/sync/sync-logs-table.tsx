@@ -139,7 +139,7 @@ export function SyncLogsTable() {
                     </div>
                   </div>
                 </div>
-                <div className="text-sm text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground">{new Date(log.createdAt).toLocaleString('en-UK')}</div>
               </div>
             ))}
           </div>

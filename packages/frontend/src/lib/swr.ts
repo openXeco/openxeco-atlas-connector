@@ -1,13 +1,7 @@
-import { getAccessToken } from '@/lib/api'
-
 export async function apiFetcher<T>(url: string): Promise<T> {
-  const token = getAccessToken()
-
   const response = await fetch(url, {
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
     },
   })
 

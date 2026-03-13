@@ -1,63 +1,92 @@
-import { AlertCircle } from 'lucide-react'
+'use client'
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import Image from 'next/image'
+import oxeLogo from '@/assets/openxeco-logo.svg'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { UseFormReturn } from 'react-hook-form'
-import { LoginFormData } from '@/lib/auth'
+import { useActionState } from 'react'
+import { login } from '@/app/actions/auth'
+import { AlertCircle } from 'lucide-react'
 
-type LoginFormProps = {
-  error: string | null
-  isLoading: boolean
-  formHandler: UseFormReturn<LoginFormData>
-  onSubmit: (data: LoginFormData) => Promise<void>
+const initialState: {
+  message?: string
+  errors?: {
+    email?: string[]
+    password?: string[]
+  }
+  values: {
+    email: string
+  }
+} = {
+  message: '',
+  errors: undefined,
+  values: {
+    email: '',
+  },
 }
 
-export const LoginForm = ({
-  error,
-  isLoading,
-  formHandler: {
-    register,
-    formState: { errors },
-    handleSubmit,
-  },
-  onSubmit = async (data: LoginFormData) => console.log(data),
-}: LoginFormProps) => {
+export const LoginForm = () => {
+  const [state, formAction, pending] = useActionState(login, initialState)
+
   return (
-    <form method="POST" onSubmit={handleSubmit(onSubmit)} className={'space-y-4'}>
-      {error && (
-        <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-          <AlertCircle className="h-4 w-4" />
-          <span>{error}</span>
-        </div>
-      )}
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl">
+            <Image src={oxeLogo} className="w-8/12 m-auto my-0 p-0" alt={'openXeco logo'} loading={'eager'} />
+            ATLAS Connector
+          </CardTitle>
+          <CardDescription>Sign in to your account to continue</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={formAction} className={'space-y-4'}>
+            {state?.message && (
+              <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                <span>{state.message}</span>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="admin@atlas-connector.local"
+                defaultValue={state?.values?.email}
+                name={'email'}
+                disabled={pending}
+                required={true}
+              />
+              {state?.errors?.email && <p className="text-sm text-destructive">{state.errors.email.join(' ')}</p>}
+            </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="admin@atlas-connector.local"
-          {...register('email')}
-          disabled={isLoading}
-        />
-        {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-      </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                name={'password'}
+                disabled={pending}
+                required={true}
+              />
+              {state?.errors?.password && <p className="text-sm text-destructive">{state.errors.password.join(' ')}</p>}
+            </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          placeholder="Enter your password"
-          {...register('password')}
-          disabled={isLoading}
-        />
-        {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-      </div>
-
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? 'Signing in...' : 'Sign in'}
-      </Button>
-    </form>
+            <Button type="submit" className="w-full" disabled={pending}>
+              {pending ? 'Signing in...' : 'Sign-in'}
+            </Button>
+          </form>
+          {process.env.NODE_ENV !== 'production' ? (
+            <div className="mt-6 text-center text-sm text-muted-foreground">
+              <p>Default credentials:</p>
+              <p className="font-mono">admin@atlas-connector.local / admin123456</p>
+            </div>
+          ) : undefined}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

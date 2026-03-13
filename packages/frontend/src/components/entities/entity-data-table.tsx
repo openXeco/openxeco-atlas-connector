@@ -89,9 +89,6 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
           return (
             <div className="flex flex-col">
               <span className="font-medium">{row.original.name}</span>
-              {row.original.description && (
-                <span className="text-sm text-muted-foreground line-clamp-1">{row.original.description}</span>
-              )}
             </div>
           )
         },
@@ -133,7 +130,7 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
           )
         },
         cell: ({ row }) => {
-          return new Date(row.original.updatedAt).toLocaleDateString()
+          return new Date(row.original.updatedAt).toLocaleDateString('en-UK')
         },
       },
       {

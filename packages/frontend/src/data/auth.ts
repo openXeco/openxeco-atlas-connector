@@ -1,14 +1,8 @@
+'use server'
+
 import { User } from '@/types'
 import { apiClientBackend } from '@/lib/api-backend'
-
-export const login = async (email: string, password: string) => {
-  return apiClientBackend.post<{
-    accessToken: string
-    refreshToken: string
-    refreshTokenExpiresIn: number
-    user: User
-  }>('/api/auth/login', { email, password })
-}
+import { cache } from 'react'
 
 export const refresh = async (refreshToken: string) => {
   return apiClientBackend.post<{
@@ -18,7 +12,11 @@ export const refresh = async (refreshToken: string) => {
   }>('/api/auth/refresh', { refreshToken })
 }
 
-export const getUserInfo = async (accessToken: string): Promise<User> => {
-  const response = await apiClientBackend.get<{ user: User }>('/api/auth/me', { accessToken })
-  return response.user
-}
+export const getUserInfo = cache(async (): Promise<User | undefined> => {
+  try {
+    const response = await apiClientBackend.get<{ user: User }>('/api/auth/me', { credentials: 'include' })
+    return response.user
+  } catch (_e) {
+    return undefined
+  }
+})

@@ -76,7 +76,6 @@ export type TaxonomyType =
   | 'sectors'
   | 'technologies'
   | 'use_cases'
-  | 'citations_source'
 
 export interface TaxonomyTerm {
   id: string
