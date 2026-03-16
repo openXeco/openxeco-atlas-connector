@@ -292,8 +292,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             status: 'draft',
             moderationState: body.moderationState || 'draft',
             syncStatus: 'local',
-            createdBy: request.currentUser?.userId,
-            updatedBy: request.currentUser?.userId,
           })
           .returning()
 
@@ -354,7 +352,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             useCaseIds: body.useCaseIds || [],
             fieldsOfActivityIds: body.fieldsOfActivityIds || [],
           },
-          changedBy: request.currentUser?.userId,
         })
 
         return entity
@@ -477,7 +474,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             ...(body.moderationState !== undefined && { moderationState: body.moderationState }),
 
             updatedAt: new Date(),
-            updatedBy: request.currentUser?.userId,
           })
           .where(eq(entities.id, id))
           .returning()
@@ -585,7 +581,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             useCaseIds: currentUseCases.map((r) => r.taxonomyId),
             fieldsOfActivityIds: currentFields.map((r) => r.taxonomyId),
           },
-          changedBy: request.currentUser?.userId,
         })
 
         return updated

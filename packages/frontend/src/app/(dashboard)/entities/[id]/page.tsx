@@ -200,16 +200,6 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
                     <p className="text-sm">{entity.registrationNumber}</p>
                   </div>
                 )}
-                {entity.logoUrl && (
-                  <div>
-                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Logo</h4>
-                    <img
-                      src={entity.logoUrl}
-                      alt={entity.name}
-                      className="h-16 w-16 rounded-md border object-contain"
-                    />
-                  </div>
-                )}
                 {entity.clusterType && (
                   <div>
                     <h4 className="mb-2 text-sm font-medium text-muted-foreground">Organisation Type</h4>

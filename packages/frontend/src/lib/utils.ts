@@ -5,6 +5,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString('en-UK', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 type FieldKeys<T> = Extract<keyof T, string>
 
 export type ParseOptions<T extends Record<string, unknown>> = {

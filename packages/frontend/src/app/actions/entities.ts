@@ -1,9 +1,10 @@
 'use server'
 
-import { ManageEntityState, entitySchema } from '@/components/entities/entity-wizard'
+import { ManageEntityState } from '@/components/entities/entity-wizard'
 import { EntityFormData, type ActionState } from '@/types'
 import { parseFormData } from '@/lib/utils'
 import { apiClientBackend } from '@/lib/api-backend'
+import { entitySchema } from '@/data/entities'
 
 export async function createEntity(
   _prevState: ManageEntityState | null,

@@ -44,6 +44,7 @@ export function SyncLogsTable() {
 
   useEffect(() => {
     loadLogs()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
   const getStatusColor = (status: string) => {

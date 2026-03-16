@@ -25,6 +25,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
   ({ options, value, onChange, placeholder = 'Select options...', disabled, className, hierarchical }, ref) => {
     const [isOpen, setIsOpen] = React.useState(false)
     const containerRef = React.useRef<HTMLDivElement>(null)
+    const comboId = React.useId()
 
     // Close dropdown when clicking outside
     React.useEffect(() => {
@@ -58,6 +59,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         <div
           ref={ref}
           role="combobox"
+          aria-controls={comboId}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-disabled={disabled}
@@ -94,7 +96,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         </div>
 
         {isOpen && (
-          <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
+          <div role={'listbox'} id={comboId} className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
             {options.length === 0 ? (
               <div className="py-2 px-3 text-sm text-muted-foreground">No options available</div>
             ) : hierarchical ? (

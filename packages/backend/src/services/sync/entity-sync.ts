@@ -27,7 +27,7 @@ export interface SyncResult {
 export interface ConflictReport {
   hasConflict: boolean
   localVersion: Entity
-  remoteVersion: any
+  remoteVersion: Partial<Entity> | null
   localUpdatedAt: Date
   remoteUpdatedAt: Date
   conflictFields: string[]
@@ -35,7 +35,9 @@ export interface ConflictReport {
 
 export interface EntityDiff {
   field: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   localValue: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   remoteValue: any
   isDifferent: boolean
 }
@@ -200,7 +202,7 @@ export class EntitySyncService {
     }
   }
 
-  async pullEntity(atlasId: string, userId?: string): Promise<SyncResult> {
+  async pullEntity(atlasId: string): Promise<SyncResult> {
     logger.info(`Pulling entity ${atlasId} from ATLAS`)
 
     try {
@@ -245,7 +247,6 @@ export class EntitySyncService {
             syncStatus: 'synced',
             lastSyncedAt: new Date(),
             updatedAt: new Date(),
-            updatedBy: userId,
           })
           .where(eq(entities.id, existing.id))
           .returning()
@@ -264,8 +265,8 @@ export class EntitySyncService {
         await db.insert(entityVersions).values({
           entityId: existing.id,
           version: newVersion,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data: entity as any,
-          changedBy: userId,
         })
       } else {
         ;[entity] = await db
@@ -276,16 +277,14 @@ export class EntitySyncService {
             status: entityData.status || 'draft',
             syncStatus: 'synced',
             lastSyncedAt: new Date(),
-            createdBy: userId,
-            updatedBy: userId,
           })
           .returning()
 
         await db.insert(entityVersions).values({
           entityId: entity.id,
           version: '1.0',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data: entity as any,
-          changedBy: userId,
         })
       }
 
@@ -506,7 +505,7 @@ export class EntitySyncService {
           throw new Error('Entity or ATLAS ID not found')
         }
 
-        return await this.pullEntity(entity.atlasId, userId)
+        return await this.pullEntity(entity.atlasId)
       }
     } catch (error) {
       logger.error(`Failed to resolve conflict for entity ${entityId}:`, error as Error)
@@ -541,9 +540,9 @@ export class EntitySyncService {
     return this.processBatch(entityIds, (id) => this.pushEntity(id, userId))
   }
 
-  async pullBatch(atlasIds: string[], userId?: string): Promise<BatchSyncResult> {
+  async pullBatch(atlasIds: string[]): Promise<BatchSyncResult> {
     logger.info(`Pulling batch of ${atlasIds.length} entities from ATLAS`)
-    return this.processBatch(atlasIds, (id) => this.pullEntity(id, userId))
+    return this.processBatch(atlasIds, (id) => this.pullEntity(id))
   }
 
   async cleanupSyncLogs(retentionDays: number = 90): Promise<number> {

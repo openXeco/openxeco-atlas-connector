@@ -215,10 +215,12 @@ See [Contributing](./CONTRIBUTING.md)
 ## Roadmap
 
 - [ ] Remove unused taxonomies
+- [ ] Change sync status on Entity change
 - [ ] Bulk import of multiple entities (JSON upload)
+- [ ] Implement ATLAS API and General settings
+- [ ] Implement conflicts resolution between local and ATLAS entities
 - [ ] Unit tests on all critical modules
-- [ ] Resolve eventual conflicts between local and ATLAS version
-- [ ] Improve the Authentication mechanism
+- [ ] Improve the Authentication mechanism with MFA
 - [ ] Reduce frontend components duplication
-- [ ] Add settings for common ATLAS fields
+- [ ] Add settings for common ATLAS fields (i.e. `default country`)
 - [ ] Integration with openXeco CORE

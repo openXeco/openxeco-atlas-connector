@@ -1,13 +1,14 @@
 'use client'
 
 import { EntityTaxonomies, EntityFormData } from '@/types'
-import { EntityWizard, entitySchema, ManageEntityState } from '@/components/entities/entity-wizard'
+import { EntityWizard, ManageEntityState } from '@/components/entities/entity-wizard'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useActionState, useEffect } from 'react'
 import { createEntity } from '@/app/actions/entities'
 import { Message } from '@/components/ui/message'
+import { entitySchema } from '@/data/entities'
 
 export const CreateEntity = ({ taxonomies }: { taxonomies: EntityTaxonomies }) => {
   const router = useRouter()

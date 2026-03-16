@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { config } from '../config/index.js'
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'

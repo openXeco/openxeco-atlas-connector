@@ -62,7 +62,6 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/entities/:id/pull', { preHandler: authenticate }, async (request, reply) => {
     try {
       const { id } = idParamSchema.parse(request.params)
-      const userId = request.currentUser?.userId
 
       const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
@@ -73,7 +72,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         })
       }
 
-      const result = await entitySyncService.pullEntity(entity.atlasId, userId)
+      const result = await entitySyncService.pullEntity(entity.atlasId)
 
       if (!result.success) {
         return reply.status(result.error === 'CONFLICT' ? 409 : 500).send({
@@ -212,7 +211,6 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/batch/pull', { preHandler: authenticate }, async (request, reply) => {
     try {
       const body = batchSyncSchema.parse(request.body)
-      const userId = request.currentUser?.userId
 
       if (!body.atlasIds || body.atlasIds.length === 0) {
         return reply.status(400).send({
@@ -221,7 +219,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         })
       }
 
-      const result = await entitySyncService.pullBatch(body.atlasIds, userId)
+      const result = await entitySyncService.pullBatch(body.atlasIds)
 
       return reply.send({
         data: result,
@@ -306,6 +304,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       if (conditions.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         query = query.where(and(...conditions)) as any
       }
 

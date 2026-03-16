@@ -103,8 +103,6 @@ export interface Entity {
   createdAt: Date
   updatedAt: Date
   lastSyncedAt: Date | null
-  createdBy: string | null
-  updatedBy: string | null
   // Relations
   country?: Taxonomy
   clusterType?: Taxonomy
@@ -120,7 +118,6 @@ export interface EntityVersion {
   entityId: string
   version: string
   data: unknown
-  changedBy: string | null
   createdAt: Date
 }
 
@@ -199,3 +196,4 @@ export interface HealthResponse {
 
 // Next.js UI related types
 export type ActionState = { success: true; message: string } | { success: false; error: string }
+export type ActionStateWithErrors = { success: true; message: string } | {success: false, error: string, fieldErrors?: Record<string, string[]>}

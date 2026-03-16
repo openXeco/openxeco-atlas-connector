@@ -177,7 +177,7 @@ export class JsonApiTransformer {
     return resources.map((resource) => this.fromJsonApiCluster({ data: resource }))
   }
 
-  toEntityFromCluster(cluster: Cluster, userId?: string): Partial<Entity> {
+  toEntityFromCluster(cluster: Cluster): Partial<Entity> {
     return {
       atlasId: cluster.atlasId,
 
@@ -239,7 +239,6 @@ export class JsonApiTransformer {
 
       metadata: cluster.metadata,
       lastSyncedAt: new Date(),
-      updatedBy: userId,
     }
   }
 
@@ -319,6 +318,7 @@ export class JsonApiTransformer {
     return {
       id: resource.id,
       atlasId: resource.id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       type: type as any,
       name: (resource.attributes.name as string) || '',
       description: resource.attributes.description as string | undefined,

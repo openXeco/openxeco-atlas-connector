@@ -111,8 +111,6 @@ export const entities = pgTable(
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
     lastSyncedAt: timestamp('last_synced_at'),
-    createdBy: uuid('created_by').references(() => users.id),
-    updatedBy: uuid('updated_by').references(() => users.id),
   },
   (table) => [
     index('entity_atlas_id_idx').on(table.atlasId),
@@ -120,7 +118,6 @@ export const entities = pgTable(
     index('entity_moderation_state_idx').on(table.moderationState),
     index('entity_sync_status_idx').on(table.syncStatus),
     index('entity_country_code_idx').on(table.countryCode),
-    index('entity_created_by_idx').on(table.createdBy),
   ]
 )
 
@@ -133,7 +130,6 @@ export const entityVersions = pgTable(
       .references(() => entities.id, { onDelete: 'cascade' }),
     version: varchar('version', { length: 50 }).notNull(),
     data: jsonb('data').notNull(),
-    changedBy: uuid('changed_by').references(() => users.id),
     createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => [
