@@ -6,6 +6,13 @@ export interface JsonApiResource {
   links?: Record<string, string>
 }
 
+export type JsonApiAddress =
+  | { country_code?: string; locality?: string; address_line1?: string; postal_code?: string }
+  | null
+  | undefined
+
+export type JsonApiWebsite = { uri?: string } | string | null | undefined
+
 export interface JsonApiRelationship {
   data?: JsonApiResourceIdentifier | JsonApiResourceIdentifier[] | null
   links?: Record<string, string>
@@ -62,16 +69,13 @@ export type TaxonomyType =
   | 'fields_of_activity'
   | 'funding_sources'
   | 'initiatives'
-  | 'institution'
   | 'languages'
   | 'legal_status'
   | 'nationality'
-  | 'organization_type'
   | 'position_category'
   | 'sectors'
   | 'technologies'
   | 'use_cases'
-  | 'citations_source'
 
 export interface TaxonomyTerm {
   id: string
@@ -113,7 +117,7 @@ export interface Cluster {
   latitude?: number
   longitude?: number
 
-  // Organization details
+  // Organisation details
   email?: string
   phone?: string
   website?: string
@@ -183,7 +187,7 @@ export interface ClusterInput {
   latitude?: number
   longitude?: number
 
-  // Organization details
+  // Organisation details
   email?: string
   phone?: string
   website?: string
@@ -217,9 +221,7 @@ export interface ClusterInput {
   goalsToContribute?: string
 
   // Taxonomy references
-  countryId?: string
   clusterTypeId?: string
-  organizationTypeId?: string
 
   // JRC Taxonomy IDs
   thematicAreaIds?: string[]
@@ -243,6 +245,8 @@ export interface AtlasConfig {
 export interface QueryParams {
   page?: number
   pageSize?: number
+  pageOffset?: number
+  pageLimit?: number
   filter?: Record<string, string>
   include?: string[]
   sort?: string

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import type { Entity } from '@/types/entity'
+import type { Entity } from '@/types'
 import { useState } from 'react'
 
 interface EntityDataTableProps {
@@ -89,9 +89,6 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
           return (
             <div className="flex flex-col">
               <span className="font-medium">{row.original.name}</span>
-              {row.original.description && (
-                <span className="text-sm text-muted-foreground line-clamp-1">{row.original.description}</span>
-              )}
             </div>
           )
         },
@@ -133,7 +130,7 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
           )
         },
         cell: ({ row }) => {
-          return new Date(row.original.updatedAt).toLocaleDateString()
+          return new Date(row.original.updatedAt).toLocaleDateString('en-UK')
         },
       },
       {
@@ -171,6 +168,8 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
     [onView, onEdit, onDelete]
   )
 
+  // @tanstack/react-table v8 does not support React Compiler; awaiting v9
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

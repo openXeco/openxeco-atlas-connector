@@ -49,3 +49,6 @@ coverage/
 CLAUDE.md
 
 .githuman
+.opencode
+opencode.*
+./docs/plans

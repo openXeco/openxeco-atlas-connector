@@ -14,7 +14,7 @@ import type {
   PaginatedResponse,
 } from './types.js'
 
-export class AtlasClient {
+class AtlasClient {
   private config: AtlasConfig
   private authToken?: string
   private tokenExpiry?: Date
@@ -66,6 +66,12 @@ export class AtlasClient {
     url.searchParams.set('api-key', this.config.apiKey)
 
     if (options?.params) {
+      if (options.params.pageOffset !== undefined) {
+        url.searchParams.set('page[offset]', String(options.params.pageOffset))
+      }
+      if (options.params.pageLimit !== undefined) {
+        url.searchParams.set('page[limit]', String(options.params.pageLimit))
+      }
       if (options.params.page) {
         url.searchParams.set('page[number]', String(options.params.page))
       }
@@ -99,7 +105,9 @@ export class AtlasClient {
     const retryableStatuses = [408, 429, 502, 503, 504]
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      logger.info(`ATLAS API request: ${method} ${url.toString()} (attempt ${attempt})`)
+      const logUrl = new URL(url.toString())
+      logUrl.searchParams.delete('api-key')
+      logger.info(`ATLAS API request: ${method} ${logUrl.toString()} (attempt ${attempt})`)
 
       try {
         const fetchOptions: RequestInit = {
@@ -126,14 +134,15 @@ export class AtlasClient {
 
           const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument
           const apiErrors = errorData.errors || []
-          const errorDetail = apiErrors.length > 0
-            ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
-            : response.statusText
+          const errorDetail =
+            apiErrors.length > 0
+              ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
+              : response.statusText
           logger.error('ATLAS API error:', {
             status: response.status,
             statusText: response.statusText,
             errors: apiErrors,
-            url: url.toString(),
+            url: logUrl.toString(),
           })
           throw new Error(`ATLAS API error ${response.status}: ${errorDetail}`)
         }
@@ -157,7 +166,7 @@ export class AtlasClient {
 
         if (error instanceof TypeError) {
           const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
-          logger.error('ATLAS API network error (final):', { message: error.message, cause, url: url.toString() })
+          logger.error('ATLAS API network error (final):', { message: error.message, cause, url: logUrl.toString() })
           throw new Error(`ATLAS API network error: ${cause}`)
         }
 
@@ -178,12 +187,13 @@ export class AtlasClient {
     logger.info(`Fetching taxonomies of type: ${type}`)
 
     const allTerms: TaxonomyTerm[] = []
-    let page = 1
-    const pageSize = 50
+    let offset = 0
+    const limit = 50
+    const pageDelayMs = 1500
 
     while (true) {
       const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}`, {
-        params: { page, pageSize },
+        params: { pageOffset: offset, pageLimit: limit },
       })
 
       if (!response.data) break
@@ -204,9 +214,12 @@ export class AtlasClient {
         })
       }
 
-      // Stop if we got fewer results than page size (last page) or no next link
-      if (resources.length < pageSize || !response.links?.next) break
-      page++
+      // Stop if we got fewer results than limit (last page) or no next link
+      if (resources.length < limit || !response.links?.next) break
+      offset += limit
+
+      // Delay between pages to avoid ATLAS API rate limiting
+      await new Promise((resolve) => setTimeout(resolve, pageDelayMs))
     }
 
     return allTerms
@@ -288,7 +301,7 @@ export class AtlasClient {
           title: data.name, // English name *
           field_institution_name_in_nation: data.nameNational, // National language name *
           field_entity_department: data.entityDepartment,
-          body: data.description,
+          // body: data.description,
 
           // Address (structured) *
           field_address:
@@ -297,13 +310,13 @@ export class AtlasClient {
                   country_code: data.countryCode,
                   locality: data.city,
                   address_line1: data.streetAddress,
-                  postal_code: data.postalCode,
+                  // postal_code: data.postalCode,
                 }
               : undefined,
-          field_latitude: data.latitude,
-          field_longitude: data.longitude,
+          // field_latitude: data.latitude,
+          // field_longitude: data.longitude,
 
-          // Organization details
+          // Organisation details
           field_general_contact_e_mail: data.email, // *
           field_phone_number: data.phone,
           field_url: data.website ? { uri: data.website } : undefined, // *
@@ -312,13 +325,13 @@ export class AtlasClient {
 
           // Headquarters
           field_question_headquarter: data.isHeadquarter, // *
-          field_headquarter: data.headquarterInfo,
+          field_headquarter: data.isHeadquarter ? undefined : data.headquarterInfo || undefined,
 
           // Subsidiaries
           field_question_subsidiaries: data.hasSubsidiaries, // *
-          field_subsidiaries_eu: data.subsidiariesDetails,
+          field_subsidiaries_eu: data.hasSubsidiaries ? data.subsidiariesDetails || undefined : undefined,
           field_question_majority: data.hasMajorityShares, // *
-          field_majority_shares_noneu: data.majoritySharesDetails,
+          field_majority_shares_noneu: data.hasMajorityShares ? data.majoritySharesDetails || undefined : undefined,
 
           // Compliance
           field_article_136_compliance: data.article138Compliance, // *
@@ -358,10 +371,18 @@ export class AtlasClient {
     const attributes: Record<string, unknown> = {}
 
     // Basic information
-    if (data.name) attributes.title = data.name
-    if (data.nameNational !== undefined) attributes.field_institution_name_in_nation = data.nameNational
-    if (data.entityDepartment !== undefined) attributes.field_entity_department = data.entityDepartment
-    if (data.description !== undefined) attributes.body = data.description
+    if (data.name) {
+      attributes.title = data.name
+    }
+    if (data.nameNational !== undefined) {
+      attributes.field_institution_name_in_nation = data.nameNational
+    }
+    if (data.entityDepartment !== undefined) {
+      attributes.field_entity_department = data.entityDepartment
+    }
+    // if (data.description !== undefined) {
+    //   attributes.body = data.description
+    // }
 
     // Address (structured)
     if (data.countryCode || data.city || data.streetAddress || data.postalCode) {
@@ -369,47 +390,105 @@ export class AtlasClient {
         ...(data.countryCode && { country_code: data.countryCode }),
         ...(data.city && { locality: data.city }),
         ...(data.streetAddress && { address_line1: data.streetAddress }),
-        ...(data.postalCode && { postal_code: data.postalCode }),
+        // ...(data.postalCode && { postal_code: data.postalCode }),
       }
     }
-    if (data.latitude !== undefined) attributes.field_latitude = data.latitude
-    if (data.longitude !== undefined) attributes.field_longitude = data.longitude
+    // if (data.latitude !== undefined) {
+    //   attributes.field_latitude = data.latitude
+    // }
+    // if (data.longitude !== undefined) {
+    //   attributes.field_longitude = data.longitude
+    // }
 
-    // Organization details
-    if (data.email !== undefined) attributes.field_general_contact_e_mail = data.email
-    if (data.phone !== undefined) attributes.field_phone_number = data.phone
-    if (data.website !== undefined) attributes.field_url = { uri: data.website }
-    if (data.registrationNumber !== undefined) attributes.field_registration_number = data.registrationNumber
-    if (data.logoUrl !== undefined) attributes.field_logo = data.logoUrl
+    // Organisation details
+    if (data.email !== undefined) {
+      attributes.field_general_contact_e_mail = data.email
+    }
+    if (data.phone !== undefined) {
+      attributes.field_phone_number = data.phone
+    }
+    if (data.website !== undefined) {
+      attributes.field_url = { uri: data.website }
+    }
+    if (data.registrationNumber !== undefined) {
+      attributes.field_registration_number = data.registrationNumber
+    }
+    if (data.logoUrl !== undefined) {
+      attributes.field_logo = data.logoUrl
+    }
 
     // Headquarters
-    if (data.isHeadquarter !== undefined) attributes.field_question_headquarter = data.isHeadquarter
-    if (data.headquarterInfo !== undefined) attributes.field_headquarter = data.headquarterInfo
+    if (data.isHeadquarter !== undefined) {
+      attributes.field_question_headquarter = data.isHeadquarter
+    }
+
+    if (data.headquarterInfo !== undefined && !data.isHeadquarter) {
+      attributes.field_headquarter = data.headquarterInfo
+    } else {
+      attributes.field_headquarter = null
+    }
 
     // Subsidiaries
-    if (data.hasSubsidiaries !== undefined) attributes.field_question_subsidiaries = data.hasSubsidiaries
-    if (data.subsidiariesDetails !== undefined) attributes.field_subsidiaries_eu = data.subsidiariesDetails
-    if (data.hasMajorityShares !== undefined) attributes.field_question_majority = data.hasMajorityShares
-    if (data.majoritySharesDetails !== undefined) attributes.field_majority_shares_noneu = data.majoritySharesDetails
+    if (data.hasSubsidiaries !== undefined) {
+      attributes.field_question_subsidiaries = data.hasSubsidiaries
+    }
+
+    if (data.subsidiariesDetails !== undefined && data.hasSubsidiaries) {
+      attributes.field_subsidiaries_eu = data.subsidiariesDetails
+    } else {
+      attributes.field_subsidiaries_eu = null
+    }
+
+    if (data.hasMajorityShares !== undefined) {
+      attributes.field_question_majority = data.hasMajorityShares
+    }
+
+    if (data.majoritySharesDetails !== undefined && data.hasMajorityShares) {
+      attributes.field_majority_shares_noneu = data.majoritySharesDetails
+    } else {
+      attributes.field_majority_shares_noneu = null
+    }
 
     // Compliance
-    if (data.article138Compliance !== undefined) attributes.field_article_136_compliance = data.article138Compliance
-    if (data.dataShareConsent !== undefined) attributes.field_data_sharing_consent = data.dataShareConsent
+    if (data.article138Compliance !== undefined) {
+      attributes.field_article_136_compliance = data.article138Compliance
+    }
+    if (data.dataShareConsent !== undefined) {
+      attributes.field_data_sharing_consent = data.dataShareConsent
+    }
 
     // Contact person
-    if (data.contactFirstName !== undefined) attributes.field_first_name = data.contactFirstName
-    if (data.contactLastName !== undefined) attributes.field_family_name = data.contactLastName
-    if (data.contactEmail !== undefined) attributes.field_e_mail = data.contactEmail
-    if (data.contactPosition !== undefined) attributes.field_position = data.contactPosition
-    if (data.contactPhone !== undefined) attributes.field_representative_phone_numbe = data.contactPhone
+    if (data.contactFirstName !== undefined) {
+      attributes.field_first_name = data.contactFirstName
+    }
+    if (data.contactLastName !== undefined) {
+      attributes.field_family_name = data.contactLastName
+    }
+    if (data.contactEmail !== undefined) {
+      attributes.field_e_mail = data.contactEmail
+    }
+    if (data.contactPosition !== undefined) {
+      attributes.field_position = data.contactPosition
+    }
+    if (data.contactPhone !== undefined) {
+      attributes.field_representative_phone_numbe = data.contactPhone
+    }
 
     // Expertise
-    if (data.expertiseDescription !== undefined) attributes.field_field_of_activity_descr = data.expertiseDescription
-    if (data.goalsToAchieve !== undefined) attributes.field_goals_to_achieve = data.goalsToAchieve
-    if (data.goalsToContribute !== undefined) attributes.field_goals_to_contribute = data.goalsToContribute
+    if (data.expertiseDescription !== undefined) {
+      attributes.field_field_of_activity_descr = data.expertiseDescription
+    }
+    if (data.goalsToAchieve !== undefined) {
+      attributes.field_goals_to_achieve = data.goalsToAchieve
+    }
+    if (data.goalsToContribute !== undefined) {
+      attributes.field_goals_to_contribute = data.goalsToContribute
+    }
 
     // Workflow
-    if (data.moderationState !== undefined) attributes.moderation_state = data.moderationState
+    if (data.moderationState !== undefined) {
+      attributes.moderation_state = data.moderationState
+    }
 
     const body = {
       data: {
@@ -432,24 +511,10 @@ export class AtlasClient {
   private buildRelationships(data: Partial<ClusterInput>): Record<string, unknown> {
     const relationships: Record<string, unknown> = {}
 
-    // Country reference
-    if (data.countryId) {
-      relationships.field_country = {
-        data: { type: 'taxonomy_term--country', id: data.countryId },
-      }
-    }
-
-    // Organization type (cluster_type) *
+    // Organisation type (cluster_type) *
     if (data.clusterTypeId) {
       relationships.field_cluster_type = {
         data: { type: 'taxonomy_term--cluster_type', id: data.clusterTypeId },
-      }
-    }
-
-    // Organization type taxonomy
-    if (data.organizationTypeId) {
-      relationships.field_organization_type = {
-        data: { type: 'taxonomy_term--organization_type', id: data.organizationTypeId },
       }
     }
 
@@ -506,5 +571,7 @@ export class AtlasClient {
     return relationships
   }
 }
+
+export default AtlasClient
 
 export const atlasClient = new AtlasClient()

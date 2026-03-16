@@ -1,10 +1,20 @@
-import { eq, desc, lt } from 'drizzle-orm'
-import { db } from '../../config/database.js'
-import { entities, entityVersions, syncLogs } from '../../db/schema.js'
-import { logger } from '../../utils/logger.js'
+import { eq, desc, lt, and, inArray } from 'drizzle-orm'
+import { db } from '@/config/database.js'
+import {
+  entities,
+  entityVersions,
+  syncLogs,
+  taxonomies,
+  entityThematicAreas,
+  entitySectors,
+  entityTechnologies,
+  entityUseCases,
+  entityFieldsOfActivity,
+} from '@/db/schema.js'
+import { logger } from '@/utils/logger.js'
 import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
-import type { Entity } from '../../db/schema.js'
+import type { Entity } from '@/db/schema.js'
 
 export interface SyncResult {
   success: boolean
@@ -17,7 +27,7 @@ export interface SyncResult {
 export interface ConflictReport {
   hasConflict: boolean
   localVersion: Entity
-  remoteVersion: any
+  remoteVersion: Partial<Entity> | null
   localUpdatedAt: Date
   remoteUpdatedAt: Date
   conflictFields: string[]
@@ -25,7 +35,9 @@ export interface ConflictReport {
 
 export interface EntityDiff {
   field: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   localValue: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   remoteValue: any
   isDifferent: boolean
 }
@@ -48,9 +60,61 @@ export class EntitySyncService {
         throw new Error('Entity not found')
       }
 
+      let clusterTypeId: string | undefined
+
+      if (entity.clusterTypeId) {
+        const [clusterType] = await db
+          .select()
+          .from(taxonomies)
+          .where(and(eq(taxonomies.taxonomyType, 'cluster_type'), eq(taxonomies.id, entity.clusterTypeId)))
+          .limit(1)
+        clusterTypeId = clusterType?.atlasId || undefined
+      }
+
       await db.update(entities).set({ syncStatus: 'pending_push' }).where(eq(entities.id, entityId))
 
-      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity)
+      // Load JRC taxonomy IDs from junction tables and resolve to ATLAS UUIDs
+      const [thematicRows, sectorRows, technologyRows, useCaseRows, fieldsOfActivityRows] = await Promise.all([
+        db.select({ taxonomyId: entityThematicAreas.taxonomyId }).from(entityThematicAreas).where(eq(entityThematicAreas.entityId, entityId)),
+        db.select({ taxonomyId: entitySectors.taxonomyId }).from(entitySectors).where(eq(entitySectors.entityId, entityId)),
+        db.select({ taxonomyId: entityTechnologies.taxonomyId }).from(entityTechnologies).where(eq(entityTechnologies.entityId, entityId)),
+        db.select({ taxonomyId: entityUseCases.taxonomyId }).from(entityUseCases).where(eq(entityUseCases.entityId, entityId)),
+        db.select({ taxonomyId: entityFieldsOfActivity.taxonomyId }).from(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, entityId)),
+      ])
+
+      // Collect all local taxonomy IDs that need atlas ID resolution
+      const allLocalIds = [
+        ...thematicRows.map((r) => r.taxonomyId),
+        ...sectorRows.map((r) => r.taxonomyId),
+        ...technologyRows.map((r) => r.taxonomyId),
+        ...useCaseRows.map((r) => r.taxonomyId),
+        ...fieldsOfActivityRows.map((r) => r.taxonomyId),
+      ]
+
+      // Resolve local taxonomy IDs to ATLAS UUIDs in a single query
+      const localToAtlas = new Map<string, string>()
+      if (allLocalIds.length > 0) {
+        const taxRecords = await db
+          .select({ id: taxonomies.id, atlasId: taxonomies.atlasId })
+          .from(taxonomies)
+          .where(inArray(taxonomies.id, allLocalIds))
+        for (const t of taxRecords) {
+          localToAtlas.set(t.id, t.atlasId || t.id)
+        }
+      }
+
+      const resolveIds = (rows: { taxonomyId: string }[]): string[] | undefined => {
+        if (rows.length === 0) return undefined
+        return rows.map((r) => localToAtlas.get(r.taxonomyId) || r.taxonomyId)
+      }
+
+      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity, clusterTypeId, {
+        thematicAreaIds: resolveIds(thematicRows),
+        sectorIds: resolveIds(sectorRows),
+        technologyIds: resolveIds(technologyRows),
+        useCaseIds: resolveIds(useCaseRows),
+        fieldsOfActivityIds: resolveIds(fieldsOfActivityRows),
+      })
 
       let cluster
       if (entity.atlasId) {
@@ -138,7 +202,7 @@ export class EntitySyncService {
     }
   }
 
-  async pullEntity(atlasId: string, userId?: string): Promise<SyncResult> {
+  async pullEntity(atlasId: string): Promise<SyncResult> {
     logger.info(`Pulling entity ${atlasId} from ATLAS`)
 
     try {
@@ -183,7 +247,6 @@ export class EntitySyncService {
             syncStatus: 'synced',
             lastSyncedAt: new Date(),
             updatedAt: new Date(),
-            updatedBy: userId,
           })
           .where(eq(entities.id, existing.id))
           .returning()
@@ -202,8 +265,8 @@ export class EntitySyncService {
         await db.insert(entityVersions).values({
           entityId: existing.id,
           version: newVersion,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data: entity as any,
-          changedBy: userId,
         })
       } else {
         ;[entity] = await db
@@ -214,16 +277,14 @@ export class EntitySyncService {
             status: entityData.status || 'draft',
             syncStatus: 'synced',
             lastSyncedAt: new Date(),
-            createdBy: userId,
-            updatedBy: userId,
           })
           .returning()
 
         await db.insert(entityVersions).values({
           entityId: entity.id,
           version: '1.0',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data: entity as any,
-          changedBy: userId,
         })
       }
 
@@ -341,7 +402,6 @@ export class EntitySyncService {
         'goalsToContribute',
         'countryId',
         'clusterTypeId',
-        'organizationTypeId',
         'moderationState',
       ]
 
@@ -411,7 +471,6 @@ export class EntitySyncService {
         'goalsToContribute',
         'countryId',
         'clusterTypeId',
-        'organizationTypeId',
         'moderationState',
       ]
 
@@ -446,7 +505,7 @@ export class EntitySyncService {
           throw new Error('Entity or ATLAS ID not found')
         }
 
-        return await this.pullEntity(entity.atlasId, userId)
+        return await this.pullEntity(entity.atlasId)
       }
     } catch (error) {
       logger.error(`Failed to resolve conflict for entity ${entityId}:`, error as Error)
@@ -481,9 +540,9 @@ export class EntitySyncService {
     return this.processBatch(entityIds, (id) => this.pushEntity(id, userId))
   }
 
-  async pullBatch(atlasIds: string[], userId?: string): Promise<BatchSyncResult> {
+  async pullBatch(atlasIds: string[]): Promise<BatchSyncResult> {
     logger.info(`Pulling batch of ${atlasIds.length} entities from ATLAS`)
-    return this.processBatch(atlasIds, (id) => this.pullEntity(id, userId))
+    return this.processBatch(atlasIds, (id) => this.pullEntity(id))
   }
 
   async cleanupSyncLogs(retentionDays: number = 90): Promise<number> {

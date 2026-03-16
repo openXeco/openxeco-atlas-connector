@@ -7,6 +7,8 @@ import { authenticate } from '../middleware/auth.js'
 import { logger } from '../utils/logger.js'
 import { entitySyncService } from '../services/sync/entity-sync.js'
 
+const idParamSchema = z.object({ id: z.string().uuid() })
+
 const resolveConflictSchema = z.object({
   resolution: z.enum(['local', 'remote']),
 })
@@ -16,10 +18,20 @@ const batchSyncSchema = z.object({
   atlasIds: z.array(z.string()).optional(),
 })
 
+const syncLogsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  entityId: z.string().uuid().optional(),
+  operation: z.enum(['push', 'pull', 'sync']).optional(),
+  status: z.enum(['success', 'failed']).optional(),
+  startDate: z.string().datetime({ offset: true }).optional(),
+  endDate: z.string().datetime({ offset: true }).optional(),
+})
+
 export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/entities/:id/push', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = idParamSchema.parse(request.params)
       const userId = request.currentUser?.userId
 
       const result = await entitySyncService.pushEntity(id, userId)
@@ -36,18 +48,20 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
+      }
       logger.error('Failed to push entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? `Failed to push entity: ${error.message}` : 'Failed to push entity',
+        message: 'Failed to push entity',
       })
     }
   })
 
   fastify.post('/entities/:id/pull', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
-      const userId = request.currentUser?.userId
+      const { id } = idParamSchema.parse(request.params)
 
       const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
@@ -58,7 +72,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         })
       }
 
-      const result = await entitySyncService.pullEntity(entity.atlasId, userId)
+      const result = await entitySyncService.pullEntity(entity.atlasId)
 
       if (!result.success) {
         return reply.status(result.error === 'CONFLICT' ? 409 : 500).send({
@@ -72,17 +86,20 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
+      }
       logger.error('Failed to pull entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
-        message: error instanceof Error ? `Failed to pull entity: ${error.message}` : 'Failed to pull entity',
+        message: 'Failed to pull entity',
       })
     }
   })
 
   fastify.get('/entities/:id/diff', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = idParamSchema.parse(request.params)
 
       const diffs = await entitySyncService.getDiff(id)
 
@@ -94,6 +111,9 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
+      }
       logger.error('Failed to get diff', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
@@ -104,7 +124,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.get('/entities/:id/conflicts', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = idParamSchema.parse(request.params)
 
       const conflict = await entitySyncService.detectConflicts(id)
 
@@ -112,6 +132,9 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         data: conflict,
       })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
+      }
       logger.error('Failed to detect conflicts', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
@@ -122,7 +145,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.post('/entities/:id/resolve', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = idParamSchema.parse(request.params)
       const body = resolveConflictSchema.parse(request.body)
       const userId = request.currentUser?.userId
 
@@ -188,7 +211,6 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/batch/pull', { preHandler: authenticate }, async (request, reply) => {
     try {
       const body = batchSyncSchema.parse(request.body)
-      const userId = request.currentUser?.userId
 
       if (!body.atlasIds || body.atlasIds.length === 0) {
         return reply.status(400).send({
@@ -197,7 +219,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         })
       }
 
-      const result = await entitySyncService.pullBatch(body.atlasIds, userId)
+      const result = await entitySyncService.pullBatch(body.atlasIds)
 
       return reply.send({
         data: result,
@@ -258,25 +280,9 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.get('/logs', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const {
-        page = 1,
-        limit = 20,
-        entityId,
-        operation,
-        status,
-        startDate,
-        endDate,
-      } = request.query as {
-        page?: number
-        limit?: number
-        entityId?: string
-        operation?: string
-        status?: string
-        startDate?: string
-        endDate?: string
-      }
+      const { page, limit, entityId, operation, status, startDate, endDate } = syncLogsQuerySchema.parse(request.query)
 
-      const offset = (Number(page) - 1) * Number(limit)
+      const offset = (page - 1) * limit
 
       let query = db.select().from(syncLogs)
 
@@ -298,20 +304,27 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       if (conditions.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         query = query.where(and(...conditions)) as any
       }
 
-      const logs = await query.limit(Number(limit)).offset(offset).orderBy(desc(syncLogs.createdAt))
+      const logs = await query.limit(limit).offset(offset).orderBy(desc(syncLogs.createdAt))
 
       return reply.send({
         data: logs,
         meta: {
-          page: Number(page),
-          limit: Number(limit),
+          page,
+          limit,
           count: logs.length,
         },
       })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
+        })
+      }
       logger.error('Failed to fetch sync logs', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',

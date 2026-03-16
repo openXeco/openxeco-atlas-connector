@@ -4,9 +4,9 @@
  * Transforms cybersecurity.lu form answers into entity form data
  */
 
-import { db } from '../../config/database.js'
-import { taxonomies } from '../../db/schema.js'
-import { logger } from '../../utils/logger.js'
+import { db } from '@/config/database.js'
+import { taxonomies } from '@/db/schema.js'
+import { logger } from '@/utils/logger.js'
 import {
   QUESTION_TO_ENTITY_MAPPING,
   MAPPING_BY_QUESTION_REF,
@@ -154,15 +154,22 @@ export class OpenXecoFormTransformer {
   }
 
   private parseBoolean(value: string | undefined): boolean | null {
-    if (value === undefined || value === null) return null
+    if (value === undefined || value === null) {
+      return null
+    }
 
     const normalized = value.toLowerCase().trim()
 
     const trueValues = ['true', 'yes', 'oui', 'ja', '1', 'on', 'checked']
     const falseValues = ['false', 'no', 'non', 'nein', '0', 'off', 'unchecked']
 
-    if (trueValues.includes(normalized)) return true
-    if (falseValues.includes(normalized)) return false
+    if (trueValues.includes(normalized)) {
+      return true
+    }
+
+    if (falseValues.includes(normalized)) {
+      return false
+    }
 
     return null
   }
@@ -281,20 +288,24 @@ export class OpenXecoFormTransformer {
   private async lookupTaxonomyByName(name: string, taxonomyType: string): Promise<string | undefined> {
     await this.ensureTaxonomyCache()
 
-    if (!this.taxonomyCache) return undefined
+    if (!this.taxonomyCache) {
+      return undefined
+    }
 
     // Try exact match (case-insensitive)
     const exactKey = `${name.toLowerCase()}|${taxonomyType}`
     const exactMatch = this.taxonomyCache.byNameAndType.get(exactKey)
-    if (exactMatch) return exactMatch
+
+    if (exactMatch) {
+      return exactMatch
+    }
 
     // Try normalized match (remove extra spaces)
     const normalized = name.toLowerCase().trim().replace(/\s+/g, ' ')
     const normalizedKey = `${normalized}|${taxonomyType}`
     const normalizedMatch = this.taxonomyCache.byNameAndType.get(normalizedKey)
-    if (normalizedMatch) return normalizedMatch
 
-    return undefined
+    return normalizedMatch || undefined
   }
 
   clearCache(): void {

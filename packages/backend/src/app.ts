@@ -17,12 +17,14 @@ export async function buildApp() {
   await fastify.register(helmet)
 
   await fastify.register(cors, {
-    origin: config.NODE_ENV === 'development' ? true : ['http://localhost:3000'],
+    origin: config.NODE_ENV === 'development' ? ['http://localhost:3000', 'http://localhost:3001'] : [config.FRONTEND_URL || 'http://localhost:3000'],
     credentials: true,
   })
 
   await fastify.register(rateLimit, {
-    global: false,
+    global: true,
+    max: 100,
+    timeWindow: '1 minute',
   })
 
   await fastify.register(jwt, {

@@ -118,21 +118,18 @@ export const QUESTION_TO_ENTITY_MAPPING: FieldMapping[] = [
     fieldType: 'taxonomy_multi',
     taxonomyType: 'sectors',
   },
-  { questionRef: 'FORM-ECCC-001-Q303-4', entityField: 'otherSectors', fieldType: 'string' },
   {
     questionRef: 'FORM-ECCC-001-Q303-5',
     entityField: 'technologyIds',
     fieldType: 'taxonomy_multi',
     taxonomyType: 'technologies',
   },
-  { questionRef: 'FORM-ECCC-001-Q303-6', entityField: 'otherTechnologies', fieldType: 'string' },
   {
     questionRef: 'FORM-ECCC-001-Q303-7',
     entityField: 'useCaseIds',
     fieldType: 'taxonomy_multi',
     taxonomyType: 'use_cases',
   },
-  { questionRef: 'FORM-ECCC-001-Q303-8', entityField: 'otherUseCases', fieldType: 'string' },
   { questionRef: 'FORM-ECCC-001-Q303-2', entityField: 'goalsToAchieve', fieldType: 'string' },
   { questionRef: 'FORM-ECCC-001-Q305', entityField: 'goalsToContribute', fieldType: 'string' },
 

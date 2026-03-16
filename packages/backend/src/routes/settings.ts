@@ -119,6 +119,37 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
         })
       }
 
+      // SSRF protection: only allow HTTPS URLs with non-private hostnames
+      try {
+        const parsed = new URL(baseUrl)
+        if (parsed.protocol !== 'https:') {
+          return reply.status(400).send({
+            error: 'Bad Request',
+            message: 'ATLAS base URL must use HTTPS',
+          })
+        }
+        const hostname = parsed.hostname.toLowerCase()
+        const blocked =
+          hostname === 'localhost' ||
+          hostname === '127.0.0.1' ||
+          hostname === '::1' ||
+          hostname.startsWith('10.') ||
+          hostname.startsWith('192.168.') ||
+          hostname.startsWith('169.254.') ||
+          /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+        if (blocked) {
+          return reply.status(400).send({
+            error: 'Bad Request',
+            message: 'ATLAS base URL must not point to a private or loopback address',
+          })
+        }
+      } catch {
+        return reply.status(400).send({
+          error: 'Bad Request',
+          message: 'ATLAS base URL is not a valid URL',
+        })
+      }
+
       // Test the connection by making a simple request
       const testUrl = `${baseUrl}/taxonomy_term/country`
 

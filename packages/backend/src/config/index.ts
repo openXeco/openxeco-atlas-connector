@@ -38,6 +38,8 @@ const envSchema = z.object({
   ATLAS_USERNAME: z.string().optional(),
   ATLAS_PASSWORD: z.string().optional(),
 
+  FRONTEND_URL: z.string().url().optional(),
+
   HTTPS_PROXY: z.string().url().optional(),
 })
 

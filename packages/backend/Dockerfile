@@ -8,7 +8,7 @@ FROM base AS development
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/backend/package.json ./packages/backend/
 COPY packages/frontend/package.json ./packages/frontend/
-RUN pnpm install --filter @atlas-connector/backend...
+RUN pnpm install --filter @openxeco/atlas-connector-backend...
 COPY tsconfig.base.json ./
 COPY packages/backend/ ./packages/backend/
 WORKDIR /app/packages/backend
@@ -19,7 +19,7 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/backend/package.json ./packages/backend/
 COPY packages/frontend/package.json ./packages/frontend/
-RUN pnpm install --frozen-lockfile --filter @atlas-connector/backend...
+RUN pnpm install --frozen-lockfile --filter @openxeco/atlas-connector-backend...
 
 # ---- Builder ----
 FROM deps AS builder
@@ -33,7 +33,7 @@ FROM base AS prod-deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/backend/package.json ./packages/backend/
 COPY packages/frontend/package.json ./packages/frontend/
-RUN pnpm install --frozen-lockfile --filter @atlas-connector/backend... --prod
+RUN pnpm install --frozen-lockfile --filter @openxeco/atlas-connector-backend... --prod
 
 # ---- Production ----
 FROM node:22-alpine AS production

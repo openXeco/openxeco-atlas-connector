@@ -203,8 +203,15 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
       })
     }
 
-    await db.delete(users).where(eq(users.id, id))
+    try {
+      await db.delete(users).where(eq(users.id, id))
+      return reply.send({ message: 'User deleted successfully' })
+    } catch (err) {
+      fastify.log.error(err)
+      return reply.status(500).send({message: 'Failed to delete the user'})
+    }
 
-    return reply.send({ message: 'User deleted successfully' })
+
+
   })
 }

@@ -11,3 +11,5 @@ docs/
 .vscode/
 .idea/
 *.log
+.opencode
+opencode.*

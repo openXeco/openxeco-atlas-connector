@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { apiClient } from '@/lib/api'
-import type { Entity } from '@/types/entity'
+import type { Entity } from '@/types'
 
 interface SyncStatusWidgetProps {
   onRefresh?: () => void
@@ -92,7 +92,7 @@ export function SyncStatusWidget({ onRefresh: _onRefresh }: SyncStatusWidgetProp
                   <div className="flex-1">
                     <div className="font-medium">{entity.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      Created {new Date(entity.createdAt).toLocaleDateString()}
+                      Created {new Date(entity.createdAt).toLocaleDateString('en-UK')}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

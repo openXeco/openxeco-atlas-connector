@@ -1,11 +1,13 @@
-import type { Entity, Taxonomy } from '../../db/schema.js'
+import type { Entity, Taxonomy } from '@/db/schema.js'
 import type {
+  JsonApiAddress,
   JsonApiDocument,
   JsonApiResource,
   JsonApiRelationship,
   Cluster,
   ClusterInput,
   TaxonomyTerm,
+  JsonApiWebsite,
 } from './types.js'
 
 /**
@@ -16,13 +18,10 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
   const attrs = resource.attributes
 
   // Extract structured address (may be null or an object)
-  const address = attrs.field_address as
-    | { country_code?: string; locality?: string; address_line1?: string; postal_code?: string }
-    | null
-    | undefined
+  const address = attrs.field_address as JsonApiAddress
 
   // Extract website URL (may be { uri: string } or a plain string)
-  const websiteField = attrs.field_url as { uri?: string } | string | null | undefined
+  const websiteField = attrs.field_url as JsonApiWebsite
   const website =
     typeof websiteField === 'object' && websiteField !== null ? websiteField.uri : (websiteField as string | undefined)
 
@@ -47,7 +46,7 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
     latitude: attrs.field_latitude as number | undefined,
     longitude: attrs.field_longitude as number | undefined,
 
-    // Organization details
+    // Organisation details
     email: attrs.field_general_contact_e_mail as string | undefined,
     phone: attrs.field_phone_number as string | undefined,
     website,
@@ -101,10 +100,6 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
     if (rels.field_cluster_type?.data && !Array.isArray(rels.field_cluster_type.data)) {
       cluster.clusterTypeId = rels.field_cluster_type.data.id
     }
-    if (rels.field_organization_type?.data && !Array.isArray(rels.field_organization_type.data)) {
-      cluster.organizationTypeId = rels.field_organization_type.data.id
-    }
-
     // Multi-value relationships (JRC taxonomy)
     const extractIds = (rel: JsonApiRelationship | undefined): string[] | undefined => {
       if (!rel?.data) return undefined
@@ -126,29 +121,11 @@ export class JsonApiTransformer {
   toJsonApiCluster(entity: Entity, taxonomies?: Taxonomy[]): JsonApiDocument {
     const relationships: Record<string, JsonApiRelationship> = {}
 
-    if (entity.countryId) {
-      relationships.field_country = {
-        data: {
-          type: 'taxonomy_term--country',
-          id: entity.countryId,
-        },
-      }
-    }
-
     if (entity.clusterTypeId) {
       relationships.field_cluster_type = {
         data: {
           type: 'taxonomy_term--cluster_type',
           id: entity.clusterTypeId,
-        },
-      }
-    }
-
-    if (entity.organizationTypeId) {
-      relationships.field_organization_type = {
-        data: {
-          type: 'taxonomy_term--organization_type',
-          id: entity.organizationTypeId,
         },
       }
     }
@@ -200,7 +177,7 @@ export class JsonApiTransformer {
     return resources.map((resource) => this.fromJsonApiCluster({ data: resource }))
   }
 
-  toEntityFromCluster(cluster: Cluster, userId?: string): Partial<Entity> {
+  toEntityFromCluster(cluster: Cluster): Partial<Entity> {
     return {
       atlasId: cluster.atlasId,
 
@@ -218,7 +195,7 @@ export class JsonApiTransformer {
       latitude: cluster.latitude?.toString(),
       longitude: cluster.longitude?.toString(),
 
-      // Organization details
+      // Organisation details
       email: cluster.email,
       phone: cluster.phone,
       website: cluster.website,
@@ -254,7 +231,6 @@ export class JsonApiTransformer {
       // Taxonomy references
       countryId: cluster.countryId,
       clusterTypeId: cluster.clusterTypeId,
-      organizationTypeId: cluster.organizationTypeId,
 
       // Workflow
       status: cluster.status || 'draft',
@@ -263,11 +239,20 @@ export class JsonApiTransformer {
 
       metadata: cluster.metadata,
       lastSyncedAt: new Date(),
-      updatedBy: userId,
     }
   }
 
-  toClusterInputFromEntity(entity: Entity): ClusterInput {
+  toClusterInputFromEntity(
+    entity: Entity,
+    clusterTypeId?: string,
+    taxonomyIds?: {
+      thematicAreaIds?: string[]
+      sectorIds?: string[]
+      technologyIds?: string[]
+      useCaseIds?: string[]
+      fieldsOfActivityIds?: string[]
+    }
+  ): ClusterInput {
     return {
       // Basic information
       name: entity.name,
@@ -283,7 +268,7 @@ export class JsonApiTransformer {
       latitude: entity.latitude ? parseFloat(entity.latitude) : undefined,
       longitude: entity.longitude ? parseFloat(entity.longitude) : undefined,
 
-      // Organization details
+      // Organisation details
       email: entity.email || undefined,
       phone: entity.phone || undefined,
       website: entity.website || undefined,
@@ -298,7 +283,7 @@ export class JsonApiTransformer {
       hasSubsidiaries: entity.hasSubsidiaries ?? undefined,
       subsidiariesDetails: entity.subsidiariesDetails || undefined,
       hasMajorityShares: entity.hasMajorityShares ?? undefined,
-      majoritySharesDetails: entity.majoritySharesDetails || undefined,
+      majoritySharesDetails: (entity.hasMajorityShares && entity.majoritySharesDetails) ? entity.majoritySharesDetails : undefined,
 
       // Compliance
       article138Compliance: entity.article138Compliance ?? undefined,
@@ -317,9 +302,12 @@ export class JsonApiTransformer {
       goalsToContribute: entity.goalsToContribute || undefined,
 
       // Taxonomy references
-      countryId: entity.countryId || undefined,
-      clusterTypeId: entity.clusterTypeId || undefined,
-      organizationTypeId: entity.organizationTypeId || undefined,
+      clusterTypeId,
+      thematicAreaIds: taxonomyIds?.thematicAreaIds,
+      sectorIds: taxonomyIds?.sectorIds,
+      technologyIds: taxonomyIds?.technologyIds,
+      useCaseIds: taxonomyIds?.useCaseIds,
+      fieldsOfActivityIds: taxonomyIds?.fieldsOfActivityIds,
 
       // Workflow
       moderationState: entity.moderationState || undefined,
@@ -330,6 +318,7 @@ export class JsonApiTransformer {
     return {
       id: resource.id,
       atlasId: resource.id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       type: type as any,
       name: (resource.attributes.name as string) || '',
       description: resource.attributes.description as string | undefined,

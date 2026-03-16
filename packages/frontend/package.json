@@ -1,5 +1,5 @@
 {
-  "name": "@atlas-connector/frontend",
+  "name": "@openxeco/atlas-connector-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -25,25 +25,26 @@
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.469.0",
-    "next": "^16.1.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-hook-form": "^7.54.2",
-    "tailwind-merge": "^2.6.0",
+    "lucide-react": "^0.577.0",
+    "next": "16.1.5",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-hook-form": "^7.71.2",
+    "swr": "^2.4.1",
+    "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "@types/react": "^19.0.0",
+    "@types/node": "^22.19.15",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.0.0",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^9.39.2",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^9.39.4",
     "eslint-config-next": "^16.1.6",
-    "postcss": "^8.4.49",
-    "rimraf": "^6.0.1",
+    "postcss": "^8.5.8",
+    "rimraf": "^6.1.3",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.3"
+    "typescript": "^5.9.3"
   }
 }

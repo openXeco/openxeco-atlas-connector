@@ -1,9 +1,10 @@
-import { eq, and, ilike, sql } from 'drizzle-orm'
-import { db } from '../../config/database.js'
-import { taxonomies, syncLogs } from '../../db/schema.js'
-import { logger } from '../../utils/logger.js'
+import { eq, and, ilike, sql, count } from 'drizzle-orm'
+import { db } from '@/config/database.js'
+import { taxonomies, syncLogs } from '@/db/schema.js'
+import { logger } from '@/utils/logger.js'
 import { atlasClient } from './client.js'
 import { jsonApiTransformer } from './transformer.js'
+import { KNOWLEDGE_DOMAIN_HIERARCHY } from './knowledge-domain-hierarchy.js'
 import type { TaxonomyType } from './types.js'
 
 const TAXONOMY_TYPES: TaxonomyType[] = [
@@ -17,19 +18,21 @@ const TAXONOMY_TYPES: TaxonomyType[] = [
   'fields_of_activity',
   'funding_sources',
   'initiatives',
-  'institution',
   'languages',
   'legal_status',
   'nationality',
-  'organization_type',
   'position_category',
   'sectors',
   'technologies',
   'use_cases',
-  'citations_source',
 ]
 
+// cluster_thematic_area terms are flat on ATLAS (no parent relationships returned by the API).
+// The parent/child hierarchy is hardcoded in knowledge-domain-hierarchy.ts and applied during sync.
+
 export class TaxonomySyncService {
+  private static readonly TYPE_DELAY_MS = 2000
+
   async syncAllTaxonomies(): Promise<{
     success: number
     failed: number
@@ -40,7 +43,8 @@ export class TaxonomySyncService {
     let success = 0
     let failed = 0
 
-    for (const type of TAXONOMY_TYPES) {
+    for (let i = 0; i < TAXONOMY_TYPES.length; i++) {
+      const type = TAXONOMY_TYPES[i]
       try {
         await this.syncTaxonomyType(type)
         success++
@@ -58,6 +62,11 @@ export class TaxonomySyncService {
             error: error instanceof Error ? error.message : 'Unknown error',
           },
         })
+      }
+
+      // Delay between taxonomy types to avoid ATLAS API rate limiting
+      if (i < TAXONOMY_TYPES.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, TaxonomySyncService.TYPE_DELAY_MS))
       }
     }
 
@@ -82,12 +91,17 @@ export class TaxonomySyncService {
 
     const rows = terms.map((term) => {
       const data = jsonApiTransformer.toTaxonomyFromTerm(term)
+      // Apply hardcoded parent hierarchy for knowledge domains
+      let parentId = data.parentId
+      if (type === 'cluster_thematic_area' && data.atlasId && data.atlasId in KNOWLEDGE_DOMAIN_HIERARCHY) {
+        parentId = KNOWLEDGE_DOMAIN_HIERARCHY[data.atlasId]
+      }
       return {
         atlasId: data.atlasId!,
         taxonomyType: data.taxonomyType!,
         name: data.name!,
         description: data.description,
-        parentId: data.parentId,
+        parentId,
         metadata: data.metadata,
         lastSyncedAt: new Date(),
       }
@@ -127,6 +141,36 @@ export class TaxonomySyncService {
 
   async getTaxonomiesByType(type: TaxonomyType) {
     return db.select().from(taxonomies).where(eq(taxonomies.taxonomyType, type)).orderBy(taxonomies.name)
+  }
+
+  async countTaxonomies(): Promise<{
+    total: number
+    taxonomies: Record<TaxonomyType, number>
+  }> {
+    const rows = await db
+      .select({
+        taxonomyType: taxonomies.taxonomyType,
+        count: sql<number>`count(*)`,
+      })
+      .from(taxonomies)
+      .groupBy(taxonomies.taxonomyType)
+
+    const taxonomiesRecord = {} as Record<TaxonomyType, number>
+
+    for (const row of rows) {
+      taxonomiesRecord[row.taxonomyType as TaxonomyType] = row.count
+    }
+
+    const total = rows.reduce((sum, r) => sum + Number(r.count), 0)
+
+    return {
+      total,
+      taxonomies: taxonomiesRecord,
+    }
+  }
+
+  async countTaxonomiesByType(type: TaxonomyType) {
+    return db.select({ total: count() }).from(taxonomies).where(eq(taxonomies.taxonomyType, type))
   }
 
   async getTaxonomyById(id: string) {

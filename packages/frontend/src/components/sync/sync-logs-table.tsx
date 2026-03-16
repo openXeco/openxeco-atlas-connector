@@ -44,6 +44,7 @@ export function SyncLogsTable() {
 
   useEffect(() => {
     loadLogs()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
   const getStatusColor = (status: string) => {
@@ -139,7 +140,7 @@ export function SyncLogsTable() {
                     </div>
                   </div>
                 </div>
-                <div className="text-sm text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground">{new Date(log.createdAt).toLocaleString('en-UK')}</div>
               </div>
             ))}
           </div>

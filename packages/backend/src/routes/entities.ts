@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { eq, desc, and, count as countFn } from 'drizzle-orm'
-import { db } from '../config/database.js'
+import { db } from '@/config/database.js'
 import {
   entities,
   entityVersions,
@@ -10,12 +10,10 @@ import {
   entityTechnologies,
   entityUseCases,
   entityFieldsOfActivity,
-  entitySubDomains,
 } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { logger } from '../utils/logger.js'
-import { atlasClient } from '../services/atlas/client.js'
-import { jsonApiTransformer } from '../services/atlas/transformer.js'
+import { entitySyncService } from '@/services/sync/entity-sync.js'
 
 // Base validation schema for ATLAS-compliant entity registration
 const baseEntitySchema = z.object({
@@ -33,7 +31,7 @@ const baseEntitySchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
 
-  // Organization details (mandatory)
+  // Organisation details (mandatory)
   email: z.string().email().optional(), // field_general_contact_e_mail *
   phone: z.string().max(50).optional(),
   website: z.string().url().optional(), // field_url.uri *
@@ -66,11 +64,6 @@ const baseEntitySchema = z.object({
   goalsToAchieve: z.string().max(800).optional(),
   goalsToContribute: z.string().max(800).optional(),
 
-  // "Other" text fields for taxonomies
-  otherSectors: z.string().max(800).optional(),
-  otherTechnologies: z.string().max(800).optional(),
-  otherUseCases: z.string().max(800).optional(),
-
   // Consent fields (ECCC form Step 4)
   dataProtectionConsent: z.boolean().optional(), // GDPR disclaimer acceptance
   formCompletionConfirmed: z.boolean().optional(), // Final submission confirmation
@@ -87,9 +80,6 @@ const baseEntitySchema = z.object({
   useCaseIds: z.array(z.string().uuid()).optional(),
   fieldsOfActivityIds: z.array(z.string().uuid()).optional(), // Article 8(3) expertise *
 
-  // Sub-domain taxonomy relationships (hierarchical - keyed by parent domain ID)
-  subDomainIds: z.record(z.string().uuid(), z.array(z.string().uuid())).optional(),
-
   // Workflow
   moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
 })
@@ -98,11 +88,7 @@ const baseEntitySchema = z.object({
 const createEntitySchema = baseEntitySchema
   .refine(
     (data) => {
-      // If isHeadquarter is false, headquarterInfo is required
-      if (data.isHeadquarter === false && !data.headquarterInfo) {
-        return false
-      }
-      return true
+      return !(data.isHeadquarter === false && !data.headquarterInfo)
     },
     {
       message: 'Headquarter information is required when organization is not the main headquarter',
@@ -111,11 +97,7 @@ const createEntitySchema = baseEntitySchema
   )
   .refine(
     (data) => {
-      // If hasSubsidiaries is true, subsidiariesDetails is required
-      if (data.hasSubsidiaries === true && !data.subsidiariesDetails) {
-        return false
-      }
-      return true
+      return !(data.hasSubsidiaries === true && !data.subsidiariesDetails)
     },
     {
       message: 'Subsidiaries details are required when organization has subsidiaries',
@@ -124,11 +106,7 @@ const createEntitySchema = baseEntitySchema
   )
   .refine(
     (data) => {
-      // If hasMajorityShares is true, majoritySharesDetails is required
-      if (data.hasMajorityShares === true && !data.majoritySharesDetails) {
-        return false
-      }
-      return true
+      return !(data.hasMajorityShares === true && !data.majoritySharesDetails)
     },
     {
       message: 'Majority shares details are required when organization holds majority shares',
@@ -137,11 +115,7 @@ const createEntitySchema = baseEntitySchema
   )
   .refine(
     (data) => {
-      // dataProtectionConsent must be true for publication
-      if (data.moderationState === 'ready_for_publication' && !data.dataProtectionConsent) {
-        return false
-      }
-      return true
+      return !(data.moderationState === 'ready_for_publication' && !data.dataProtectionConsent)
     },
     {
       message: 'Data protection consent is required for publication',
@@ -150,11 +124,7 @@ const createEntitySchema = baseEntitySchema
   )
   .refine(
     (data) => {
-      // formCompletionConfirmed must be true for publication
-      if (data.moderationState === 'ready_for_publication' && !data.formCompletionConfirmed) {
-        return false
-      }
-      return true
+      return !(data.moderationState === 'ready_for_publication' && !data.formCompletionConfirmed)
     },
     {
       message: 'Form completion confirmation is required for publication',
@@ -180,9 +150,11 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       const offset = (page - 1) * limit
 
       const conditions = []
+
       if (status) {
         conditions.push(eq(entities.status, status))
       }
+
       if (syncStatus) {
         conditions.push(eq(entities.syncStatus, syncStatus))
       }
@@ -214,9 +186,20 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.get('/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
-      const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
+      const entity = await db.query.entities.findFirst({
+        where: { id },
+        with: {
+          country: true,
+          clusterType: true,
+          thematicAreas: true,
+          sectors: true,
+          technologies: true,
+          useCases: true,
+          fieldsOfActivity: true,
+        },
+      })
 
       if (!entity) {
         return reply.status(404).send({
@@ -227,6 +210,12 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ data: entity })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: 'Invalid entity ID format',
+        })
+      }
       logger.error('Failed to fetch entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
@@ -257,7 +246,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             latitude: body.latitude?.toString(),
             longitude: body.longitude?.toString(),
 
-            // Organization details
+            // Organisation details
             email: body.email,
             phone: body.phone,
             website: body.website,
@@ -290,11 +279,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             goalsToAchieve: body.goalsToAchieve,
             goalsToContribute: body.goalsToContribute,
 
-            // "Other" text fields
-            otherSectors: body.otherSectors,
-            otherTechnologies: body.otherTechnologies,
-            otherUseCases: body.otherUseCases,
-
             // Consent fields
             dataProtectionConsent: body.dataProtectionConsent,
             formCompletionConfirmed: body.formCompletionConfirmed,
@@ -308,8 +292,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             status: 'draft',
             moderationState: body.moderationState || 'draft',
             syncStatus: 'local',
-            createdBy: request.currentUser?.userId,
-            updatedBy: request.currentUser?.userId,
           })
           .returning()
 
@@ -359,23 +341,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           )
         }
 
-        // Handle sub-domain taxonomy relationships (hierarchical)
-        if (body.subDomainIds) {
-          const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = []
-          for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
-            for (const taxonomyId of subDomainIdList) {
-              subDomainInserts.push({
-                entityId: entity.id,
-                taxonomyId,
-                parentDomainId,
-              })
-            }
-          }
-          if (subDomainInserts.length > 0) {
-            await tx.insert(entitySubDomains).values(subDomainInserts)
-          }
-        }
-
         await tx.insert(entityVersions).values({
           entityId: entity.id,
           version: '1.0',
@@ -386,9 +351,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             technologyIds: body.technologyIds || [],
             useCaseIds: body.useCaseIds || [],
             fieldsOfActivityIds: body.fieldsOfActivityIds || [],
-            subDomainIds: body.subDomainIds || {},
-          } as any,
-          changedBy: request.currentUser?.userId,
+          },
         })
 
         return entity
@@ -415,7 +378,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.patch('/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
       const body = updateEntitySchema.parse(request.body)
 
       const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
@@ -445,7 +408,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             ...(body.latitude !== undefined && { latitude: body.latitude.toString() }),
             ...(body.longitude !== undefined && { longitude: body.longitude.toString() }),
 
-            // Organization details
+            // Organisation details
             ...(body.email !== undefined && { email: body.email }),
             ...(body.phone !== undefined && { phone: body.phone }),
             ...(body.website !== undefined && { website: body.website }),
@@ -492,13 +455,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
               goalsToContribute: body.goalsToContribute,
             }),
 
-            // "Other" text fields
-            ...(body.otherSectors !== undefined && { otherSectors: body.otherSectors }),
-            ...(body.otherTechnologies !== undefined && {
-              otherTechnologies: body.otherTechnologies,
-            }),
-            ...(body.otherUseCases !== undefined && { otherUseCases: body.otherUseCases }),
-
             // Consent fields
             ...(body.dataProtectionConsent !== undefined && {
               dataProtectionConsent: body.dataProtectionConsent,
@@ -518,7 +474,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             ...(body.moderationState !== undefined && { moderationState: body.moderationState }),
 
             updatedAt: new Date(),
-            updatedBy: request.currentUser?.userId,
           })
           .where(eq(entities.id, id))
           .returning()
@@ -583,24 +538,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           }
         }
 
-        // Handle sub-domain taxonomy relationships (hierarchical)
-        if (body.subDomainIds) {
-          await tx.delete(entitySubDomains).where(eq(entitySubDomains.entityId, id))
-          const subDomainInserts: { entityId: string; taxonomyId: string; parentDomainId: string }[] = []
-          for (const [parentDomainId, subDomainIdList] of Object.entries(body.subDomainIds)) {
-            for (const taxonomyId of subDomainIdList) {
-              subDomainInserts.push({
-                entityId: id,
-                taxonomyId,
-                parentDomainId,
-              })
-            }
-          }
-          if (subDomainInserts.length > 0) {
-            await tx.insert(entitySubDomains).values(subDomainInserts)
-          }
-        }
-
         const versions = await tx
           .select()
           .from(entityVersions)
@@ -643,8 +580,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             technologyIds: currentTech.map((r) => r.taxonomyId),
             useCaseIds: currentUseCases.map((r) => r.taxonomyId),
             fieldsOfActivityIds: currentFields.map((r) => r.taxonomyId),
-          } as any,
-          changedBy: request.currentUser?.userId,
+          },
         })
 
         return updated
@@ -671,7 +607,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.delete('/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
       const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
@@ -688,6 +624,12 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Entity deleted successfully',
       })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: 'Invalid entity ID format',
+        })
+      }
       logger.error('Failed to delete entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
@@ -698,61 +640,39 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.post('/:id/sync', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
-      const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
+      const result = await entitySyncService.pushEntity(id)
 
-      if (!entity) {
-        return reply.status(404).send({
-          error: 'Not Found',
-          message: 'Entity not found',
+      if (result.success) {
+        return reply.send({
+          data: result.atlasId,
+          message: 'Entity synced to ATLAS successfully',
         })
-      }
-
-      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity)
-
-      let cluster
-      if (entity.atlasId) {
-        cluster = await atlasClient.updateCluster(entity.atlasId, clusterInput)
       } else {
-        cluster = await atlasClient.createCluster(clusterInput)
+        return reply.status(result.error === 'CONFLICT' ? 409 : 500).send({
+          error: result.error || 'Sync Failed',
+          message: result.message,
+        })
       }
-
-      const [updated] = await db
-        .update(entities)
-        .set({
-          atlasId: cluster.atlasId,
-          syncStatus: 'synced',
-          lastSyncedAt: new Date(),
-        })
-        .where(eq(entities.id, id))
-        .returning()
-
-      return reply.send({
-        data: updated,
-        message: 'Entity synced to ATLAS successfully',
-      })
     } catch (error) {
-      const { id } = request.params as { id: string }
-      logger.error(`Failed to sync entity ${id} to ATLAS`, error instanceof Error ? error : { message: String(error) })
-
-      await db
-        .update(entities)
-        .set({
-          syncStatus: 'failed',
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
-        .where(eq(entities.id, id))
-
+      }
+      logger.error('Failed to sync entity', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
-        error: 'Sync Failed',
-        message: error instanceof Error ? `Failed to sync entity to ATLAS: ${error.message}` : 'Failed to sync entity to ATLAS',
+        error: 'Internal Server Error',
+        message: 'Failed to sync entity to ATLAS',
       })
     }
   })
 
   fastify.get('/:id/versions', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
       const versions = await db
         .select()
@@ -767,6 +687,12 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: 'Invalid entity ID format',
+        })
+      }
       logger.error('Failed to fetch entity versions', error instanceof Error ? error : { message: String(error) })
       return reply.status(500).send({
         error: 'Internal Server Error',
