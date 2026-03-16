@@ -171,8 +171,8 @@ The entity model covers the full ECCC membership registration form:
 - **Compliance**: Article 138 compliance, data sharing consent
 - **Structure**: headquarters flag, subsidiaries, majority shares
 - **Expertise**: description (800 char limit), goals to achieve/contribute
-- **Taxonomy dimensions**: thematic areas (knowledge domains), sectors, technologies, use cases, fields of activity,
-  sub-domains
+- **Taxonomy dimensions**: thematic areas (knowledge domains and sub-domains), sectors, technologies, use cases, fields
+  of activity
 
 Conditional validation applies (e.g. `headquarterInfo` required when `isHeadquarter` is false). See the entity creation
 endpoint for the full schema.
@@ -215,10 +215,11 @@ See [Contributing](./CONTRIBUTING.md)
 ## Roadmap
 
 - [ ] Remove unused taxonomies
+- [ ] Pull entities from ATLAS
 - [ ] Change sync status on Entity change
 - [ ] Bulk import of multiple entities (JSON upload)
-- [ ] Implement ATLAS API and General settings
 - [ ] Implement conflicts resolution between local and ATLAS entities
+- [ ] Implement ATLAS API and General settings
 - [ ] Unit tests on all critical modules
 - [ ] Improve the Authentication mechanism with MFA
 - [ ] Reduce frontend components duplication
