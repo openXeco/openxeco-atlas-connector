@@ -6,7 +6,6 @@
 
 import { db } from '@/config/database.js'
 import { taxonomies } from '@/db/schema.js'
-import { logger } from '@/utils/logger.js'
 import {
   QUESTION_TO_ENTITY_MAPPING,
   MAPPING_BY_QUESTION_REF,
@@ -14,6 +13,8 @@ import {
   type OpenXecoFormAnswer,
   type FieldMapping,
 } from './types.js'
+import { Logger } from 'pino'
+import { getLogger } from '@/utils/logger.js'
 
 export interface TransformResult {
   entity: Record<string, unknown>
@@ -32,6 +33,12 @@ interface AnswerLookup {
 
 export class OpenXecoFormTransformer {
   private taxonomyCache: TaxonomyCache | null = null
+  private readonly logger: Logger
+
+  constructor() {
+    this.logger = getLogger()
+  }
+
 
   /**
    * Main transformation function
@@ -268,7 +275,7 @@ export class OpenXecoFormTransformer {
   private async ensureTaxonomyCache(): Promise<void> {
     if (this.taxonomyCache) return
 
-    logger.info('Loading taxonomy cache for OpenXeco transformation')
+    this.logger.info('Loading taxonomy cache for OpenXeco transformation')
 
     const allTaxonomies = await db.select().from(taxonomies)
 
@@ -282,7 +289,7 @@ export class OpenXecoFormTransformer {
       this.taxonomyCache.byNameAndType.set(nameKey, tax.id)
     }
 
-    logger.info(`Taxonomy cache loaded: ${allTaxonomies.length} terms`)
+    this.logger.info(`Taxonomy cache loaded: ${allTaxonomies.length} terms`)
   }
 
   private async lookupTaxonomyByName(name: string, taxonomyType: string): Promise<string | undefined> {
@@ -310,7 +317,7 @@ export class OpenXecoFormTransformer {
 
   clearCache(): void {
     this.taxonomyCache = null
-    logger.info('Taxonomy cache cleared')
+    this.logger.info('Taxonomy cache cleared')
   }
 }
 

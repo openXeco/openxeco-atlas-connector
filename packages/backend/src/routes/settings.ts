@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { atlasConfig } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
-import { logger } from '../utils/logger.js'
 
 // Settings keys
 const SETTINGS_KEYS = {
@@ -182,7 +181,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      logger.error('ATLAS connection test failed', error instanceof Error ? error : { message })
+      fastify.log.error(error instanceof Error ? error : { message }, 'ATLAS connection test failed')
       return reply.status(500).send({
         success: false,
         message: `Connection test failed: ${message}`,

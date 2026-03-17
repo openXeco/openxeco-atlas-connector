@@ -12,7 +12,7 @@ import {
   entityFieldsOfActivity,
 } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
-import { logger } from '../utils/logger.js'
+
 import { entitySyncService } from '@/services/sync/entity-sync.js'
 
 // Base validation schema for ATLAS-compliant entity registration
@@ -176,7 +176,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      logger.error('Failed to fetch entities', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch entities')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch entities',
@@ -216,7 +216,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           message: 'Invalid entity ID format',
         })
       }
-      logger.error('Failed to fetch entity', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch entity')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch entity',
@@ -368,7 +368,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
       }
-      logger.error('Failed to create entity', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to create entity')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to create entity',
@@ -597,7 +597,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
       }
-      logger.error('Failed to update entity', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to update entity')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to update entity',
@@ -630,7 +630,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           message: 'Invalid entity ID format',
         })
       }
-      logger.error('Failed to delete entity', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to delete entity')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to delete entity',
@@ -662,7 +662,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
       }
-      logger.error('Failed to sync entity', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to sync entity')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to sync entity to ATLAS',
@@ -693,7 +693,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           message: 'Invalid entity ID format',
         })
       }
-      logger.error('Failed to fetch entity versions', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch entity versions')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch entity versions',

@@ -3,11 +3,11 @@ services:
     build:
       context: .
       dockerfile: packages/frontend/Dockerfile
-      target: production
+      target: development
     ports:
       - "3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
     depends_on:
       backend:
@@ -20,11 +20,11 @@ services:
     build:
       context: .
       dockerfile: packages/backend/Dockerfile
-      target: production
+      target: development
     ports:
       - "3001"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-atlas_connector}
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET}
