@@ -20,7 +20,10 @@ export async function buildApp() {
   await fastify.register(helmet)
 
   await fastify.register(cors, {
-    origin: config.NODE_ENV === 'development' ? ['http://localhost:3000', 'http://localhost:3001'] : [config.FRONTEND_URL || 'http://localhost:3000'],
+    origin:
+      config.NODE_ENV === 'development'
+        ? ['http://localhost:3000', 'http://localhost:3001', 'http://frontend:3000']
+        : [config.FRONTEND_URL || 'http://localhost:3000'],
     credentials: true,
   })
 
@@ -28,6 +31,10 @@ export async function buildApp() {
     global: true,
     max: 100,
     timeWindow: '1 minute',
+    allowList:
+      config.NODE_ENV === 'production'
+        ? [config.FRONTEND_URL || 'http://frontend:3000']
+        : ['http://localhost:3000', 'http://frontend:3000'],
   })
 
   await fastify.register(jwt, {
