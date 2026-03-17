@@ -6,7 +6,6 @@ import { users } from '../db/schema.js'
 import { verifyPassword } from '../services/password.js'
 import { generateTokens, verifyRefreshToken } from '../services/jwt.js'
 import { authenticate } from '../middleware/auth.js'
-import { logger } from '../utils/logger.js'
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -104,7 +103,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         refreshTokenExpiresIn: 7 * 24 * 60 * 60,
       })
     } catch (error) {
-      logger.error('Token refresh failed', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Token refresh failed')
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Token refresh failed',

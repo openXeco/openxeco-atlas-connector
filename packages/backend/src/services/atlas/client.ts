@@ -1,6 +1,6 @@
 import { ProxyAgent } from 'undici'
 import { config } from '@/config/index.js'
-import { logger } from '@/utils/logger.js'
+import { Logger, getLogger } from '@/utils/logger.js'
 import { mapResourceToCluster } from './transformer.js'
 import type {
   AtlasConfig,
@@ -19,6 +19,7 @@ class AtlasClient {
   private authToken?: string
   private tokenExpiry?: Date
   private proxyDispatcher?: ProxyAgent
+  private readonly logger: Logger
 
   constructor(atlasConfig?: Partial<AtlasConfig>) {
     this.config = {
@@ -30,9 +31,11 @@ class AtlasClient {
       ...atlasConfig,
     }
 
+    this.logger = getLogger(config.NODE_ENV)
+
     if (config.HTTPS_PROXY) {
       this.proxyDispatcher = new ProxyAgent(config.HTTPS_PROXY)
-      logger.info(`ATLAS API requests will use proxy: ${config.HTTPS_PROXY}`)
+      this.logger.info(`ATLAS API requests will use proxy: ${config.HTTPS_PROXY}`)
     }
   }
 
@@ -45,7 +48,7 @@ class AtlasClient {
       const credentials = `${this.config.username}:${this.config.password}`
       this.authToken = Buffer.from(credentials).toString('base64')
       this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
-      logger.info('ATLAS authenticated with Basic Auth')
+      this.logger.info('ATLAS authenticated with Basic Auth')
     }
   }
 
@@ -107,7 +110,7 @@ class AtlasClient {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const logUrl = new URL(url.toString())
       logUrl.searchParams.delete('api-key')
-      logger.info(`ATLAS API request: ${method} ${logUrl.toString()} (attempt ${attempt})`)
+      this.logger.info(`ATLAS API request: ${method} ${logUrl.toString()} (attempt ${attempt})`)
 
       try {
         const fetchOptions: RequestInit = {
@@ -127,7 +130,7 @@ class AtlasClient {
         if (!response.ok) {
           if (retryableStatuses.includes(response.status) && attempt < maxRetries) {
             const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
-            logger.warn(`ATLAS API returned ${response.status}, retrying in ${delay}ms...`)
+            this.logger.warn(`ATLAS API returned ${response.status}, retrying in ${delay}ms...`)
             await new Promise((resolve) => setTimeout(resolve, delay))
             continue
           }
@@ -138,19 +141,22 @@ class AtlasClient {
             apiErrors.length > 0
               ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
               : response.statusText
-          logger.error('ATLAS API error:', {
-            status: response.status,
-            statusText: response.statusText,
-            errors: apiErrors,
-            url: logUrl.toString(),
-          })
+          this.logger.error(
+            {
+              status: response.status,
+              statusText: response.statusText,
+              errors: apiErrors,
+              url: logUrl.toString(),
+            },
+            'ATLAS API error:'
+          )
           throw new Error(`ATLAS API error ${response.status}: ${errorDetail}`)
         }
 
         const data = (await response.json()) as JsonApiDocument<T>
 
         if (data.errors && data.errors.length > 0) {
-          logger.error('ATLAS API returned errors:', { errors: data.errors })
+          this.logger.error({ errors: data.errors }, 'ATLAS API returned errors:')
           throw new Error(`ATLAS API error: ${data.errors[0].title || 'Unknown error'}`)
         }
 
@@ -159,14 +165,23 @@ class AtlasClient {
         if (error instanceof TypeError && attempt < maxRetries) {
           const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
           const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
-          logger.warn(`ATLAS API network error (attempt ${attempt}/${maxRetries}): ${cause}, retrying in ${delay}ms...`)
+          this.logger.warn(
+            `ATLAS API network error (attempt ${attempt}/${maxRetries}): ${cause}, retrying in ${delay}ms...`
+          )
           await new Promise((resolve) => setTimeout(resolve, delay))
           continue
         }
 
         if (error instanceof TypeError) {
           const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
-          logger.error('ATLAS API network error (final):', { message: error.message, cause, url: logUrl.toString() })
+          this.logger.error(
+            {
+              message: error.message,
+              cause,
+              url: logUrl.toString(),
+            },
+            'ATLAS API network error (final):'
+          )
           throw new Error(`ATLAS API network error: ${cause}`)
         }
 
@@ -184,7 +199,7 @@ class AtlasClient {
   }
 
   async getTaxonomies(type: TaxonomyType): Promise<TaxonomyTerm[]> {
-    logger.info(`Fetching taxonomies of type: ${type}`)
+    this.logger.info(`Fetching taxonomies of type: ${type}`)
 
     const allTerms: TaxonomyTerm[] = []
     let offset = 0
@@ -226,7 +241,7 @@ class AtlasClient {
   }
 
   async getTaxonomy(type: TaxonomyType, id: string): Promise<TaxonomyTerm> {
-    logger.info(`Fetching taxonomy: ${type}/${id}`)
+    this.logger.info(`Fetching taxonomy: ${type}/${id}`)
 
     const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}/${id}`)
 
@@ -250,7 +265,7 @@ class AtlasClient {
   }
 
   async getClusters(params?: QueryParams): Promise<PaginatedResponse<Cluster>> {
-    logger.info('Fetching clusters from ATLAS')
+    this.logger.info('Fetching clusters from ATLAS')
 
     const response = await this.request<JsonApiResource>('GET', '/node/cluster', { params })
 
@@ -277,7 +292,7 @@ class AtlasClient {
   }
 
   async getCluster(id: string): Promise<Cluster> {
-    logger.info(`Fetching cluster: ${id}`)
+    this.logger.info(`Fetching cluster: ${id}`)
 
     const response = await this.request<JsonApiResource>('GET', `/node/cluster/${id}`)
 
@@ -291,7 +306,7 @@ class AtlasClient {
   }
 
   async createCluster(data: ClusterInput): Promise<Cluster> {
-    logger.info('Creating cluster in ATLAS')
+    this.logger.info('Creating cluster in ATLAS')
 
     const body = {
       data: {
@@ -366,7 +381,7 @@ class AtlasClient {
   }
 
   async updateCluster(id: string, data: Partial<ClusterInput>): Promise<Cluster> {
-    logger.info(`Updating cluster: ${id}`)
+    this.logger.info(`Updating cluster: ${id}`)
 
     const attributes: Record<string, unknown> = {}
 

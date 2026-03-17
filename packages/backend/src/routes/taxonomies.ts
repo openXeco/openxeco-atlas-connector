@@ -1,7 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { authenticate } from '../middleware/auth.js'
-import { logger } from '../utils/logger.js'
 import { taxonomySyncService } from '../services/atlas/taxonomy-sync.js'
 import type { TaxonomyType } from '../services/atlas/types.js'
 
@@ -42,7 +41,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         })
       }
     } catch (error) {
-      logger.error('Failed to count taxonomies', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to count taxonomies')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to count taxonomies',
@@ -58,7 +57,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         result,
       })
     } catch (error) {
-      logger.error('Failed to sync taxonomies', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to sync taxonomies')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to sync taxonomies',
@@ -142,7 +141,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
           message: 'Invalid taxonomy ID format',
         })
       }
-      logger.error('Failed to fetch taxonomy', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch taxonomy')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch taxonomy',

@@ -7,11 +7,14 @@ import cookie from '@fastify/cookie'
 import { config } from './config/index.js'
 import { errorHandler } from './middleware/error.js'
 import { registerRoutes } from './routes/index.js'
-import { logger } from './utils/logger.js'
+import { getLoggerConfigByEnv } from './utils/logger.js'
 
 export async function buildApp() {
   const fastify = Fastify({
-    logger: config.NODE_ENV === 'development',
+    logger: getLoggerConfigByEnv(config.NODE_ENV, config.NODE_ENV === 'production' ? 'info' : 'debug'),
+    routerOptions: {
+      ignoreDuplicateSlashes: true,
+    },
   })
 
   await fastify.register(helmet)
@@ -40,7 +43,7 @@ export async function buildApp() {
 
   await registerRoutes(fastify)
 
-  logger.info('Fastify app built successfully')
+  fastify.log.info('Fastify app built successfully')
 
   return fastify
 }

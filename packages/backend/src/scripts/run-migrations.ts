@@ -1,6 +1,8 @@
 import { runMigrations } from '../db/migrate.js'
 import { closeDatabase } from '../config/database.js'
-import { logger } from '../utils/logger.js'
+import { getLogger } from '@/utils/logger.js'
+
+const logger = getLogger()
 
 runMigrations()
   .then(() => {
@@ -9,6 +11,6 @@ runMigrations()
   })
   .then(() => process.exit(0))
   .catch((error) => {
-    logger.error('Migration run failed:', error as Error)
+    logger.error(`Migration run failed: ${JSON.stringify(error, null, 2)}`)
     process.exit(1)
   })

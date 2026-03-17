@@ -4,7 +4,6 @@ import { eq, desc, and, gte, lte, count } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { syncLogs, entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
-import { logger } from '../utils/logger.js'
 import { entitySyncService } from '../services/sync/entity-sync.js'
 
 const idParamSchema = z.object({ id: z.string().uuid() })
@@ -51,7 +50,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
       }
-      logger.error('Failed to push entity', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to push entity')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to push entity',
@@ -89,7 +88,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
       }
-      logger.error('Failed to pull entity', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to pull entity')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to pull entity',
@@ -114,7 +113,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
       }
-      logger.error('Failed to get diff', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to get diff')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to get diff',
@@ -135,7 +134,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
       }
-      logger.error('Failed to detect conflicts', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to detect conflicts')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to detect conflicts',
@@ -270,7 +269,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      logger.error('Failed to get sync status', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to get sync status')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to get sync status',
@@ -325,7 +324,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
           message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
         })
       }
-      logger.error('Failed to fetch sync logs', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch sync logs')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to fetch sync logs',
@@ -345,7 +344,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         deleted,
       })
     } catch (error) {
-      logger.error('Failed to cleanup sync logs', error instanceof Error ? error : { message: String(error) })
+      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to cleanup sync logs')
       return reply.status(500).send({
         error: 'Internal Server Error',
         message: 'Failed to cleanup sync logs',

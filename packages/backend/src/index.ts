@@ -2,7 +2,6 @@ import { buildApp } from './app.js'
 import { config } from './config/index.js'
 import { closeDatabase } from './config/database.js'
 import { runMigrations } from './db/migrate.js'
-import { logger } from './utils/logger.js'
 
 async function main(): Promise<void> {
   await runMigrations()
@@ -10,7 +9,7 @@ async function main(): Promise<void> {
   const app = await buildApp()
 
   const shutdown = async (signal: string) => {
-    logger.info(`Received ${signal}, shutting down gracefully...`)
+    app.log.info(`Received ${signal}, shutting down gracefully...`)
     await app.close()
     await closeDatabase()
     process.exit(0)
@@ -21,9 +20,9 @@ async function main(): Promise<void> {
 
   try {
     await app.listen({ port: config.PORT, host: config.HOST })
-    logger.info(`Server running at http://${config.HOST}:${config.PORT}`)
+    app.log.info(`Server running at http://${config.HOST}:${config.PORT}`)
   } catch (err) {
-    logger.error('Failed to start server', { error: err })
+    app.log.error({ error: err }, 'Failed to start server')
     process.exit(1)
   }
 }
