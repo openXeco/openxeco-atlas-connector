@@ -9,6 +9,7 @@ services:
     environment:
       - NODE_ENV=development
       - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
+      - NEXT_TELEMETRY_DISABLED=1
     depends_on:
       backend:
         condition: service_started
@@ -35,7 +36,6 @@ services:
       - ATLAS_USERNAME=${ATLAS_USERNAME:-}
       - ATLAS_PASSWORD=${ATLAS_PASSWORD:-}
       - FRONTEND_URL=${FRONTEND_URL}
-      - NEXT_TELEMETRY_DISABLED=1
     depends_on:
       db:
         condition: service_healthy
