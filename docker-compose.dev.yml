@@ -13,8 +13,6 @@ services:
     depends_on:
       backend:
         condition: service_started
-    networks:
-      - dokploy-network
     restart: unless-stopped
 
   backend:
@@ -41,8 +39,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - dokploy-network
     restart: unless-stopped
 
   db:
@@ -71,14 +67,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - dokploy-network
     restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
-
-networks:
-  dokploy-network:
-    external: true
