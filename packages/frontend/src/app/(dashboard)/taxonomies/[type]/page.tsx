@@ -15,10 +15,7 @@ export default async function TaxonomyDetailsPage({ params }: { params: Promise<
     <>
       <div className="mb-6 flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <Link
-            href={`/taxonomies`}
-            variant={'ghost'}
-          >
+          <Link href={`/taxonomies`} variant={'ghost'}>
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>

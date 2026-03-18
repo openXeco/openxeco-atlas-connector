@@ -1,16 +1,16 @@
-'use server'
+import 'server-only'
 
 import { cache } from 'react'
-import { apiClientBackend } from '@/lib/api-backend'
 import { SyncRecap } from '@/types'
+import { getApiClient } from '@/lib/api-client'
 
 export const getSyncStatus = cache(async () => {
+  const apiClient = getApiClient()
   try {
-    const response = await apiClientBackend.get<{data: SyncRecap}>('/api/sync/status', {credentials: 'include'})
+    const response = await apiClient.get<{ data: SyncRecap }>('/sync/status', { credentials: 'include' })
     return response.data
   } catch (e) {
     console.error(e)
     return undefined
   }
-
 })

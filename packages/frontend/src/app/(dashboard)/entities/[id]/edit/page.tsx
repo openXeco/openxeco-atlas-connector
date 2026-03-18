@@ -1,18 +1,21 @@
 import { EditEntity } from '@/components/entities/edit-entity'
-import { getTaxonomies } from '@/data/taxonomies'
 import { Link } from '@/components/ui/link'
 import { ArrowLeft } from 'lucide-react'
-import { apiClientBackend } from '@/lib/api-backend'
 import type { Entity, EntityTaxonomies } from '@/types'
+
+import { getApiClient } from '@/lib/api-client'
+import { getTaxonomies } from '@/app/actions/taxonomies'
 
 export default async function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const apiClient = getApiClient()
+
   let entity: Entity
   let taxonomies: EntityTaxonomies
 
   try {
     const [entityRes, taxonomiesRes] = await Promise.all([
-      apiClientBackend.get<{ data: Entity }>(`/api/entities/${id}`, { credentials: 'include' }),
+      apiClient.get<{ data: Entity }>(`/entities/${id}`, { credentials: 'include' }),
       getTaxonomies(),
     ])
 

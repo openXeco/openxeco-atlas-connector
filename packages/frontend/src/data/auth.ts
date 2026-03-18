@@ -1,21 +1,13 @@
-'use server'
+import 'server-only'
 
 import { User } from '@/types'
-import { apiClientBackend } from '@/lib/api-backend'
 import { cache } from 'react'
-
-export const refresh = async (refreshToken: string) => {
-  return apiClientBackend.post<{
-    accessToken: string
-    refreshToken: string
-    refreshTokenExpiresIn: number
-  }>('/api/auth/refresh', { refreshToken })
-}
+import { getApiClient } from '@/lib/api-client'
 
 export const getUserInfo = cache(async (): Promise<User | undefined> => {
+  const apiClient = getApiClient()
   try {
-    const response = await apiClientBackend.get<{ user: User }>('/api/auth/me', { credentials: 'include' })
-    return response.user
+    return await apiClient.getCurrentUser()
   } catch (_e) {
     return undefined
   }

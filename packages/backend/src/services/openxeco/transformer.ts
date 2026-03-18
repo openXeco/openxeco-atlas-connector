@@ -39,7 +39,6 @@ export class OpenXecoFormTransformer {
     this.logger = getLogger()
   }
 
-
   /**
    * Main transformation function
    */

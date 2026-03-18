@@ -22,7 +22,7 @@ export async function buildApp() {
   await fastify.register(cors, {
     origin:
       config.NODE_ENV === 'development'
-        ? ['http://localhost:3000', 'http://localhost:3001', 'http://frontend:3000']
+        ? ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://frontend:3000']
         : [config.FRONTEND_URL || 'http://localhost:3000'],
     credentials: true,
   })
@@ -34,7 +34,7 @@ export async function buildApp() {
     allowList:
       config.NODE_ENV === 'production'
         ? [config.FRONTEND_URL || 'http://frontend:3000']
-        : ['http://localhost:3000', 'http://frontend:3000'],
+        : ['http://localhost:3000', 'http://frontend:3000', 'http://127.0.0.1:3000'],
   })
 
   await fastify.register(jwt, {

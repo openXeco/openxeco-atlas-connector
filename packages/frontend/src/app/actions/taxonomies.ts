@@ -1,11 +1,12 @@
 'use server'
 
-import { apiClientBackend } from '@/lib/api-backend'
-import type { ActionState } from '@/types'
+import { getApiClient } from '@/lib/api-client'
+import { ActionState, EntityTaxonomies, type Taxonomy } from '@/types'
 
 export async function syncAll(): Promise<ActionState> {
+  const apiClient = getApiClient()
   try {
-    await apiClientBackend.post('/api/taxonomies/sync', {}, { credentials: 'include' })
+    await apiClient.post('/taxonomies/sync', {}, { credentials: 'include' })
     return {
       success: true,
       message: 'Successfully synced all taxonomies.',
@@ -20,9 +21,10 @@ export async function syncAll(): Promise<ActionState> {
 
 export async function syncByType(prevState: unknown, formData: FormData): Promise<ActionState> {
   const type = formData.get('type')
+  const apiClient = getApiClient()
 
   try {
-    await apiClientBackend.post(`/api/taxonomies/sync/${type}`, {}, {credentials: 'include'})
+    await apiClient.post(`/taxonomies/sync/${type}`, {}, { credentials: 'include' })
     return {
       success: true,
       message: 'Successfully synced.',
@@ -32,5 +34,31 @@ export async function syncByType(prevState: unknown, formData: FormData): Promis
       success: false,
       error: 'Error syncing taxonomy.',
     }
+  }
+}
+
+export const getTaxonomies = async (): Promise<EntityTaxonomies> => {
+  const apiClient = getApiClient()
+
+  const [countries, clusterTypes, fieldsOfActivity, thematicAreas, sectors, technologies, useCases] = await Promise.all(
+    [
+      apiClient.get<{ data: Taxonomy[] }>('/taxonomies/country', { credentials: 'include' }),
+      apiClient.get<{ data: Taxonomy[] }>('/taxonomies/cluster_type', { credentials: 'include' }),
+      apiClient.get<{ data: Taxonomy[] }>('/taxonomies/fields_of_activity', { credentials: 'include' }),
+      apiClient.get<{ data: Taxonomy[] }>('/taxonomies/cluster_thematic_area', { credentials: 'include' }),
+      apiClient.get<{ data: Taxonomy[] }>('/taxonomies/sectors', { credentials: 'include' }),
+      apiClient.get<{ data: Taxonomy[] }>('/taxonomies/technologies', { credentials: 'include' }),
+      apiClient.get<{ data: Taxonomy[] }>('/taxonomies/use_cases', { credentials: 'include' }),
+    ]
+  )
+
+  return {
+    countries: countries.data,
+    clusterTypes: clusterTypes.data,
+    fieldsOfActivity: fieldsOfActivity.data,
+    thematicAreas: thematicAreas.data,
+    sectors: sectors.data,
+    technologies: technologies.data,
+    useCases: useCases.data,
   }
 }

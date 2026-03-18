@@ -17,12 +17,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-export const ChangePasswordDialog = ({
-  open,
-  user,
-  onOpenChangeAction,
-  onSuccessAction,
-}: UserDialogProps) => {
+export const ChangePasswordDialog = ({ open, user, onOpenChangeAction, onSuccessAction }: UserDialogProps) => {
   const [state, formAction, pending] = useActionState(changePassword, undefined)
   const [error, setError] = useState<string>('')
 

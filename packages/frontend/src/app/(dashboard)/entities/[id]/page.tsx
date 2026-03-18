@@ -1,5 +1,4 @@
 import type { Entity, EntityVersion } from '@/types'
-import { apiClientBackend } from '@/lib/api-backend'
 import { ArrowLeft, Clock, FileText, Globe, ExternalLink, MapPin, Building2, Pencil } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -7,30 +6,29 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { SyncEntityButton } from '@/components/entities/sync-entity-button'
 import { DeleteEntityButton } from '@/components/entities/delete-entity-button'
 import { Link } from '@/components/ui/link'
+import { getApiClient } from '@/lib/api-client'
 
 export default async function ViewEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const apiClient = getApiClient()
+
   let entity: Entity
   let versions: EntityVersion[]
 
   try {
     const [entityRes, versionsRes] = await Promise.all([
-      apiClientBackend.get<{ data: Entity }>(`/api/entities/${id}`, { credentials: 'include' }),
-      apiClientBackend.get<{ data: EntityVersion[] }>(`/api/entities/${id}/versions`, { credentials: 'include' })
+      apiClient.get<{ data: Entity }>(`/entities/${id}`, { credentials: 'include' }),
+      apiClient.get<{ data: EntityVersion[] }>(`/entities/${id}/versions`, { credentials: 'include' }),
     ])
 
     entity = entityRes.data
     versions = versionsRes.data
-
   } catch (_e) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold">Entity not found</h2>
-          <Link
-            href={'/entities'}
-            variant="ghost"
-          >
+          <Link href={'/entities'} variant="ghost">
             Back to Entities
           </Link>
         </div>

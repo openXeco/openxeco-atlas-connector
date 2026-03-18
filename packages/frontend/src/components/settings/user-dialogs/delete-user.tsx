@@ -33,7 +33,9 @@ export const DeleteUserDialog = ({ open, user, onOpenChangeAction, onSuccessActi
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        {state?.success == false && state?.error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{state.error}</div>}
+        {state?.success == false && state?.error && (
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{state.error}</div>
+        )}
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>

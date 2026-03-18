@@ -5,12 +5,6 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  // rewrites: async () => [
-  //   {
-  //     source: '/api/:path*',
-  //     destination: `${backendUrl}/api/:path*`,
-  //   },
-  // ],
 }
 
 export default nextConfig

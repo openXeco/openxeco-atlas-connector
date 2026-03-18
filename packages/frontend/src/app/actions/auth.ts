@@ -1,84 +1,56 @@
 'use server'
 
-import { cookies } from 'next/headers'
-import { cache } from 'react'
-import { refresh as authRefresh } from '@/data/auth'
-import { apiClientBackend } from '@/lib/api-backend'
-import { User, ActionStateWithErrors, ActionState } from '@/types'
-import { loginSchema } from '@/lib/auth'
-import { refresh } from 'next/cache'
-import { newUserSchema, editUserSchema, changePasswordSchema } from '@/data/users'
+import { getApiClient } from '@/lib/api-client'
+import { ActionStateWithErrors, ActionState } from '@/types'
+import { loginSchema, changePasswordSchema, editUserSchema, newUserSchema } from '@/schema'
 
-export async function createSession(refreshToken: string, refreshTokenExpiresIn: number) {
-  const cookieStore = await cookies()
-
-  cookieStore.set('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV !== 'development',
-    sameSite: 'strict',
-    path: '/',
-    maxAge: refreshTokenExpiresIn,
-  })
-}
-
-export async function destroySession() {
-  const cookieStore = await cookies()
-
-  cookieStore.delete('refreshToken')
-}
-
-export const getAccessToken = cache(async (): Promise<string | undefined> => {
-  const refreshToken = (await cookies()).get('refreshToken')?.value
-
-  if (!refreshToken) {
-    return
-  }
-
-  const result = await authRefresh(refreshToken)
-
-  return result.accessToken
-})
-
-export const login = async (_initialState: unknown, formData: FormData) => {
+export const login = async (
+  _initialState: unknown,
+  formData: FormData
+): Promise<ActionStateWithErrors & { email: string }> => {
+  const apiClient = getApiClient()
   const result = loginSchema.safeParse({ email: formData.get('email'), password: formData.get('password') })
 
   if (!result.success) {
     return {
-      message: 'The form is invalid',
-      errors: { ...result.error.flatten().fieldErrors },
-      values: { email: String(formData.get('email')) || '' },
+      success: false,
+      error: 'The form is invalid',
+      fieldErrors: { ...result.error.flatten().fieldErrors },
+      email: String(formData.get('email')) || '',
     }
   }
 
   try {
-    const response = await apiClientBackend.post<{
-      accessToken: string
-      refreshToken: string
-      refreshTokenExpiresIn: number
-      user: User
-    }>('/api/auth/login', { email: result.data.email, password: result.data.password })
+    await apiClient.loginUser(result.data.email, result.data.password)
 
-    await createSession(response.refreshToken, response.refreshTokenExpiresIn)
-
-    refresh()
+    return {
+      success: true,
+      message: 'User successfully logged in',
+      email: result.data.email,
+    }
   } catch (_error) {
     return {
-      message: 'Invalid email or password. Please try again.',
-      values: { email: String(formData.get('email')) || '' },
+      success: false,
+      error: 'Invalid email or password. Please try again.',
+      email: String(formData.get('email')) || '',
     }
   }
 }
 
-export const logout = async (): Promise<void> => {
-  await destroySession()
-  refresh()
+export const logout = async (): Promise<{ success: boolean }> => {
+  const apiClient = getApiClient()
+
+  await apiClient.logoutUser()
+
+  return {
+    success: true,
+  }
 }
 
 export const createUser = async (
   _initialState: unknown,
   formData: FormData
 ): Promise<ActionStateWithErrors & { email: string }> => {
-  console.log(formData)
   const raw = {
     email: formData.get('email') || '',
     password: formData.get('password') || undefined,
@@ -88,7 +60,6 @@ export const createUser = async (
   const parsed = newUserSchema.safeParse(raw)
 
   if (!parsed.success) {
-    console.log(parsed.error.flatten())
     return {
       success: false,
       error: 'Backend validation failed.',
@@ -98,8 +69,9 @@ export const createUser = async (
   }
 
   try {
-    await apiClientBackend.post(
-      '/api/users',
+    const apiClient = getApiClient()
+    await apiClient.post(
+      '/users',
       { email: parsed.data.email, password: parsed.data.password },
       { credentials: 'include' }
     )
@@ -131,7 +103,6 @@ export const updateUser = async (
   const parsed = editUserSchema.safeParse(raw)
 
   if (!parsed.success) {
-    console.log(parsed.error.flatten())
     return {
       success: false,
       error: 'Backend validation failed.',
@@ -141,11 +112,8 @@ export const updateUser = async (
   }
 
   try {
-    await apiClientBackend.patch(
-      `/api/users/${parsed.data.id}`,
-      { email: parsed.data.email },
-      { credentials: 'include' }
-    )
+    const apiClient = getApiClient()
+    await apiClient.patch(`/users/${parsed.data.id}`, { email: parsed.data.email }, { credentials: 'include' })
 
     return {
       success: true,
@@ -172,7 +140,6 @@ export const changePassword = async (_initialState: unknown, formData: FormData)
   const parsed = changePasswordSchema.safeParse(raw)
 
   if (!parsed.success) {
-    console.log(parsed.error.flatten())
     return {
       success: false,
       error: 'Backend validation failed.',
@@ -181,8 +148,9 @@ export const changePassword = async (_initialState: unknown, formData: FormData)
   }
 
   try {
-    await apiClientBackend.patch(
-      `/api/users/${parsed.data.id}/password`,
+    const apiClient = getApiClient()
+    await apiClient.patch(
+      `/users/${parsed.data.id}/password`,
       { password: parsed.data.password },
       { credentials: 'include' }
     )
@@ -206,7 +174,6 @@ export const deleteUser = async (_initialState: unknown, formData: FormData): Pr
   const parsed = editUserSchema.pick({ id: true }).safeParse({ id })
 
   if (!parsed.success) {
-    console.log(parsed.error.flatten())
     return {
       success: false,
       error: 'Errod while deleting the user.',
@@ -214,10 +181,8 @@ export const deleteUser = async (_initialState: unknown, formData: FormData): Pr
   }
 
   try {
-    await apiClientBackend.delete(
-      `/api/users/${parsed.data.id}`,
-      { credentials: 'include' }
-    )
+    const apiClient = getApiClient()
+    await apiClient.delete(`/users/${parsed.data.id}`, { credentials: 'include' })
 
     return {
       success: true,

@@ -81,11 +81,26 @@ export class EntitySyncService {
 
       // Load JRC taxonomy IDs from junction tables and resolve to ATLAS UUIDs
       const [thematicRows, sectorRows, technologyRows, useCaseRows, fieldsOfActivityRows] = await Promise.all([
-        db.select({ taxonomyId: entityThematicAreas.taxonomyId }).from(entityThematicAreas).where(eq(entityThematicAreas.entityId, entityId)),
-        db.select({ taxonomyId: entitySectors.taxonomyId }).from(entitySectors).where(eq(entitySectors.entityId, entityId)),
-        db.select({ taxonomyId: entityTechnologies.taxonomyId }).from(entityTechnologies).where(eq(entityTechnologies.entityId, entityId)),
-        db.select({ taxonomyId: entityUseCases.taxonomyId }).from(entityUseCases).where(eq(entityUseCases.entityId, entityId)),
-        db.select({ taxonomyId: entityFieldsOfActivity.taxonomyId }).from(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, entityId)),
+        db
+          .select({ taxonomyId: entityThematicAreas.taxonomyId })
+          .from(entityThematicAreas)
+          .where(eq(entityThematicAreas.entityId, entityId)),
+        db
+          .select({ taxonomyId: entitySectors.taxonomyId })
+          .from(entitySectors)
+          .where(eq(entitySectors.entityId, entityId)),
+        db
+          .select({ taxonomyId: entityTechnologies.taxonomyId })
+          .from(entityTechnologies)
+          .where(eq(entityTechnologies.entityId, entityId)),
+        db
+          .select({ taxonomyId: entityUseCases.taxonomyId })
+          .from(entityUseCases)
+          .where(eq(entityUseCases.entityId, entityId)),
+        db
+          .select({ taxonomyId: entityFieldsOfActivity.taxonomyId })
+          .from(entityFieldsOfActivity)
+          .where(eq(entityFieldsOfActivity.entityId, entityId)),
       ])
 
       // Collect all local taxonomy IDs that need atlas ID resolution

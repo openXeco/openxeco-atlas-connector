@@ -1,6 +1,6 @@
 'use client'
 
-import { apiFetcher } from '@/lib/swr'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 import useSWR from 'swr'
 import type { SyncRecap } from '@/types'
 import { Building2, RefreshCw, AlertCircle, Tags } from 'lucide-react'
@@ -11,11 +11,12 @@ export const DashboardCards = () => {
     data: syncData,
     isLoading: syncLoading,
     error: syncError,
-  } = useSWR<{ data: SyncRecap }>('/api/sync/status', apiFetcher)
-  const { data: taxData, isLoading: taxLoading, error: taxError } = useSWR<{ data: { total: number } }>(
-    '/api/taxonomies/count',
-    apiFetcher
-  )
+  } = useSWR<{ data: SyncRecap }>('/api/sync/status', apiFetcher, swrDefaultOptions)
+  const {
+    data: taxData,
+    isLoading: taxLoading,
+    error: taxError,
+  } = useSWR<{ data: { total: number } }>('/api/taxonomies/count', apiFetcher, swrDefaultOptions)
 
   const isLoading = syncLoading || taxLoading
 
