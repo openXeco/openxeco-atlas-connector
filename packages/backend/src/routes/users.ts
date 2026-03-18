@@ -208,10 +208,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({ message: 'User deleted successfully' })
     } catch (err) {
       fastify.log.error(err)
-      return reply.status(500).send({message: 'Failed to delete the user'})
+      return reply.status(500).send({ message: 'Failed to delete the user' })
     }
-
-
-
   })
 }

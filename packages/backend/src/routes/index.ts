@@ -10,11 +10,11 @@ import { settingsRoutes } from './settings.js'
 
 export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   await fastify.register(healthRoutes)
-  await fastify.register(authRoutes, { prefix: '/api/auth' })
-  await fastify.register(taxonomyRoutes, { prefix: '/api/taxonomies' })
-  await fastify.register(entityRoutes, { prefix: '/api/entities' })
-  await fastify.register(syncRoutes, { prefix: '/api/sync' })
-  await fastify.register(importRoutes, { prefix: '/api/import' })
-  await fastify.register(userRoutes, { prefix: '/api/users' })
-  await fastify.register(settingsRoutes, { prefix: '/api/settings' })
+  await fastify.register(authRoutes, { prefix: '/auth' })
+  await fastify.register(taxonomyRoutes, { prefix: '/taxonomies' })
+  await fastify.register(entityRoutes, { prefix: '/entities' })
+  await fastify.register(syncRoutes, { prefix: '/sync' })
+  await fastify.register(importRoutes, { prefix: '/import' })
+  await fastify.register(userRoutes, { prefix: '/users' })
+  await fastify.register(settingsRoutes, { prefix: '/settings' })
 }

@@ -47,7 +47,7 @@ export const ManageUserDialog = ({ open, user, onOpenChangeAction, onSuccessActi
             </DialogDescription>
           </DialogHeader>
 
-          {isEditing && (<input type={'hidden'} name={'id'} defaultValue={user?.id} />)}
+          {isEditing && <input type={'hidden'} name={'id'} defaultValue={user?.id} />}
 
           {error && <Message message={error} success={false} duration={99} />}
 

@@ -12,7 +12,9 @@ export const TaxonomyTree = ({ taxonomies }: { taxonomies: Taxonomy[] }) => {
               {taxonomies
                 .filter((tax) => tax.parentId === t.atlasId)
                 .map((child) => (
-                  <div key={`taxonomy_${child.id}`} className={'pl-4'}>{child.name}</div>
+                  <div key={`taxonomy_${child.id}`} className={'pl-4'}>
+                    {child.name}
+                  </div>
                 ))}
             </div>
           </div>

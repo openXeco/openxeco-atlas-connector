@@ -24,7 +24,6 @@ export const EntityWizard = ({
   isPending,
   entityId,
 }: EntityWizardProps) => {
-
   const onSubmit = useFormParams.handleSubmit(async (data) => {
     // avoid double submit
     if (isPending) {

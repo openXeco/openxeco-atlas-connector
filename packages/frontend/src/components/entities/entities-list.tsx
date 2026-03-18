@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { EntityDataTable } from '@/components/entities/entity-data-table'
 import useSWR from 'swr'
 import type { Entity, EntityListParams } from '@/types'
-import { apiFetcher } from '@/lib/swr'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteEntity } from '@/app/actions/entities'
@@ -38,7 +38,8 @@ export const EntitiesList = () => {
 
   const { data, error, isLoading, mutate } = useSWR<{ data: Entity[] }>(
     `/api/entities?${params.toString()}`,
-    apiFetcher
+    apiFetcher,
+    swrDefaultOptions
   )
 
   const entities = data?.data ?? []

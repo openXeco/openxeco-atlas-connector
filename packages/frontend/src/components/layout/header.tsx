@@ -1,9 +1,36 @@
-import { User, LogOut } from 'lucide-react'
-import { getUserInfo } from '@/data/auth'
-import { logout } from '@/app/actions/auth'
+'use client'
 
-export async function Header() {
-  const user = await getUserInfo()
+import { User, LogOut } from 'lucide-react'
+import useSWR from 'swr'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
+import { redirect } from 'next/navigation'
+import { User as TUser } from '@/types'
+import { logout } from '@/app/actions/auth'
+import { useActionState, useEffect } from 'react'
+
+export function Header() {
+  // To check if the user is authorized
+  const { data, error, isLoading } = useSWR<{ data: TUser }>('/api/auth/me', apiFetcher, {
+    ...swrDefaultOptions,
+    refreshInterval: 300000,
+  })
+  const [state, formAction] = useActionState(logout, undefined)
+
+  useEffect(() => {
+    if (state?.success === true) {
+      redirect(`/login`)
+    }
+  }, [state])
+
+  if (isLoading) {
+    return <>loading...</>
+  }
+
+  if (error || !data) {
+    redirect('/login')
+  }
+
+  const user = data.data
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-card px-6">
@@ -15,10 +42,9 @@ export async function Header() {
           <User className="h-5 w-5" />
           <span>{user?.email || 'Admin'}</span>
         </div>
-        <form>
+        <form action={formAction}>
           <button
             type="submit"
-            formAction={logout}
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
             <LogOut className="h-5 w-5" />

@@ -96,7 +96,11 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         </div>
 
         {isOpen && (
-          <div role={'listbox'} id={comboId} className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
+          <div
+            role={'listbox'}
+            id={comboId}
+            className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md"
+          >
             {options.length === 0 ? (
               <div className="py-2 px-3 text-sm text-muted-foreground">No options available</div>
             ) : hierarchical ? (

@@ -4,7 +4,6 @@
  * Handles authentication and data fetching from the cybersecurity.lu platform
  */
 
-
 import type { OpenXecoFormQuestion, OpenXecoFormAnswer } from './types.js'
 import { Logger, getLogger } from '@/utils/logger.js'
 
