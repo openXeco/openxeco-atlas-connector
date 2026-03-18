@@ -1,7 +1,41 @@
-import { ApiClientOptions, ApiClientError, User } from '@/types'
+import { ApiClientOptions, ApiClientError as IApiClientError, User } from '@/types'
 import path from 'node:path'
 import { cookies } from 'next/headers'
 import { encryptSession, decryptSession } from '@/lib/session'
+
+class ApiClientError extends Error implements IApiClientError {
+  readonly statusCode: number
+  readonly payload: Record<string, unknown> | undefined
+
+  constructor(message?: string, statusCode?: number, payload?: Record<string, unknown>) {
+    super(message)
+    this.name = 'ApiClientError'
+    this.payload = payload
+
+    this.statusCode = statusCode || 500
+  }
+
+  toString() {
+    return `[API-ERROR]: ${this.message}`
+  }
+
+  toJSON() {
+    return {
+      statusCode: this.statusCode,
+      message: this.message,
+      payload: this.payload,
+      stack: this.stack,
+    }
+  }
+
+  valueOf() {
+    return {
+      statusCode: this.statusCode,
+      message: this.message,
+      payload: this.payload,
+    }
+  }
+}
 
 const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atlas-session') => {
   const getUrl = (endpoint: string) => path.join(baseUrl, endpoint)
@@ -34,10 +68,9 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
     })
 
     if (!response.ok) {
-      const error: ApiClientError = await response.json()
-      console.error(error)
+      const error = await response.json()
       const message = Array.isArray(error.message) ? String(error.message) : error.message || 'An error has occurred'
-      throw new Error(message || 'An error occurred')
+      throw new ApiClientError(message, response.status)
     }
 
     return response.json()
@@ -88,12 +121,13 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
       return accessToken
     } catch (e) {
       if ((e as ApiClientError).statusCode === 401) {
+        // console.debug('Access token expired. Refreshing...')
         // try to refresh
         const data = await request<{ accessToken: string; refreshToken: string; refreshTokenExpiresIn: number }>(
           'auth/refresh',
           {
             method: 'POST',
-            body: JSON.stringify(refreshToken),
+            body: JSON.stringify({refreshToken}),
           }
         )
 

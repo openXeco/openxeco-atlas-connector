@@ -4,10 +4,9 @@ export interface ApiClientOptions extends RequestInit {
   forceAccessToken?: string
 }
 
-export type ApiClientError = {
+export interface ApiClientError extends Error {
   statusCode: number
-  error: string
-  message: string
+  payload?: Record<string, unknown>
 }
 
 export interface User {
