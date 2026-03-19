@@ -40,9 +40,9 @@ services:
       - ATLAS_PASSWORD=${ATLAS_PASSWORD:-}
       - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
-      ${APP_PREFIX}-db:
+      db:
         condition: service_healthy
-      ${APP_PREFIX}-redis:
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
