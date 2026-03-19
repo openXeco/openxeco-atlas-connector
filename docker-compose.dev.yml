@@ -1,5 +1,6 @@
 services:
-  ${APP_PREFIX}-frontend:
+  frontend:
+    container_name: ${APP_PREFIX}-frontend
     build:
       context: .
       dockerfile: packages/frontend/Dockerfile
@@ -17,7 +18,8 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  ${APP_PREFIX}-backend:
+  backend:
+    container_name: ${APP_PREFIX}-backend
     build:
       context: .
       dockerfile: packages/backend/Dockerfile
@@ -44,7 +46,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  ${APP_PREFIX}-db:
+  db:
+    container_name: ${APP_PREFIX}-db
     image: postgres:17-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -59,7 +62,8 @@ services:
       retries: 5
     restart: unless-stopped
 
-  ${APP_PREFIX}-redis:
+  redis:
+    container_name: ${APP_PREFIX}-redis
     image: redis:7-alpine
     volumes:
       - redis_data:/data
