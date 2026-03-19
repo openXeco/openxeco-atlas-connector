@@ -1,10 +1,9 @@
 services:
   frontend:
-#    container_name: ${FRONTEND_CONTAINER_NAME:-frontend-dev}
     build:
       context: .
       dockerfile: packages/frontend/Dockerfile
-      target: development
+      target: production
     ports:
       - "3000"
     environment:
@@ -17,11 +16,11 @@ services:
     restart: unless-stopped
 
   backend:
-#    container_name: ${BACKEND_CONTAINER_NAME:-backend-dev}
     build:
       context: .
       dockerfile: packages/backend/Dockerfile
-      target: development
+      target: production
+    # no need to expose for now
     #expose:
     #  - "3001"
     environment:
@@ -44,7 +43,6 @@ services:
     restart: unless-stopped
 
   db:
-#    container_name: ${DB_CONTAINER_NAME:-db-dev}
     image: postgres:17-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -60,7 +58,6 @@ services:
     restart: unless-stopped
 
   redis:
-#    container_name: ${REDIS_CONTAINER_NAME:-redis-dev}
     image: redis:7-alpine
     volumes:
       - redis_data:/data
