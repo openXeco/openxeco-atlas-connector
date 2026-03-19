@@ -9,6 +9,8 @@ services:
     environment:
       - NODE_ENV=development
       - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
+      - FRONTEND_SECRECT_KEY=${FRONTEND_SECRET_KEY}
+      - FRONTEND_SESSION_COOKIE_NAME=${FRONTEND_SESSION_COOKIE_NAME}
       - NEXT_TELEMETRY_DISABLED=1
     depends_on:
       backend:
