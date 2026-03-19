@@ -2,6 +2,7 @@
 
 import { getApiClient } from '@/lib/api-client'
 import { ActionState, EntityTaxonomies, type Taxonomy } from '@/types'
+import { refresh } from 'next/cache'
 
 export async function syncAll(): Promise<ActionState> {
   const apiClient = await getApiClient()
@@ -25,6 +26,7 @@ export async function syncByType(prevState: unknown, formData: FormData): Promis
 
   try {
     await apiClient.post(`/taxonomies/sync/${type}`, {}, { credentials: 'include' })
+    refresh()
     return {
       success: true,
       message: 'Successfully synced.',
