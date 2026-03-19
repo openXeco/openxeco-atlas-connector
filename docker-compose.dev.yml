@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: packages/frontend/Dockerfile
       target: development
-    ports:
+    expose:
       - "3000"
     environment:
       - NODE_ENV=development
@@ -22,8 +22,9 @@ services:
       context: .
       dockerfile: packages/backend/Dockerfile
       target: development
-    ports:
-      - "3001"
+    # no need to expose at this stage
+    #expose:
+    #  - "3001"
     environment:
       - NODE_ENV=development
       - DATABASE_URL=${DATABASE_URL}
