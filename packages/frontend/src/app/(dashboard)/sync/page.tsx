@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { getSyncStatus } from '@/data/sync'
 import { ArrowUpCircle, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
 import { Message } from '@/components/ui/message'

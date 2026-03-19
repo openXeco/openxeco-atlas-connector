@@ -1,4 +1,4 @@
-'use server'
+import 'server-only'
 
 import { ApiClientOptions, ApiClientError as IApiClientError, User } from '@/types'
 import path from 'node:path'

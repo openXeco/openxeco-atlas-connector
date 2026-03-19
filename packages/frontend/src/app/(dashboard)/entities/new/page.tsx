@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { ArrowLeft } from 'lucide-react'
 import { CreateEntity } from '@/components/entities/create-entity'
 import { Link } from '@/components/ui/link'
