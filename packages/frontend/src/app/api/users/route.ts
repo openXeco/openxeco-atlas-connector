@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { apiClientBackend } from '@/lib/api-backend'
+import { getApiClient } from '@/lib/api-client'
 import { User } from '@/types'
 
 export async function GET() {
   try {
-    const response = await apiClientBackend.get<{ data: User[] }>('/api/users', { credentials: 'include' })
+    const apiClient = await getApiClient()
+    const response = await apiClient.get<{ data: User[] }>('/users', { credentials: 'include' })
 
     return NextResponse.json({ data: response.data })
   } catch (_e) {

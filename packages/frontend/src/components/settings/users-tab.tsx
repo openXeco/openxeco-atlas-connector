@@ -4,7 +4,7 @@ import { CardTitle, CardDescription, CardHeader, Card, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { Plus, Pencil, Key, Trash2 } from 'lucide-react'
 import useSWR from 'swr'
-import { apiFetcher } from '@/lib/swr'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 import { User } from '@/types'
 import { Message } from '@/components/ui/message'
 import { useState } from 'react'
@@ -51,7 +51,7 @@ export const UsersTab = ({ currentUser }: { currentUser: User }) => {
     setDeleteDialogOpen(true)
   }
 
-  const { data, error, isLoading, mutate } = useSWR<{ data: User[] }>('/api/users', apiFetcher)
+  const { data, error, isLoading, mutate } = useSWR<{ data: User[] }>('/api/users', apiFetcher, swrDefaultOptions)
 
   if (!data || isLoading) {
     return <>Loading...</>

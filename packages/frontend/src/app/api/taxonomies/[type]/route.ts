@@ -1,13 +1,14 @@
 'use server'
 
 import { NextResponse, NextRequest } from 'next/server'
-import { apiClientBackend } from '@/lib/api-backend'
+import { getApiClient } from '@/lib/api-client'
 
 export async function GET(req: NextRequest, ctx: RouteContext<'/api/taxonomies/[type]'>) {
   const { type } = await ctx.params
 
   try {
-    const response = await apiClientBackend.get<{ data: { total: number } }>(`/api/taxonomies/${type}`, {
+    const apiClient = await getApiClient()
+    const response = await apiClient.get<{ data: { total: number } }>(`/taxonomies/${type}`, {
       credentials: 'include',
     })
 

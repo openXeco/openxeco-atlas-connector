@@ -3,8 +3,9 @@
 import { ManageEntityState } from '@/components/entities/entity-wizard'
 import { EntityFormData, type ActionState } from '@/types'
 import { parseFormData } from '@/lib/utils'
-import { apiClientBackend } from '@/lib/api-backend'
-import { entitySchema } from '@/data/entities'
+import { getApiClient } from '@/lib/api-client'
+
+import { entitySchema } from '@/schema'
 
 export async function createEntity(
   _prevState: ManageEntityState | null,
@@ -23,7 +24,8 @@ export async function createEntity(
   }
 
   try {
-    await apiClientBackend.post('/api/entities', parsed.data, { credentials: 'include' })
+    const apiClient = await getApiClient()
+    await apiClient.post('/entities', parsed.data, { credentials: 'include' })
 
     return {
       success: true,
@@ -57,7 +59,8 @@ export async function updateEntity(
   }
 
   try {
-    await apiClientBackend.patch(`/api/entities/${id}`, parsed.data, { credentials: 'include' })
+    const apiClient = await getApiClient()
+    await apiClient.patch(`/entities/${id}`, parsed.data, { credentials: 'include' })
 
     return {
       success: true,
@@ -74,8 +77,9 @@ export async function updateEntity(
 }
 
 export async function deleteEntity(id: string) {
+  const apiClient = await getApiClient()
   try {
-    await apiClientBackend.delete(`/api/entities/${id}`, { credentials: 'include' })
+    await apiClient.delete(`/entities/${id}`, { credentials: 'include' })
   } catch (_e) {
     console.error(_e)
   }
@@ -94,9 +98,10 @@ export async function deleteEntityFormAction(prevState: unknown, formData: FormD
 
 export async function syncEntity(prevState: unknown, formData: FormData): Promise<ActionState> {
   const id = formData.get('id')
+  const apiClient = await getApiClient()
 
   try {
-    await apiClientBackend.post(`/api/entities/${id}/sync`, {}, { credentials: 'include' })
+    await apiClient.post(`/entities/${id}/sync`, {}, { credentials: 'include' })
     return {
       success: true,
       message: 'Successfully synced.',

@@ -1,3 +1,5 @@
+import { SWRConfiguration } from 'swr'
+
 export async function apiFetcher<T>(url: string): Promise<T> {
   const response = await fetch(url, {
     headers: {
@@ -11,4 +13,9 @@ export async function apiFetcher<T>(url: string): Promise<T> {
   }
 
   return response.json()
+}
+
+export const swrDefaultOptions: SWRConfiguration = {
+  revalidateOnFocus: false,
+  refreshInterval: 60000,
 }

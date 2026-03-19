@@ -2,7 +2,7 @@
 
 import useSWR from 'swr'
 import type { Taxonomy, TaxonomyType } from '@/types'
-import { apiFetcher } from '@/lib/swr'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 import { useState, useMemo } from 'react'
 import { CardHeader, CardTitle, CardDescription, CardContent, Card } from '@/components/ui/card'
 import { Search } from 'lucide-react'
@@ -11,20 +11,29 @@ import { TaxonomyTree } from '@/components/taxonomies/taxonomy-tree-new'
 
 export const TaxonomyList = ({ type }: { type: TaxonomyType }) => {
   const [searchQuery, setSearchQuery] = useState('')
-  const { data, error, isLoading } = useSWR<{ data: Taxonomy[] }>(`/api/taxonomies/${type}`, apiFetcher)
+  const { data, error, isLoading } = useSWR<{ data: Taxonomy[] }>(
+    `/api/taxonomies/${type}`,
+    apiFetcher,
+    swrDefaultOptions
+  )
   const hasHierarchy = type === 'cluster_thematic_area'
 
   const filteredTaxonomies = useMemo(() => {
     const taxonomies = data?.data ?? []
-    if (searchQuery.trim() === '') return taxonomies
+
+    if (searchQuery.trim() === '') {
+      return taxonomies
+    }
+
     const query = searchQuery.toLowerCase()
+
     return taxonomies.filter(
       (taxonomy) => taxonomy.name.toLowerCase().includes(query) || taxonomy.description?.toLowerCase().includes(query)
     )
   }, [searchQuery, data])
 
   if (isLoading) {
-    return null
+    return <>loading...</>
   }
 
   return (

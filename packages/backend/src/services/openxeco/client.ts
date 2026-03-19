@@ -4,8 +4,8 @@
  * Handles authentication and data fetching from the cybersecurity.lu platform
  */
 
-import { logger } from '@/utils/logger.js'
 import type { OpenXecoFormQuestion, OpenXecoFormAnswer } from './types.js'
+import { Logger, getLogger } from '@/utils/logger.js'
 
 const OPENXECO_API_BASE = 'https://api.cybersecurity.lu'
 const ECCC_FORM_ID = 11
@@ -23,10 +23,12 @@ export interface OpenXecoSession {
 export class OpenXecoClient {
   private readonly baseUrl: string
   private readonly timeout: number
+  private readonly logger: Logger
 
   constructor(baseUrl: string = OPENXECO_API_BASE, timeout: number = 30000) {
     this.baseUrl = baseUrl
     this.timeout = timeout
+    this.logger = getLogger()
   }
 
   /**
@@ -35,7 +37,7 @@ export class OpenXecoClient {
   async login(credentials: OpenXecoCredentials): Promise<OpenXecoSession> {
     const url = `${this.baseUrl}/account/login`
 
-    logger.info('OpenXeco: Attempting login', { email: credentials.email })
+    this.logger.info({ email: credentials.email }, 'OpenXeco: Attempting login')
 
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this.timeout)
@@ -66,11 +68,14 @@ export class OpenXecoClient {
           /* ignore */
         }
 
-        logger.error('OpenXeco: Login failed', {
-          status,
-          statusText: response.statusText,
-          errorBody: errorBody.substring(0, 500),
-        })
+        this.logger.error(
+          {
+            status,
+            statusText: response.statusText,
+            errorBody: errorBody.substring(0, 500),
+          },
+          'OpenXeco: Login failed'
+        )
 
         if (status === 401) {
           throw new Error('Invalid credentials: email or password is incorrect')
@@ -89,10 +94,13 @@ export class OpenXecoClient {
         (response.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.() ??
         ([response.headers.get('set-cookie')].filter(Boolean) as string[])
 
-      logger.debug('OpenXeco: Login response headers', {
-        setCookieCount: setCookieHeaders.length,
-        setCookieHeaders: setCookieHeaders.map((c) => c?.substring(0, 50) + '...'),
-      })
+      this.logger.debug(
+        {
+          setCookieCount: setCookieHeaders.length,
+          setCookieHeaders: setCookieHeaders.map((c) => c?.substring(0, 50) + '...'),
+        },
+        'OpenXeco: Login response headers'
+      )
 
       for (const cookie of setCookieHeaders) {
         if (!cookie) continue
@@ -107,22 +115,22 @@ export class OpenXecoClient {
       if (!accessToken) {
         try {
           const body = (await response.json()) as Record<string, unknown>
-          logger.debug('OpenXeco: Login response body', { bodyKeys: Object.keys(body) })
+          this.logger.debug({ bodyKeys: Object.keys(body) }, 'OpenXeco: Login response body')
 
           if (typeof body.access_token === 'string') accessToken = body.access_token
           if (typeof body.refresh_token === 'string') refreshToken = body.refresh_token
         } catch {
           // Response might not be JSON
-          logger.debug('OpenXeco: Login response is not JSON')
+          this.logger.debug('OpenXeco: Login response is not JSON')
         }
       }
 
       if (!accessToken) {
-        logger.warn('OpenXeco: No token found in login response')
+        this.logger.warn('OpenXeco: No token found in login response')
         throw new Error('Login succeeded but no authentication token was returned')
       }
 
-      logger.info('OpenXeco: Login successful', { hasRefreshToken: !!refreshToken })
+      this.logger.info({ hasRefreshToken: !!refreshToken }, 'OpenXeco: Login successful')
 
       return {
         accessToken,
@@ -143,7 +151,7 @@ export class OpenXecoClient {
   async getFormQuestions(formId: number = ECCC_FORM_ID, session: OpenXecoSession): Promise<OpenXecoFormQuestion[]> {
     const url = `${this.baseUrl}/private/get_my_form_questions?form_id=${formId}`
 
-    logger.info('OpenXeco: Fetching form questions', { formId })
+    this.logger.info({ formId }, 'OpenXeco: Fetching form questions')
 
     const response = await this.authenticatedRequest(url, session)
 
@@ -166,7 +174,7 @@ export class OpenXecoClient {
     // Use the private endpoint for user-specific answers
     const url = `${this.baseUrl}/private/get_my_form_answers?form_id=${formId}`
 
-    logger.info('OpenXeco: Fetching form answers', { formId })
+    this.logger.info({ formId }, 'OpenXeco: Fetching form answers')
 
     const response = await this.authenticatedRequest(url, session)
 
@@ -205,7 +213,7 @@ export class OpenXecoClient {
         headers['Cookie'] = cookies.join('; ')
       }
 
-      logger.debug('OpenXeco: Making authenticated request', { url })
+      this.logger.debug({ url }, 'OpenXeco: Making authenticated request')
 
       const response = await fetch(url, {
         method: 'GET',

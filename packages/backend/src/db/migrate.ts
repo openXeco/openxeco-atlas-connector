@@ -2,7 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import { db } from '../config/database.js'
-import { logger } from '../utils/logger.js'
+import { getLogger } from '../utils/logger.js'
+
+const logger = getLogger()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -17,13 +19,13 @@ export async function runMigrations(): Promise<void> {
     ? path.resolve(__dirname, '../../src/db/migrations')
     : path.resolve(__dirname, './migrations')
 
-  logger.info('Running database migrations...', { migrationsFolder })
+  logger.info({ migrationsFolder }, 'Running database migrations...')
 
   try {
     await migrate(db, { migrationsFolder })
     logger.info('Database migrations completed successfully')
   } catch (error) {
-    logger.error('Database migration failed', error as Error)
+    logger.error(error as Error, 'Database migration failed')
     throw error
   }
 }

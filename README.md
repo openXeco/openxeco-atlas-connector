@@ -47,7 +47,7 @@ packages/
         ├── app/
         │   ├── (dashboard)/  # layout with sidebar/header, all dashboard pages
         │   └── login/        # public login page
-        ├── assets            # assets (images, fonts, etc.)    
+        ├── assets            # assets (images, fonts, etc.)
         ├── components/       # shadcn/ui based
         ├── contexts/         # auth context
         ├── data/             # data access related functions
@@ -59,10 +59,10 @@ packages/
 ### Authentication Flow
 
 1. **Login**: Backend validates credentials, returns access token and refresh token in body. The frontend server sets
-   refresh token as httpOnly cookie (`sameSite: strict`, `secure` in production, scoped to `/api/auth/refresh`).
+   refresh token as httpOnly cookie (`sameSite: strict`, `secure` in production, scoped to `/auth/refresh`).
 2. **Access token**: Stored in-memory (not localStorage) to prevent XSS exposure. Sent as `Authorization: Bearer` header
    on API requests.
-3. **Refresh**: Frontend calls `POST /api/auth/refresh` and backend issues new token pair.
+3. **Refresh**: Frontend calls `POST /auth/refresh` and backend issues new token pair.
 4. **Auto-refresh**: Auth context refreshes tokens every 50 minutes via `setInterval`.
 
 ### Data Fetching
@@ -108,49 +108,49 @@ pnpm --filter @openxeco/atlas-connector-frontend build
 
 ### Auth
 
-| Method | Endpoint            | Auth   | Description                          |
-|--------|---------------------|--------|--------------------------------------|
-| POST   | `/api/auth/login`   | No     | Login (sets refresh token cookie)    |
-| POST   | `/api/auth/logout`  | Yes    | Logout (clears refresh token cookie) |
-| POST   | `/api/auth/refresh` | Cookie | Refresh access token                 |
-| GET    | `/api/auth/me`      | Yes    | Current user                         |
+| Method | Endpoint        | Auth   | Description                          |
+|--------|-----------------|--------|--------------------------------------|
+| POST   | `/auth/login`   | No     | Login (sets refresh token cookie)    |
+| POST   | `/auth/logout`  | Yes    | Logout (clears refresh token cookie) |
+| POST   | `/auth/refresh` | Cookie | Refresh access token                 |
+| GET    | `/auth/me`      | Yes    | Current user                         |
 
 ### Entities
 
-| Method | Endpoint                     | Description      |
-|--------|------------------------------|------------------|
-| GET    | `/api/entities`              | List (paginated) |
-| GET    | `/api/entities/:id`          | Get by ID        |
-| POST   | `/api/entities`              | Create           |
-| PATCH  | `/api/entities/:id`          | Update           |
-| DELETE | `/api/entities/:id`          | Delete           |
-| GET    | `/api/entities/:id/versions` | Version history  |
+| Method | Endpoint                 | Description      |
+|--------|--------------------------|------------------|
+| GET    | `/entities`              | List (paginated) |
+| GET    | `/entities/:id`          | Get by ID        |
+| POST   | `/entities`              | Create           |
+| PATCH  | `/entities/:id`          | Update           |
+| DELETE | `/entities/:id`          | Delete           |
+| GET    | `/entities/:id/versions` | Version history  |
 
 ### Sync
 
-| Method | Endpoint                           | Description            |
-|--------|------------------------------------|------------------------|
-| POST   | `/api/sync/entities/:id/push`      | Push entity to ATLAS   |
-| POST   | `/api/sync/entities/:id/pull`      | Pull entity from ATLAS |
-| GET    | `/api/sync/entities/:id/diff`      | Field-level diff       |
-| GET    | `/api/sync/entities/:id/conflicts` | Detect conflicts       |
-| POST   | `/api/sync/entities/:id/resolve`   | Resolve conflict       |
-| POST   | `/api/sync/batch/push`             | Batch push             |
-| POST   | `/api/sync/batch/pull`             | Batch pull             |
-| GET    | `/api/sync/status`                 | Sync status overview   |
-| GET    | `/api/sync/logs`                   | Sync log history       |
-| DELETE | `/api/sync/logs/cleanup`           | Clean old logs         |
+| Method | Endpoint                       | Description            |
+|--------|--------------------------------|------------------------|
+| POST   | `/sync/entities/:id/push`      | Push entity to ATLAS   |
+| POST   | `/sync/entities/:id/pull`      | Pull entity from ATLAS |
+| GET    | `/sync/entities/:id/diff`      | Field-level diff       |
+| GET    | `/sync/entities/:id/conflicts` | Detect conflicts       |
+| POST   | `/sync/entities/:id/resolve`   | Resolve conflict       |
+| POST   | `/sync/batch/push`             | Batch push             |
+| POST   | `/sync/batch/pull`             | Batch pull             |
+| GET    | `/sync/status`                 | Sync status overview   |
+| GET    | `/sync/logs`                   | Sync log history       |
+| DELETE | `/sync/logs/cleanup`           | Clean old logs         |
 
 ### Taxonomies
 
-| Method | Endpoint                       | Description                   |
-|--------|--------------------------------|-------------------------------|
-| POST   | `/api/taxonomies/sync`         | Sync all from ATLAS           |
-| POST   | `/api/taxonomies/sync/:type`   | Sync one type                 |
-| GET    | `/api/taxonomies/:type`        | List by type                  |
-| GET    | `/api/taxonomies/id/:id`       | Get by ID                     |
-| GET    | `/api/taxonomies/count/:?type` | Count by type (:type optional |
-| GET    | `/api/taxonomies/search`       | Search by name                |
+| Method | Endpoint                   | Description                   |
+|--------|----------------------------|-------------------------------|
+| POST   | `/taxonomies/sync`         | Sync all from ATLAS           |
+| POST   | `/taxonomies/sync/:type`   | Sync one type                 |
+| GET    | `/taxonomies/:type`        | List by type                  |
+| GET    | `/taxonomies/id/:id`       | Get by ID                     |
+| GET    | `/taxonomies/count/:?type` | Count by type (:type optional |
+| GET    | `/taxonomies/search`       | Search by name                |
 
 ### Health
 
@@ -188,21 +188,25 @@ status:     draft → ready_for_publication → published / to_be_rejected
 syncStatus: local → pending_push → synced / conflict / failed
 ```
 
+## Deployment
+
+We recommend [docker](https://www.docker.com/)
+
+Check [docker-compose-dev.yml](./docker-compose.dev.yml) and [docker-compose-prod.yml](docker-compose.prod.yml) for
+examples
+
+Once the stack is ready and running, you can create the first user by entering into the backend container and running:
+
+```shell
+cd app
+node dist/scripts/seed-admin.js
+```
+
+> An admin user will be created. In production environment we recommend to change the email and password immediately.
+
 ## Environment
 
-See `.env.example` for all variables. Key ones:
-
-| Variable               | Description                                        |
-|------------------------|----------------------------------------------------|
-| `DATABASE_URL`         | PostgreSQL connection string                       |
-| `JWT_SECRET`           | Min 32 chars, change from default                  |
-| `ATLAS_BASE_URL`       | ATLAS API base URL                                 |
-| `ATLAS_USERNAME`       | ATLAS API username (used for the test environment) |
-| `ATLAS_PASSWORD`       | ATLAS API password (used for the test environment) |
-| `HTTPS_PROXY`          | Optional proxy for ATLAS requests                  |
-| `BACKEND_INTERNAL_URL` | Backend URL for Next.js rewrites (production)      |
-| `NEXT_PUBLIC_API_URL`  | Backend URL for frontend (development)             |
-| `PUBLIC_API_URL`       | Backend URL for frontend server (development)      |
+See `.env.example` for all variables.
 
 ## License
 

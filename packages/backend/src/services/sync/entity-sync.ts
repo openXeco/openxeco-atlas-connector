@@ -11,10 +11,11 @@ import {
   entityUseCases,
   entityFieldsOfActivity,
 } from '@/db/schema.js'
-import { logger } from '@/utils/logger.js'
 import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
 import type { Entity } from '@/db/schema.js'
+import { Logger } from 'pino'
+import { getLogger } from '@/utils/logger.js'
 
 export interface SyncResult {
   success: boolean
@@ -50,8 +51,13 @@ export interface BatchSyncResult {
 }
 
 export class EntitySyncService {
+  private readonly logger: Logger
+
+  constructor() {
+    this.logger = getLogger()
+  }
   async pushEntity(entityId: string, _userId?: string, options?: { force?: boolean }): Promise<SyncResult> {
-    logger.info(`Pushing entity ${entityId} to ATLAS`)
+    this.logger.info(`Pushing entity ${entityId} to ATLAS`)
 
     try {
       const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1)
@@ -75,11 +81,26 @@ export class EntitySyncService {
 
       // Load JRC taxonomy IDs from junction tables and resolve to ATLAS UUIDs
       const [thematicRows, sectorRows, technologyRows, useCaseRows, fieldsOfActivityRows] = await Promise.all([
-        db.select({ taxonomyId: entityThematicAreas.taxonomyId }).from(entityThematicAreas).where(eq(entityThematicAreas.entityId, entityId)),
-        db.select({ taxonomyId: entitySectors.taxonomyId }).from(entitySectors).where(eq(entitySectors.entityId, entityId)),
-        db.select({ taxonomyId: entityTechnologies.taxonomyId }).from(entityTechnologies).where(eq(entityTechnologies.entityId, entityId)),
-        db.select({ taxonomyId: entityUseCases.taxonomyId }).from(entityUseCases).where(eq(entityUseCases.entityId, entityId)),
-        db.select({ taxonomyId: entityFieldsOfActivity.taxonomyId }).from(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, entityId)),
+        db
+          .select({ taxonomyId: entityThematicAreas.taxonomyId })
+          .from(entityThematicAreas)
+          .where(eq(entityThematicAreas.entityId, entityId)),
+        db
+          .select({ taxonomyId: entitySectors.taxonomyId })
+          .from(entitySectors)
+          .where(eq(entitySectors.entityId, entityId)),
+        db
+          .select({ taxonomyId: entityTechnologies.taxonomyId })
+          .from(entityTechnologies)
+          .where(eq(entityTechnologies.entityId, entityId)),
+        db
+          .select({ taxonomyId: entityUseCases.taxonomyId })
+          .from(entityUseCases)
+          .where(eq(entityUseCases.entityId, entityId)),
+        db
+          .select({ taxonomyId: entityFieldsOfActivity.taxonomyId })
+          .from(entityFieldsOfActivity)
+          .where(eq(entityFieldsOfActivity.entityId, entityId)),
       ])
 
       // Collect all local taxonomy IDs that need atlas ID resolution
@@ -170,7 +191,7 @@ export class EntitySyncService {
         },
       })
 
-      logger.info(`Successfully pushed entity ${entityId} to ATLAS`)
+      this.logger.info(`Successfully pushed entity ${entityId} to ATLAS`)
 
       return {
         success: true,
@@ -179,7 +200,7 @@ export class EntitySyncService {
         message: entity.atlasId ? 'Entity updated in ATLAS' : 'Entity created in ATLAS',
       }
     } catch (error) {
-      logger.error(`Failed to push entity ${entityId}:`, error as Error)
+      this.logger.error(error as Error, `Failed to push entity ${entityId}:`)
 
       await db.update(entities).set({ syncStatus: 'failed' }).where(eq(entities.id, entityId))
 
@@ -203,7 +224,7 @@ export class EntitySyncService {
   }
 
   async pullEntity(atlasId: string): Promise<SyncResult> {
-    logger.info(`Pulling entity ${atlasId} from ATLAS`)
+    this.logger.info(`Pulling entity ${atlasId} from ATLAS`)
 
     try {
       const cluster = await atlasClient.getCluster(atlasId)
@@ -299,7 +320,7 @@ export class EntitySyncService {
         },
       })
 
-      logger.info(`Successfully pulled entity ${atlasId} from ATLAS`)
+      this.logger.info(`Successfully pulled entity ${atlasId} from ATLAS`)
 
       return {
         success: true,
@@ -308,7 +329,7 @@ export class EntitySyncService {
         message: existing ? 'Entity updated from ATLAS' : 'Entity created from ATLAS',
       }
     } catch (error) {
-      logger.error(`Failed to pull entity ${atlasId}:`, error as Error)
+      this.logger.error(error as Error, `Failed to pull entity ${atlasId}:`)
 
       await db.insert(syncLogs).values({
         entityType: 'entity',
@@ -420,7 +441,7 @@ export class EntitySyncService {
         conflictFields,
       }
     } catch (error) {
-      logger.error(`Failed to detect conflicts for entity ${entityId}:`, error as Error)
+      this.logger.error(error as Error, `Failed to detect conflicts for entity ${entityId}:`)
       throw error
     }
   }
@@ -487,13 +508,13 @@ export class EntitySyncService {
 
       return diffs
     } catch (error) {
-      logger.error(`Failed to get diff for entity ${entityId}:`, error as Error)
+      this.logger.error(error as Error, `Failed to get diff for entity ${entityId}:`)
       throw error
     }
   }
 
   async resolveConflict(entityId: string, resolution: 'local' | 'remote', userId?: string): Promise<SyncResult> {
-    logger.info(`Resolving conflict for entity ${entityId} with ${resolution} version`)
+    this.logger.info(`Resolving conflict for entity ${entityId} with ${resolution} version`)
 
     try {
       if (resolution === 'local') {
@@ -508,7 +529,7 @@ export class EntitySyncService {
         return await this.pullEntity(entity.atlasId)
       }
     } catch (error) {
-      logger.error(`Failed to resolve conflict for entity ${entityId}:`, error as Error)
+      this.logger.error(error as Error, `Failed to resolve conflict for entity ${entityId}:`)
       throw error
     }
   }
@@ -536,22 +557,22 @@ export class EntitySyncService {
   }
 
   async pushBatch(entityIds: string[], userId?: string): Promise<BatchSyncResult> {
-    logger.info(`Pushing batch of ${entityIds.length} entities to ATLAS`)
+    this.logger.info(`Pushing batch of ${entityIds.length} entities to ATLAS`)
     return this.processBatch(entityIds, (id) => this.pushEntity(id, userId))
   }
 
   async pullBatch(atlasIds: string[]): Promise<BatchSyncResult> {
-    logger.info(`Pulling batch of ${atlasIds.length} entities from ATLAS`)
+    this.logger.info(`Pulling batch of ${atlasIds.length} entities from ATLAS`)
     return this.processBatch(atlasIds, (id) => this.pullEntity(id))
   }
 
   async cleanupSyncLogs(retentionDays: number = 90): Promise<number> {
     const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
-    logger.info(`Cleaning up sync logs older than ${cutoff.toISOString()}`)
+    this.logger.info(`Cleaning up sync logs older than ${cutoff.toISOString()}`)
 
     const deleted = await db.delete(syncLogs).where(lt(syncLogs.createdAt, cutoff)).returning({ id: syncLogs.id })
 
-    logger.info(`Deleted ${deleted.length} old sync log entries`)
+    this.logger.info(`Deleted ${deleted.length} old sync log entries`)
     return deleted.length
   }
 }

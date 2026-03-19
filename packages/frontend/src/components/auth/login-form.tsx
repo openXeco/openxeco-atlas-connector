@@ -6,29 +6,19 @@ import oxeLogo from '@/assets/openxeco-logo.svg'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
 import { login } from '@/app/actions/auth'
 import { AlertCircle } from 'lucide-react'
-
-const initialState: {
-  message?: string
-  errors?: {
-    email?: string[]
-    password?: string[]
-  }
-  values: {
-    email: string
-  }
-} = {
-  message: '',
-  errors: undefined,
-  values: {
-    email: '',
-  },
-}
+import { redirect } from 'next/navigation'
 
 export const LoginForm = () => {
-  const [state, formAction, pending] = useActionState(login, initialState)
+  const [state, formAction, pending] = useActionState(login, undefined)
+
+  useEffect(() => {
+    if (state?.success === true) {
+      redirect('/')
+    }
+  }, [state])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
@@ -42,10 +32,10 @@ export const LoginForm = () => {
         </CardHeader>
         <CardContent>
           <form action={formAction} className={'space-y-4'}>
-            {state?.message && (
+            {!state?.success && state?.error && (
               <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4" />
-                <span>{state.message}</span>
+                <span>{state.error}</span>
               </div>
             )}
             <div className="space-y-2">
@@ -54,12 +44,14 @@ export const LoginForm = () => {
                 id="email"
                 type="email"
                 placeholder="admin@atlas-connector.local"
-                defaultValue={state?.values?.email}
+                defaultValue={state?.email}
                 name={'email'}
                 disabled={pending}
                 required={true}
               />
-              {state?.errors?.email && <p className="text-sm text-destructive">{state.errors.email.join(' ')}</p>}
+              {!state?.success && state?.fieldErrors?.email && (
+                <p className="text-sm text-destructive">{state?.fieldErrors.email.join(' ')}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -72,7 +64,9 @@ export const LoginForm = () => {
                 disabled={pending}
                 required={true}
               />
-              {state?.errors?.password && <p className="text-sm text-destructive">{state.errors.password.join(' ')}</p>}
+              {!state?.success && state?.fieldErrors?.password && (
+                <p className="text-sm text-destructive">{state?.fieldErrors.password.join(' ')}</p>
+              )}
             </div>
 
             <Button type="submit" className="w-full" disabled={pending}>

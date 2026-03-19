@@ -1,3 +1,5 @@
+//@TODO remove it
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
 interface ApiOptions extends RequestInit {

@@ -1,9 +1,8 @@
 import React from 'react'
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
+
 import './globals.css'
-import { getUserInfo } from '@/data/auth'
-import { LoginForm } from '@/components/auth/login-form'
 
 const inter = localFont({
   src: [
@@ -26,13 +25,9 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const user = await getUserInfo()
-
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {user ? (children) : <LoginForm />}
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }

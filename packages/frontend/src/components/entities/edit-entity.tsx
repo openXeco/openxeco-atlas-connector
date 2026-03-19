@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ManageEntityState, EntityWizard } from '@/components/entities/entity-wizard'
 import { useForm } from 'react-hook-form'
-import { entityToForm, entitySchema } from '@/data/entities'
+import { entityToForm } from '@/data/entities'
 import { useActionState, useEffect } from 'react'
 import { updateEntity } from '@/app/actions/entities'
 import { Message } from '@/components/ui/message'
+import { entitySchema } from '@/schema'
 
 type EditEntityProps = {
   id: string

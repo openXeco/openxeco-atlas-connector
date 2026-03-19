@@ -2,7 +2,12 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { CardProps } from '@/components/entities/entity-wizard/types'
 
-export const ContactCard = ({useFormParams: {formState: {errors}, register}}: CardProps) => {
+export const ContactCard = ({
+  useFormParams: {
+    formState: { errors },
+    register,
+  },
+}: CardProps) => {
   return (
     <>
       <div className="space-y-2">

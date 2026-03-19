@@ -36,9 +36,7 @@ export interface LinkProps
 }
 
 const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(({ className, variant, size, href, ...props }, ref) => {
-  return (
-    <NextLink href={href} className={cn(linkVariants({ variant, size }), className)} {...props} ref={ref} />
-  )
+  return <NextLink href={href} className={cn(linkVariants({ variant, size }), className)} {...props} ref={ref} />
 })
 
 Link.displayName = 'Link'

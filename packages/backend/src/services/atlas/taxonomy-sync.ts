@@ -1,11 +1,11 @@
 import { eq, and, ilike, sql, count } from 'drizzle-orm'
 import { db } from '@/config/database.js'
 import { taxonomies, syncLogs } from '@/db/schema.js'
-import { logger } from '@/utils/logger.js'
 import { atlasClient } from './client.js'
 import { jsonApiTransformer } from './transformer.js'
 import { KNOWLEDGE_DOMAIN_HIERARCHY } from './knowledge-domain-hierarchy.js'
 import type { TaxonomyType } from './types.js'
+import { getLogger, Logger } from '@/utils/logger.js'
 
 const TAXONOMY_TYPES: TaxonomyType[] = [
   'activities_of_interest',
@@ -32,13 +32,18 @@ const TAXONOMY_TYPES: TaxonomyType[] = [
 
 export class TaxonomySyncService {
   private static readonly TYPE_DELAY_MS = 2000
+  private readonly logger: Logger
+
+  constructor() {
+    this.logger = getLogger()
+  }
 
   async syncAllTaxonomies(): Promise<{
     success: number
     failed: number
     total: number
   }> {
-    logger.info('Starting taxonomy sync from ATLAS')
+    this.logger.info('Starting taxonomy sync from ATLAS')
 
     let success = 0
     let failed = 0
@@ -48,10 +53,10 @@ export class TaxonomySyncService {
       try {
         await this.syncTaxonomyType(type)
         success++
-        logger.info(`✓ Synced taxonomy type: ${type}`)
+        this.logger.info(`✓ Synced taxonomy type: ${type}`)
       } catch (error) {
         failed++
-        logger.error(`✗ Failed to sync taxonomy type: ${type}`, error as Error)
+        this.logger.error(error as Error, `✗ Failed to sync taxonomy type: ${type}`)
 
         await db.insert(syncLogs).values({
           entityType: 'taxonomy',
@@ -70,7 +75,7 @@ export class TaxonomySyncService {
       }
     }
 
-    logger.info(`Taxonomy sync complete: ${success} success, ${failed} failed`)
+    this.logger.info(`Taxonomy sync complete: ${success} success, ${failed} failed`)
 
     return {
       success,
@@ -80,12 +85,12 @@ export class TaxonomySyncService {
   }
 
   async syncTaxonomyType(type: TaxonomyType): Promise<number> {
-    logger.info(`Syncing taxonomy type: ${type}`)
+    this.logger.info(`Syncing taxonomy type: ${type}`)
 
     const terms = await atlasClient.getTaxonomies(type)
 
     if (terms.length === 0) {
-      logger.warn(`No terms found for taxonomy type: ${type}`)
+      this.logger.warn(`No terms found for taxonomy type: ${type}`)
       return 0
     }
 
@@ -134,7 +139,7 @@ export class TaxonomySyncService {
       },
     })
 
-    logger.info(`Synced ${synced} terms for taxonomy type: ${type}`)
+    this.logger.info(`Synced ${synced} terms for taxonomy type: ${type}`)
 
     return synced
   }

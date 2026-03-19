@@ -24,7 +24,10 @@ const getDefaultUI = ({
   variant,
   label,
   syncingLabel,
-}: Pick<ActionButtonProps, 'label' | 'syncingLabel' | 'confirmMessage' | 'variant'>): Pick<ActionButtonProps, 'label' | 'syncingLabel' | 'confirmMessage' > & {
+}: Pick<ActionButtonProps, 'label' | 'syncingLabel' | 'confirmMessage' | 'variant'>): Pick<
+  ActionButtonProps,
+  'label' | 'syncingLabel' | 'confirmMessage'
+> & {
   Icon: LucideIcon
   buttonVariant?: ButtonProps['variant']
   className: string
@@ -82,9 +85,7 @@ export function ActionButton({
 }: ActionButtonProps) {
   const uiProps = getDefaultUI({ variant, label, syncingLabel })
 
-  const handleClick: React.MouseEventHandler<HTMLButtonElement> = (
-    e
-  ) => {
+  const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     if (variant === 'delete' && !confirm(uiProps.confirmMessage || '')) {
       return
     }
@@ -99,7 +100,7 @@ export function ActionButton({
       {hiddenFields}
 
       <Button
-        type={"submit"}
+        type={'submit'}
         onClick={handleClick}
         disabled={pending}
         className={`gap-2 max-w-max ${uiProps.buttonClassName}`}

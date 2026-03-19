@@ -1,7 +1,10 @@
+export const dynamic = 'force-dynamic'
+
 import { ArrowLeft } from 'lucide-react'
-import { getTaxonomies } from '@/data/taxonomies'
 import { CreateEntity } from '@/components/entities/create-entity'
 import { Link } from '@/components/ui/link'
+
+import { getTaxonomies } from '@/app/actions/taxonomies'
 
 export default async function CreateEntityPage() {
   const taxonomies = await getTaxonomies()
@@ -9,10 +12,7 @@ export default async function CreateEntityPage() {
   return (
     <>
       <div className="mb-6 flex items-center gap-4">
-        <Link
-          href={`/entities`}
-          variant={'ghost'}
-        >
+        <Link href={`/entities`} variant={'ghost'}>
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>

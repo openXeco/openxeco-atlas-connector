@@ -1,8 +1,10 @@
 import { db } from '../config/database.js'
 import { users } from '../db/schema.js'
 import { hashPassword } from '../services/password.js'
-import { logger } from '../utils/logger.js'
 import { eq } from 'drizzle-orm'
+import { getLogger } from '@/utils/logger.js'
+
+const logger = getLogger()
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@atlas-connector.local'
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123456'
@@ -30,7 +32,7 @@ async function seedAdmin() {
     logger.info(`  Password: ${ADMIN_PASSWORD}`)
     logger.warn('  ⚠️  Please change the password after first login!')
   } catch (error) {
-    logger.error('Failed to seed admin user:', error as Error)
+    logger.error(error as Error, 'Failed to seed admin user:')
     throw error
   }
 }
@@ -41,6 +43,6 @@ seedAdmin()
     process.exit(0)
   })
   .catch((error) => {
-    logger.error('Seed failed:', error as Error)
+    logger.error(error as Error, 'Seed failed:')
     process.exit(1)
   })

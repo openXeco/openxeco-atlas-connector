@@ -7,17 +7,23 @@ import cookie from '@fastify/cookie'
 import { config } from './config/index.js'
 import { errorHandler } from './middleware/error.js'
 import { registerRoutes } from './routes/index.js'
-import { logger } from './utils/logger.js'
+import { getLoggerConfigByEnv } from './utils/logger.js'
 
 export async function buildApp() {
   const fastify = Fastify({
-    logger: config.NODE_ENV === 'development',
+    logger: getLoggerConfigByEnv(config.NODE_ENV, config.NODE_ENV === 'production' ? 'info' : 'debug'),
+    routerOptions: {
+      ignoreDuplicateSlashes: true,
+    },
   })
 
   await fastify.register(helmet)
 
   await fastify.register(cors, {
-    origin: config.NODE_ENV === 'development' ? ['http://localhost:3000', 'http://localhost:3001'] : [config.FRONTEND_URL || 'http://localhost:3000'],
+    origin:
+      config.NODE_ENV === 'development'
+        ? ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://frontend:3000']
+        : [config.FRONTEND_URL || 'http://localhost:3000'],
     credentials: true,
   })
 
@@ -25,6 +31,10 @@ export async function buildApp() {
     global: true,
     max: 100,
     timeWindow: '1 minute',
+    allowList:
+      config.NODE_ENV === 'production'
+        ? [config.FRONTEND_URL || 'http://frontend:3000']
+        : ['http://localhost:3000', 'http://frontend:3000', 'http://127.0.0.1:3000'],
   })
 
   await fastify.register(jwt, {
@@ -40,7 +50,7 @@ export async function buildApp() {
 
   await registerRoutes(fastify)
 
-  logger.info('Fastify app built successfully')
+  fastify.log.info('Fastify app built successfully')
 
   return fastify
 }

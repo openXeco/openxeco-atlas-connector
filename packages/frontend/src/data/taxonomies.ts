@@ -1,6 +1,4 @@
-import { TaxonomyTypeInfo, type Taxonomy, EntityTaxonomies } from '@/types'
-import { apiClientBackend } from '@/lib/api-backend'
-import { cache } from 'react'
+import { TaxonomyTypeInfo } from '@/types'
 
 export const TAXONOMY_TYPES: TaxonomyTypeInfo[] = [
   { type: 'country', label: 'Countries', description: 'Geographic locations' },
@@ -35,29 +33,5 @@ export const TAXONOMY_TYPES: TaxonomyTypeInfo[] = [
   { type: 'initiatives', label: 'Initiatives', description: 'Cybersecurity initiatives' },
   { type: 'nationality', label: 'Nationalities', description: 'National origins' },
   { type: 'position_category', label: 'Position Categories', description: 'Job position types' },
-  { type: 'use_cases', label: 'Use Cases', description: 'Application use cases' }
+  { type: 'use_cases', label: 'Use Cases', description: 'Application use cases' },
 ] as const
-
-export const getTaxonomies = cache(async (): Promise<EntityTaxonomies> => {
-  const [countries, clusterTypes, fieldsOfActivity, thematicAreas, sectors, technologies, useCases] = await Promise.all(
-    [
-      apiClientBackend.get<{ data: Taxonomy[] }>('/api/taxonomies/country', { credentials: 'include' }),
-      apiClientBackend.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_type', { credentials: 'include' }),
-      apiClientBackend.get<{ data: Taxonomy[] }>('/api/taxonomies/fields_of_activity', { credentials: 'include' }),
-      apiClientBackend.get<{ data: Taxonomy[] }>('/api/taxonomies/cluster_thematic_area', { credentials: 'include' }),
-      apiClientBackend.get<{ data: Taxonomy[] }>('/api/taxonomies/sectors', { credentials: 'include' }),
-      apiClientBackend.get<{ data: Taxonomy[] }>('/api/taxonomies/technologies', { credentials: 'include' }),
-      apiClientBackend.get<{ data: Taxonomy[] }>('/api/taxonomies/use_cases', { credentials: 'include' }),
-    ]
-  )
-
-  return {
-    countries: countries.data,
-    clusterTypes: clusterTypes.data,
-    fieldsOfActivity: fieldsOfActivity.data,
-    thematicAreas: thematicAreas.data,
-    sectors: sectors.data,
-    technologies: technologies.data,
-    useCases: useCases.data,
-  }
-})

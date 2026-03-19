@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { UsersTab } from '@/components/settings/users-tab'
 import { getUserInfo } from '@/data/auth'

@@ -1,3 +1,14 @@
+// Auth
+export interface ApiClientOptions extends RequestInit {
+  params?: Record<string, string>
+  forceAccessToken?: string
+}
+
+export interface ApiClientError extends Error {
+  statusCode: number
+  payload?: Record<string, unknown>
+}
+
 export interface User {
   id: string
   email: string
@@ -6,6 +17,7 @@ export interface User {
   updatedAt: string
 }
 
+// ATLAS
 export type TaxonomyType =
   | 'activities_of_interest'
   | 'applications_and_technologies'
@@ -46,7 +58,7 @@ export interface Taxonomy {
 
 export type EntityStatus = 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected'
 export type SyncStatus = 'local' | 'synced' | 'pending_push' | 'failed' | 'conflict'
-export type SyncRecap =  {
+export type SyncRecap = {
   total: number
   local: number
   synced: number
@@ -186,6 +198,7 @@ export type EntityTaxonomies = {
   useCases: Taxonomy[]
 }
 
+// Various
 export interface HealthResponse {
   status: 'ok' | 'error'
   timestamp: string
@@ -194,6 +207,8 @@ export interface HealthResponse {
   }
 }
 
-// Next.js UI related types
+// UI related types
 export type ActionState = { success: true; message: string } | { success: false; error: string }
-export type ActionStateWithErrors = { success: true; message: string } | {success: false, error: string, fieldErrors?: Record<string, string[]>}
+export type ActionStateWithErrors =
+  | { success: true; message: string }
+  | { success: false; error: string; fieldErrors?: Record<string, string[]> }
