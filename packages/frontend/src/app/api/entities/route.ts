@@ -6,7 +6,7 @@ import { Entity } from '@/types'
 
 export async function GET(req: NextRequest) {
   try {
-    const apiClient = getApiClient()
+    const apiClient = await getApiClient()
     const response = await apiClient.get<{ data: Entity[] }>(`/entities?${req.nextUrl.searchParams.toString()}`, {
       credentials: 'include',
     })

@@ -8,7 +8,7 @@ import { getTaxonomies } from '@/app/actions/taxonomies'
 
 export default async function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const apiClient = getApiClient()
+  const apiClient = await getApiClient()
 
   let entity: Entity
   let taxonomies: EntityTaxonomies

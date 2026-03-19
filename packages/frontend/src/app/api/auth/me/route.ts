@@ -2,7 +2,7 @@ import { getApiClient } from '@/lib/api-client'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const apiClient = getApiClient()
+  const apiClient = await getApiClient()
 
   try {
     const user = await apiClient.getCurrentUser()

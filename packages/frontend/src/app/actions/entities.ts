@@ -24,7 +24,7 @@ export async function createEntity(
   }
 
   try {
-    const apiClient = getApiClient()
+    const apiClient = await getApiClient()
     await apiClient.post('/entities', parsed.data, { credentials: 'include' })
 
     return {
@@ -59,7 +59,7 @@ export async function updateEntity(
   }
 
   try {
-    const apiClient = getApiClient()
+    const apiClient = await getApiClient()
     await apiClient.patch(`/entities/${id}`, parsed.data, { credentials: 'include' })
 
     return {
@@ -77,7 +77,7 @@ export async function updateEntity(
 }
 
 export async function deleteEntity(id: string) {
-  const apiClient = getApiClient()
+  const apiClient = await getApiClient()
   try {
     await apiClient.delete(`/entities/${id}`, { credentials: 'include' })
   } catch (_e) {
@@ -98,7 +98,7 @@ export async function deleteEntityFormAction(prevState: unknown, formData: FormD
 
 export async function syncEntity(prevState: unknown, formData: FormData): Promise<ActionState> {
   const id = formData.get('id')
-  const apiClient = getApiClient()
+  const apiClient = await getApiClient()
 
   try {
     await apiClient.post(`/entities/${id}/sync`, {}, { credentials: 'include' })

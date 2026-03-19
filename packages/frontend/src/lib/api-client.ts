@@ -1,3 +1,5 @@
+'use server'
+
 import { ApiClientOptions, ApiClientError as IApiClientError, User } from '@/types'
 import path from 'node:path'
 import { cookies } from 'next/headers'
@@ -127,7 +129,7 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
           'auth/refresh',
           {
             method: 'POST',
-            body: JSON.stringify({refreshToken}),
+            body: JSON.stringify({ refreshToken }),
           }
         )
 
@@ -188,7 +190,7 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
   }
 }
 
-export const getApiClient = () => {
+export const getApiClient = async () => {
   if (!process.env.BACKEND_INTERNAL_URL) {
     throw new Error('Environment variable `BACKEND_INTERNAL_URL` missing.')
   }

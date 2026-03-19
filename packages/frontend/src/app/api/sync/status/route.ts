@@ -6,7 +6,7 @@ import { getApiClient } from '@/lib/api-client'
 
 export async function GET() {
   try {
-    const apiClient = getApiClient()
+    const apiClient = await getApiClient()
     const response = await apiClient.get<{ data: SyncStatus }>('/sync/status', { credentials: 'include' })
 
     return NextResponse.json({ data: response.data })

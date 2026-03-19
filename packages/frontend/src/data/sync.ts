@@ -5,7 +5,7 @@ import { SyncRecap } from '@/types'
 import { getApiClient } from '@/lib/api-client'
 
 export const getSyncStatus = cache(async () => {
-  const apiClient = getApiClient()
+  const apiClient = await getApiClient()
   try {
     const response = await apiClient.get<{ data: SyncRecap }>('/sync/status', { credentials: 'include' })
     return response.data

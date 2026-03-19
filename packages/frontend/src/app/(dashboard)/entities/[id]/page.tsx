@@ -10,7 +10,7 @@ import { getApiClient } from '@/lib/api-client'
 
 export default async function ViewEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const apiClient = getApiClient()
+  const apiClient = await getApiClient()
 
   let entity: Entity
   let versions: EntityVersion[]

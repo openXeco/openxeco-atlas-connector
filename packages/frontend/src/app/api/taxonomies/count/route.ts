@@ -5,7 +5,7 @@ import { getApiClient } from '@/lib/api-client'
 
 export async function GET() {
   try {
-    const apiClient = getApiClient()
+    const apiClient = await getApiClient()
     const response = await apiClient.get<{ data: { total: number } }>('/taxonomies/count', {
       credentials: 'include',
     })

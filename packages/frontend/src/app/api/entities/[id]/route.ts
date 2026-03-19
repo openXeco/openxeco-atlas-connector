@@ -15,7 +15,7 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext<'/api/entities
 
 export async function GET(_req: NextRequest, ctx: RouteContext<'/api/entities/[id]'>) {
   const { id } = await ctx.params
-  const apiClient = getApiClient()
+  const apiClient = await getApiClient()
 
   try {
     await apiClient.get(`/entities/${id}`, { credentials: 'include' })

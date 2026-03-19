@@ -7,7 +7,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/api/taxonomies/[
   const { type } = await ctx.params
 
   try {
-    const apiClient = getApiClient()
+    const apiClient = await getApiClient()
     const response = await apiClient.get<{ data: { total: number } }>(`/taxonomies/${type}`, {
       credentials: 'include',
     })

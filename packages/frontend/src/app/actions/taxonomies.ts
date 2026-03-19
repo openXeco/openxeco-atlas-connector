@@ -4,7 +4,7 @@ import { getApiClient } from '@/lib/api-client'
 import { ActionState, EntityTaxonomies, type Taxonomy } from '@/types'
 
 export async function syncAll(): Promise<ActionState> {
-  const apiClient = getApiClient()
+  const apiClient = await getApiClient()
   try {
     await apiClient.post('/taxonomies/sync', {}, { credentials: 'include' })
     return {
@@ -21,7 +21,7 @@ export async function syncAll(): Promise<ActionState> {
 
 export async function syncByType(prevState: unknown, formData: FormData): Promise<ActionState> {
   const type = formData.get('type')
-  const apiClient = getApiClient()
+  const apiClient = await getApiClient()
 
   try {
     await apiClient.post(`/taxonomies/sync/${type}`, {}, { credentials: 'include' })
@@ -38,7 +38,7 @@ export async function syncByType(prevState: unknown, formData: FormData): Promis
 }
 
 export const getTaxonomies = async (): Promise<EntityTaxonomies> => {
-  const apiClient = getApiClient()
+  const apiClient = await getApiClient()
 
   const [countries, clusterTypes, fieldsOfActivity, thematicAreas, sectors, technologies, useCases] = await Promise.all(
     [
