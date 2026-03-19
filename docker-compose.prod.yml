@@ -1,5 +1,6 @@
 services:
   frontend:
+    container_name: ${APP_PREFIX}-frontend
     build:
       context: .
       dockerfile: packages/frontend/Dockerfile
@@ -9,15 +10,16 @@ services:
     environment:
       - NODE_ENV=production
       - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
+      - FRONTEND_SECRET_KEY=${FRONTEND_SECRET_KEY}
+      - FRONTEND_SESSION_COOKIE_NAME=${FRONTEND_SESSION_COOKIE_NAME}
       - NEXT_TELEMETRY_DISABLED=1
     depends_on:
       backend:
         condition: service_started
-    networks:
-      - dokploy-network
     restart: unless-stopped
 
   backend:
+    container_name: ${APP_PREFIX}-backend
     build:
       context: .
       dockerfile: packages/backend/Dockerfile
@@ -41,11 +43,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - dokploy-network
     restart: unless-stopped
 
   db:
+    container_name: ${APP_PREFIX}-db
     image: postgres:17-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -61,6 +62,7 @@ services:
     restart: unless-stopped
 
   redis:
+    container_name: ${APP_PREFIX}-redis
     image: redis:7-alpine
     volumes:
       - redis_data:/data
@@ -74,7 +76,3 @@ services:
 volumes:
   postgres_data:
   redis_data:
-
-networks:
-  dokploy-network:
-    external: true
