@@ -2,7 +2,7 @@
 
 import useSWR from 'swr'
 import { TaxonomyType } from '@/types'
-import { apiFetcher } from '@/lib/swr'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
 import { Database, Clock, ChevronRight } from 'lucide-react'
 import { TAXONOMY_TYPES } from '@/data/taxonomies'
@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 export const TaxonomiesCards = () => {
   const { data, error, isLoading } = useSWR<{
     data: { total: number; taxonomies: Record<TaxonomyType, number> }
-  }>('/api/taxonomies/count', apiFetcher)
+  }>('/api/taxonomies/count', apiFetcher, swrDefaultOptions)
 
   const router = useRouter()
 

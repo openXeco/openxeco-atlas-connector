@@ -109,7 +109,7 @@ pnpm --filter @openxeco/atlas-connector-frontend build
 ### Auth
 
 | Method | Endpoint        | Auth   | Description                          |
-| ------ | --------------- | ------ | ------------------------------------ |
+|--------|-----------------|--------|--------------------------------------|
 | POST   | `/auth/login`   | No     | Login (sets refresh token cookie)    |
 | POST   | `/auth/logout`  | Yes    | Logout (clears refresh token cookie) |
 | POST   | `/auth/refresh` | Cookie | Refresh access token                 |
@@ -118,7 +118,7 @@ pnpm --filter @openxeco/atlas-connector-frontend build
 ### Entities
 
 | Method | Endpoint                 | Description      |
-| ------ | ------------------------ | ---------------- |
+|--------|--------------------------|------------------|
 | GET    | `/entities`              | List (paginated) |
 | GET    | `/entities/:id`          | Get by ID        |
 | POST   | `/entities`              | Create           |
@@ -129,7 +129,7 @@ pnpm --filter @openxeco/atlas-connector-frontend build
 ### Sync
 
 | Method | Endpoint                       | Description            |
-| ------ | ------------------------------ | ---------------------- |
+|--------|--------------------------------|------------------------|
 | POST   | `/sync/entities/:id/push`      | Push entity to ATLAS   |
 | POST   | `/sync/entities/:id/pull`      | Pull entity from ATLAS |
 | GET    | `/sync/entities/:id/diff`      | Field-level diff       |
@@ -144,7 +144,7 @@ pnpm --filter @openxeco/atlas-connector-frontend build
 ### Taxonomies
 
 | Method | Endpoint                   | Description                   |
-| ------ | -------------------------- | ----------------------------- |
+|--------|----------------------------|-------------------------------|
 | POST   | `/taxonomies/sync`         | Sync all from ATLAS           |
 | POST   | `/taxonomies/sync/:type`   | Sync one type                 |
 | GET    | `/taxonomies/:type`        | List by type                  |
@@ -155,7 +155,7 @@ pnpm --filter @openxeco/atlas-connector-frontend build
 ### Health
 
 | Method | Endpoint        | Description     |
-| ------ | --------------- | --------------- |
+|--------|-----------------|-----------------|
 | GET    | `/health`       | Health check    |
 | GET    | `/health/live`  | Liveness probe  |
 | GET    | `/health/ready` | Readiness probe |
@@ -188,21 +188,25 @@ status:     draft → ready_for_publication → published / to_be_rejected
 syncStatus: local → pending_push → synced / conflict / failed
 ```
 
+## Deployment
+
+We recommend [docker](https://www.docker.com/)
+
+Check [docker-compose-dev.yml](./docker-compose.dev.yml) and [docker-compose-prod.yml](docker-compose.prod.yml) for
+examples
+
+Once the stack is ready and running, you can create the first user by entering into the backend container and running:
+
+```shell
+cd app
+node dist/scripts/seed-admin.js
+```
+
+> An admin user will be created. In production environment we recommend to change the email and password immediately.
+
 ## Environment
 
-See `.env.example` for all variables. Key ones:
-
-| Variable               | Description                                        |
-| ---------------------- | -------------------------------------------------- |
-| `DATABASE_URL`         | PostgreSQL connection string                       |
-| `JWT_SECRET`           | Min 32 chars, change from default                  |
-| `ATLAS_BASE_URL`       | ATLAS API base URL                                 |
-| `ATLAS_USERNAME`       | ATLAS API username (used for the test environment) |
-| `ATLAS_PASSWORD`       | ATLAS API password (used for the test environment) |
-| `HTTPS_PROXY`          | Optional proxy for ATLAS requests                  |
-| `BACKEND_INTERNAL_URL` | Backend URL for Next.js rewrites (production)      |
-| `NEXT_PUBLIC_API_URL`  | Backend URL for frontend (development)             |
-| `PUBLIC_API_URL`       | Backend URL for frontend server (development)      |
+See `.env.example` for all variables.
 
 ## License
 
