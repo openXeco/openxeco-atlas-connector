@@ -1,5 +1,5 @@
 services:
-  frontend:
+  ${APP_PREFIX}-frontend:
     build:
       context: .
       dockerfile: packages/frontend/Dockerfile
@@ -17,7 +17,7 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  backend:
+  ${APP_PREFIX}-backend:
     build:
       context: .
       dockerfile: packages/backend/Dockerfile
@@ -38,13 +38,13 @@ services:
       - ATLAS_PASSWORD=${ATLAS_PASSWORD:-}
       - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
-      db:
+      ${APP_PREFIX}-db:
         condition: service_healthy
-      redis:
+      ${APP_PREFIX}-redis:
         condition: service_healthy
     restart: unless-stopped
 
-  db:
+  ${APP_PREFIX}-db:
     image: postgres:17-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -59,7 +59,7 @@ services:
       retries: 5
     restart: unless-stopped
 
-  redis:
+  ${APP_PREFIX}-redis:
     image: redis:7-alpine
     volumes:
       - redis_data:/data
