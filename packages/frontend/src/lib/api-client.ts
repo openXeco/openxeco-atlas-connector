@@ -189,8 +189,12 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
 }
 
 export const getApiClient = () => {
-  if (!process.env.BACKEND_INTERNAL_URL || !process.env.FRONTEND_SECRET_KEY) {
-    throw new Error('Environment variables `BACKEND_INTERNAL_URL` and `FRONTEND_SECRET_KEY` missing.')
+  if (!process.env.BACKEND_INTERNAL_URL) {
+    throw new Error('Environment variable `BACKEND_INTERNAL_URL` missing.')
+  }
+
+  if (!process.env.FRONTEND_SECRET_KEY) {
+    throw new Error('Environment variable `FRONTEND_SECRET_KEY` missing.')
   }
 
   return apiClient(
