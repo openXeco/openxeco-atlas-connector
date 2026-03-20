@@ -76,19 +76,19 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
         header: ({ column }) => {
           return (
             <Button
-              variant="ghost"
+              variant='ghost'
               onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              className="h-8 px-2"
+              className='h-8 px-2'
             >
               Name
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <ArrowUpDown className='ml-2 h-4 w-4' />
             </Button>
           )
         },
         cell: ({ row }) => {
           return (
-            <div className="flex flex-col">
-              <span className="font-medium">{row.original.name}</span>
+            <div className='flex flex-col'>
+              <span className='font-medium'>{row.original.name}</span>
             </div>
           )
         },
@@ -98,7 +98,7 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
         header: 'Status',
         cell: ({ row }) => {
           return (
-            <Badge variant="secondary" className={getStatusColor(row.original.status)}>
+            <Badge variant='secondary' className={getStatusColor(row.original.status)}>
               {row.original.status}
             </Badge>
           )
@@ -109,7 +109,7 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
         header: 'Sync Status',
         cell: ({ row }) => {
           return (
-            <Badge variant="secondary" className={getSyncStatusColor(row.original.syncStatus)}>
+            <Badge variant='secondary' className={getSyncStatusColor(row.original.syncStatus)}>
               {row.original.syncStatus.replace('_', ' ')}
             </Badge>
           )
@@ -120,12 +120,12 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
         header: ({ column }) => {
           return (
             <Button
-              variant="ghost"
+              variant='ghost'
               onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              className="h-8 px-2"
+              className='h-8 px-2'
             >
               Updated
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <ArrowUpDown className='ml-2 h-4 w-4' />
             </Button>
           )
         },
@@ -139,24 +139,24 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
+                <Button variant='ghost' className='h-8 w-8 p-0'>
+                  <span className='sr-only'>Open menu</span>
+                  <MoreHorizontal className='h-4 w-4' />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align='end'>
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onView(row.original.id)}>
-                  <Eye className="mr-2 h-4 w-4" />
+                  <Eye className='mr-2 h-4 w-4' />
                   View Details
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onEdit(row.original.id)}>
-                  <Pencil className="mr-2 h-4 w-4" />
+                  <Pencil className='mr-2 h-4 w-4' />
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onDelete(row.original.id)} className="text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
+                <DropdownMenuItem onClick={() => onDelete(row.original.id)} className='text-destructive'>
+                  <Trash2 className='mr-2 h-4 w-4' />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -165,11 +165,10 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
         },
       },
     ],
-    [onView, onEdit, onDelete]
+    [onView, onEdit, onDelete],
   )
 
   // @tanstack/react-table v8 does not support React Compiler; awaiting v9
-  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -183,23 +182,23 @@ export function EntityDataTable({ data, loading, onView, onEdit, onDelete }: Ent
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-muted-foreground">Loading entities...</div>
+      <div className='flex h-64 items-center justify-center'>
+        <div className='text-muted-foreground'>Loading entities...</div>
       </div>
     )
   }
 
   if (data.length === 0) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center gap-2">
-        <div className="text-muted-foreground">No entities found</div>
-        <p className="text-sm text-muted-foreground">Create your first entity to get started</p>
+      <div className='flex h-64 flex-col items-center justify-center gap-2'>
+        <div className='text-muted-foreground'>No entities found</div>
+        <p className='text-sm text-muted-foreground'>Create your first entity to get started</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-md border">
+    <div className='rounded-md border'>
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (

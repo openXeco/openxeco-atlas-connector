@@ -4,6 +4,6 @@ export type UserDialogProps = {
   open: boolean
   onOpenChangeAction: (open: boolean) => void
   user: User | null
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: Fine here
   onSuccessAction?: (...args: any[]) => void
 }

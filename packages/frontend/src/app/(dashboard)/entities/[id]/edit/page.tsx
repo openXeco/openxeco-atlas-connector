@@ -23,10 +23,10 @@ export default async function EditEntityPage({ params }: { params: Promise<{ id:
     taxonomies = taxonomiesRes
   } catch (_e) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Entity not found</h2>
-          <Link href={'/entities'} variant="ghost">
+      <div className='flex min-h-[50vh] items-center justify-center'>
+        <div className='text-center'>
+          <h2 className='text-2xl font-bold'>Entity not found</h2>
+          <Link href={'/entities'} variant='ghost'>
             Back to Entities
           </Link>
         </div>
@@ -40,13 +40,13 @@ export default async function EditEntityPage({ params }: { params: Promise<{ id:
         <>Loading...</>
       ) : (
         <>
-          <div className="mb-6 flex items-center gap-4">
-            <Link href={`/entities`} variant={'ghost'}>
-              <ArrowLeft className="h-5 w-5" />
+          <div className='mb-6 flex items-center gap-4'>
+            <Link href={'/entities'} variant={'ghost'}>
+              <ArrowLeft className='h-5 w-5' />
             </Link>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Edit Entity</h2>
-              <p className="text-muted-foreground">Update entity information</p>
+              <h2 className='text-2xl font-bold tracking-tight'>Edit Entity</h2>
+              <p className='text-muted-foreground'>Update entity information</p>
             </div>
           </div>
 

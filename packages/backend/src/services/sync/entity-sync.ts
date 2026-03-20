@@ -14,8 +14,9 @@ import {
 import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
 import type { Entity } from '@/db/schema.js'
-import { Logger } from 'pino'
+import type { Logger } from 'pino'
 import { getLogger } from '@/utils/logger.js'
+import type { Cluster } from '@/services/atlas/types.js'
 
 export interface SyncResult {
   success: boolean
@@ -36,9 +37,9 @@ export interface ConflictReport {
 
 export interface EntityDiff {
   field: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: It's fine here
   localValue: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: It's fine here
   remoteValue: any
   isDifferent: boolean
 }
@@ -137,7 +138,8 @@ export class EntitySyncService {
         fieldsOfActivityIds: resolveIds(fieldsOfActivityRows),
       })
 
-      let cluster
+      let cluster: Cluster
+
       if (entity.atlasId) {
         if (!options?.force) {
           const conflict = await this.detectConflicts(entityId)
@@ -232,7 +234,7 @@ export class EntitySyncService {
 
       const [existing] = await db.select().from(entities).where(eq(entities.atlasId, atlasId)).limit(1)
 
-      let entity
+      let entity: Entity
       if (existing) {
         const localUpdated = existing.updatedAt ? new Date(existing.updatedAt) : new Date()
         const remoteUpdated = cluster.updatedAt ? new Date(cluster.updatedAt) : new Date()
@@ -280,14 +282,13 @@ export class EntitySyncService {
           .limit(1)
 
         const lastVersion = versions[0]
-        const lastMajor = lastVersion ? parseInt(lastVersion.version) || 0 : 0
+        const lastMajor = lastVersion ? Number.parseInt(lastVersion.version, 10) || 0 : 0
         const newVersion = `${lastMajor + 1}.0`
 
         await db.insert(entityVersions).values({
           entityId: existing.id,
           version: newVersion,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data: entity as any,
+          data: entity as Entity,
         })
       } else {
         ;[entity] = await db
@@ -304,8 +305,7 @@ export class EntitySyncService {
         await db.insert(entityVersions).values({
           entityId: entity.id,
           version: '1.0',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data: entity as any,
+          data: entity as Entity,
         })
       }
 
@@ -519,15 +519,14 @@ export class EntitySyncService {
     try {
       if (resolution === 'local') {
         return await this.pushEntity(entityId, userId, { force: true })
-      } else {
-        const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1)
-
-        if (!entity || !entity.atlasId) {
-          throw new Error('Entity or ATLAS ID not found')
-        }
-
-        return await this.pullEntity(entity.atlasId)
       }
+      const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1)
+
+      if (!entity || !entity.atlasId) {
+        throw new Error('Entity or ATLAS ID not found')
+      }
+
+      return await this.pullEntity(entity.atlasId)
     } catch (error) {
       this.logger.error(error as Error, `Failed to resolve conflict for entity ${entityId}:`)
       throw error
@@ -537,7 +536,7 @@ export class EntitySyncService {
   private async processBatch<T>(
     items: T[],
     fn: (item: T) => Promise<SyncResult>,
-    concurrency: number = 5
+    concurrency = 5,
   ): Promise<BatchSyncResult> {
     const results: SyncResult[] = []
     let success = 0
@@ -566,7 +565,7 @@ export class EntitySyncService {
     return this.processBatch(atlasIds, (id) => this.pullEntity(id))
   }
 
-  async cleanupSyncLogs(retentionDays: number = 90): Promise<number> {
+  async cleanupSyncLogs(retentionDays = 90): Promise<number> {
     const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
     this.logger.info(`Cleaning up sync logs older than ${cutoff.toISOString()}`)
 

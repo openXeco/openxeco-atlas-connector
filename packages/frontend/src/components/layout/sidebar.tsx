@@ -19,14 +19,14 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-card">
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/" className="flex items-center gap-2">
-          <Image src={oxeLogo} className="m-0 p-0 w-10" alt={'openXeco logo'} />
-          <span className="text-lg font-semibold">ATLAS Connector</span>
+    <aside className='flex h-screen w-64 flex-col border-r bg-card'>
+      <div className='flex h-16 items-center border-b px-6'>
+        <Link href='/' className='flex items-center gap-2'>
+          <Image src={oxeLogo} className='m-0 p-0 w-10' alt={'openXeco logo'} />
+          <span className='text-lg font-semibold'>ATLAS Connector</span>
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 p-4">
+      <nav className='flex-1 space-y-1 p-4'>
         {navigation.map((item) => {
           const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
           return (
@@ -37,10 +37,10 @@ export function Sidebar() {
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
               )}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className='h-5 w-5' />
               {item.name}
             </Link>
           )

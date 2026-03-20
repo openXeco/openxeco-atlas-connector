@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, Pencil, Key, Trash2 } from 'lucide-react'
 import useSWR from 'swr'
 import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
-import { User } from '@/types'
+import type { User } from '@/types'
 import { Message } from '@/components/ui/message'
 import { useState } from 'react'
 import { ManageUserDialog } from '@/components/settings/user-dialogs/manage-user'
@@ -63,14 +63,14 @@ export const UsersTab = ({ currentUser }: { currentUser: User }) => {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className='flex items-center justify-between'>
             <div>
               <CardTitle>User Management</CardTitle>
               <CardDescription>Add, edit, or remove users who can access this application</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={handleAddUser} className="gap-2">
-                <Plus className="h-4 w-4" />
+            <div className='flex items-center gap-2'>
+              <Button onClick={handleAddUser} className='gap-2'>
+                <Plus className='h-4 w-4' />
                 Add User
               </Button>
             </div>
@@ -85,50 +85,50 @@ export const UsersTab = ({ currentUser }: { currentUser: User }) => {
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead className="w-[150px]">Actions</TableHead>
+                <TableHead className='w-[150px]'>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={4} className='text-center py-8 text-muted-foreground'>
                     No users found
                   </TableCell>
                 </TableRow>
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">
+                    <TableCell className='font-medium'>
                       {user.email}
-                      {user.id === currentUser?.id && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+                      {user.id === currentUser?.id && <span className='ml-2 text-xs text-muted-foreground'>(you)</span>}
                     </TableCell>
                     <TableCell>
-                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                      <span className='inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary'>
                         {user.role}
                       </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(user.createdAt)}</TableCell>
+                    <TableCell className='text-muted-foreground'>{formatDate(user.createdAt)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)} title="Edit user">
-                          <Pencil className="h-4 w-4" />
+                      <div className='flex items-center gap-1'>
+                        <Button variant='ghost' size='icon' onClick={() => handleEditUser(user)} title='Edit user'>
+                          <Pencil className='h-4 w-4' />
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant='ghost'
+                          size='icon'
                           onClick={() => handleChangePassword(user)}
-                          title="Change password"
+                          title='Change password'
                         >
-                          <Key className="h-4 w-4" />
+                          <Key className='h-4 w-4' />
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant='ghost'
+                          size='icon'
                           onClick={() => handleDeleteUser(user)}
                           disabled={user.id === currentUser?.id}
                           title={user.id === currentUser?.id ? 'Cannot delete yourself' : 'Delete user'}
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Trash2 className='h-4 w-4 text-destructive' />
                         </Button>
                       </div>
                     </TableCell>

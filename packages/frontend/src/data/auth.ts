@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { User } from '@/types'
+import type { User } from '@/types'
 import { cache } from 'react'
 import { getApiClient } from '@/lib/api-client'
 

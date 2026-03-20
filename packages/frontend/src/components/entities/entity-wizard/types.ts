@@ -1,5 +1,5 @@
-import { UseFormReturn } from 'react-hook-form'
-import { EntityFormData, EntityTaxonomies } from '@/types'
+import type { UseFormReturn } from 'react-hook-form'
+import type { EntityFormData, EntityTaxonomies } from '@/types'
 
 export type Step = 'organisation' | 'contact' | 'expertise' | 'confirmation'
 

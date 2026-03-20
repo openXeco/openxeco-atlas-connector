@@ -36,7 +36,7 @@ export function parseFormData<T extends Record<string, unknown>>(formData: FormD
 function parseValue<T extends Record<string, unknown>>(
   key: string,
   value: FormDataEntryValue,
-  options: ParseOptions<T>
+  options: ParseOptions<T>,
 ) {
   if (value instanceof File) return value
 
@@ -55,7 +55,7 @@ function setDeep<T extends Record<string, unknown>>(
   obj: Record<string, unknown>,
   path: string,
   value: unknown,
-  options: ParseOptions<T>
+  options: ParseOptions<T>,
 ) {
   const keys = path.split('.')
   let current: Record<string, unknown> = obj

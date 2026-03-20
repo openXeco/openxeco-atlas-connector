@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { authenticate } from '../middleware/auth.js'
 import { taxonomySyncService } from '../services/atlas/taxonomy-sync.js'
@@ -32,14 +32,13 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
       if (!type) {
         const result = await taxonomySyncService.countTaxonomies()
         return reply.send({ data: result })
-      } else {
-        const validatedType = taxonomyTypeSchema.parse(type)
-        const [result] = await taxonomySyncService.countTaxonomiesByType(validatedType as TaxonomyType)
-
-        return reply.send({
-          data: { total: result.total },
-        })
       }
+      const validatedType = taxonomyTypeSchema.parse(type)
+      const [result] = await taxonomySyncService.countTaxonomiesByType(validatedType as TaxonomyType)
+
+      return reply.send({
+        data: { total: result.total },
+      })
     } catch (error) {
       fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to count taxonomies')
       return reply.status(500).send({

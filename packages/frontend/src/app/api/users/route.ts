@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getApiClient } from '@/lib/api-client'
-import { User } from '@/types'
+import type { User } from '@/types'
 
 export async function GET() {
   try {

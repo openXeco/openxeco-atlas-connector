@@ -10,9 +10,9 @@ export const SyncAllButton = () => {
 
   useEffect(() => {
     if (state?.success) {
-      mutate(`/api/taxonomies`)
+      mutate('/api/taxonomies')
     }
-  }, [state, mutate])
+  }, [state])
 
   return <ActionButton formAction={formAction} pending={pending} state={state} label={'Sync All from ATLAS'} />
 }

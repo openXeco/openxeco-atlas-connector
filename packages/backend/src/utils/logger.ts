@@ -29,6 +29,6 @@ export const getLoggerConfigByEnv = (env: string, envLogLevel = 'info') => {
 
 export const getLogger = (
   env: string = config.NODE_ENV,
-  logLevel = config.NODE_ENV === 'production' ? 'info' : 'debug'
+  logLevel = config.NODE_ENV === 'production' ? 'info' : 'debug',
 ) => pino(getLoggerConfigByEnv(env, logLevel))
 export type Logger = ReturnType<typeof getLogger>

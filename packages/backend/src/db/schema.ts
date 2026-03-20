@@ -36,7 +36,7 @@ export const taxonomies = pgTable(
     index('taxonomy_type_idx').on(table.taxonomyType),
     index('taxonomy_atlas_id_idx').on(table.atlasId),
     index('taxonomy_parent_id_idx').on(table.parentId),
-  ]
+  ],
 )
 
 export const entities = pgTable(
@@ -118,7 +118,7 @@ export const entities = pgTable(
     index('entity_moderation_state_idx').on(table.moderationState),
     index('entity_sync_status_idx').on(table.syncStatus),
     index('entity_country_code_idx').on(table.countryCode),
-  ]
+  ],
 )
 
 export const entityVersions = pgTable(
@@ -135,7 +135,7 @@ export const entityVersions = pgTable(
   (table) => [
     index('entity_version_entity_id_idx').on(table.entityId),
     index('entity_version_created_at_idx').on(table.createdAt),
-  ]
+  ],
 )
 
 // JRC Cybersecurity Taxonomy relationships - specific tables for each dimension
@@ -155,7 +155,7 @@ export const entityThematicAreas = pgTable(
     uniqueIndex('entity_thematic_area_unique_idx').on(table.entityId, table.taxonomyId),
     index('entity_thematic_area_entity_id_idx').on(table.entityId),
     index('entity_thematic_area_taxonomy_id_idx').on(table.taxonomyId),
-  ]
+  ],
 )
 
 export const entitySectors = pgTable(
@@ -174,7 +174,7 @@ export const entitySectors = pgTable(
     uniqueIndex('entity_sector_unique_idx').on(table.entityId, table.taxonomyId),
     index('entity_sector_entity_id_idx').on(table.entityId),
     index('entity_sector_taxonomy_id_idx').on(table.taxonomyId),
-  ]
+  ],
 )
 
 export const entityTechnologies = pgTable(
@@ -193,7 +193,7 @@ export const entityTechnologies = pgTable(
     uniqueIndex('entity_technology_unique_idx').on(table.entityId, table.taxonomyId),
     index('entity_technology_entity_id_idx').on(table.entityId),
     index('entity_technology_taxonomy_id_idx').on(table.taxonomyId),
-  ]
+  ],
 )
 
 export const entityUseCases = pgTable(
@@ -212,7 +212,7 @@ export const entityUseCases = pgTable(
     uniqueIndex('entity_use_case_unique_idx').on(table.entityId, table.taxonomyId),
     index('entity_use_case_entity_id_idx').on(table.entityId),
     index('entity_use_case_taxonomy_id_idx').on(table.taxonomyId),
-  ]
+  ],
 )
 
 export const entityFieldsOfActivity = pgTable(
@@ -231,7 +231,7 @@ export const entityFieldsOfActivity = pgTable(
     uniqueIndex('entity_field_of_activity_unique_idx').on(table.entityId, table.taxonomyId),
     index('entity_field_of_activity_entity_id_idx').on(table.entityId),
     index('entity_field_of_activity_taxonomy_id_idx').on(table.taxonomyId),
-  ]
+  ],
 )
 
 export const syncLogs = pgTable(
@@ -250,7 +250,7 @@ export const syncLogs = pgTable(
     index('sync_log_entity_type_idx').on(table.entityType),
     index('sync_log_status_idx').on(table.status),
     index('sync_log_created_at_idx').on(table.createdAt),
-  ]
+  ],
 )
 
 export const atlasConfig = pgTable('atlas_config', {

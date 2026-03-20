@@ -1,7 +1,13 @@
-import { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { authenticate } from '../middleware/auth.js'
-import { openXecoClient, openXecoFormTransformer } from '../services/openxeco/index.js'
+import {
+  openXecoClient,
+  openXecoFormTransformer,
+  type OpenXecoFormQuestion,
+  type OpenXecoFormAnswer,
+  type OpenXecoSession,
+} from '../services/openxeco/index.js'
 
 const ECCC_FORM_ID = 11
 
@@ -31,7 +37,7 @@ export async function importRoutes(fastify: FastifyInstance): Promise<void> {
       const { email, password } = parseResult.data
 
       // Login to OpenXeco
-      let session
+      let session: OpenXecoSession
       try {
         session = await openXecoClient.login({ email, password })
       } catch (error) {
@@ -45,12 +51,12 @@ export async function importRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       // Fetch form questions and answers
-      let questions
-      let answers
+      let questions: OpenXecoFormQuestion[]
+      let answers: OpenXecoFormAnswer[]
       try {
         ;[questions, answers] = await Promise.all([
-          openXecoClient.getFormQuestions(ECCC_FORM_ID, session),
-          openXecoClient.getFormAnswers(ECCC_FORM_ID, session),
+          openXecoClient.getFormQuestions({ formId: ECCC_FORM_ID, session }),
+          openXecoClient.getFormAnswers({ formId: ECCC_FORM_ID, session }),
         ])
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to fetch form data'

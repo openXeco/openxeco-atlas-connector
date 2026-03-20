@@ -5,7 +5,7 @@ import { atlasClient } from './client.js'
 import { jsonApiTransformer } from './transformer.js'
 import { KNOWLEDGE_DOMAIN_HIERARCHY } from './knowledge-domain-hierarchy.js'
 import type { TaxonomyType } from './types.js'
-import { getLogger, Logger } from '@/utils/logger.js'
+import { getLogger, type Logger } from '@/utils/logger.js'
 
 const TAXONOMY_TYPES: TaxonomyType[] = [
   'activities_of_interest',
@@ -102,9 +102,9 @@ export class TaxonomySyncService {
         parentId = KNOWLEDGE_DOMAIN_HIERARCHY[data.atlasId]
       }
       return {
-        atlasId: data.atlasId!,
-        taxonomyType: data.taxonomyType!,
-        name: data.name!,
+        atlasId: data.atlasId,
+        taxonomyType: data.taxonomyType,
+        name: data.name || '',
         description: data.description,
         parentId,
         metadata: data.metadata,

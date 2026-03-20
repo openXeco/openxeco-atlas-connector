@@ -100,12 +100,12 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Download className="mr-2 h-4 w-4" />
+        <Button variant='outline' size='sm'>
+          <Download className='mr-2 h-4 w-4' />
           Import from cybersecurity.lu
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>Import from cybersecurity.lu</DialogTitle>
           <DialogDescription>
@@ -115,24 +115,24 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
         </DialogHeader>
 
         {!result ? (
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="openxeco-email">Email</Label>
+          <div className='space-y-4 py-4'>
+            <div className='space-y-2'>
+              <Label htmlFor='openxeco-email'>Email</Label>
               <Input
-                id="openxeco-email"
-                type="email"
-                placeholder="your@email.com"
+                id='openxeco-email'
+                type='email'
+                placeholder='your@email.com'
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="openxeco-password">Password</Label>
+            <div className='space-y-2'>
+              <Label htmlFor='openxeco-password'>Password</Label>
               <Input
-                id="openxeco-password"
-                type="password"
-                placeholder="Your password"
+                id='openxeco-password'
+                type='password'
+                placeholder='Your password'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
@@ -140,51 +140,65 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4" />
+              <div className='flex items-center gap-2 text-sm text-destructive'>
+                <AlertCircle className='h-4 w-4' />
                 {error}
               </div>
             )}
           </div>
         ) : (
-          <div className="space-y-4 py-4">
+          <div className='space-y-4 py-4'>
             {result.errors.length === 0 ? (
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <CheckCircle className="h-4 w-4" />
+              <div className='flex items-center gap-2 text-sm text-green-600'>
+                <CheckCircle className='h-4 w-4' />
                 <span>
                   Successfully imported {result.data.answersCount} answers from {result.data.questionsCount} questions
                 </span>
               </div>
             ) : (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertCircle className="h-4 w-4" />
+              <div className='space-y-2'>
+                <div className='flex items-center gap-2 text-sm text-destructive'>
+                  <AlertCircle className='h-4 w-4' />
                   <span>Import completed with errors:</span>
                 </div>
-                <ul className="text-sm text-destructive list-disc pl-6 space-y-1">
+                <ul className='text-sm text-destructive list-disc pl-6 space-y-1'>
                   {result.errors.map((err, i) => (
-                    <li key={i}>{err}</li>
+                    <li
+                      key={`error_${
+                        // biome-ignore lint/suspicious/noArrayIndexKey: i is ok with error_
+                        i
+                      }`}
+                    >
+                      {err}
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {result.warnings.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-yellow-600">
-                  <AlertCircle className="h-4 w-4" />
+              <div className='space-y-2'>
+                <div className='flex items-center gap-2 text-sm text-yellow-600'>
+                  <AlertCircle className='h-4 w-4' />
                   <span>Warnings ({result.warnings.length}):</span>
                 </div>
-                <ul className="text-sm text-muted-foreground list-disc pl-6 space-y-1 max-h-32 overflow-y-auto">
+                <ul className='text-sm text-muted-foreground list-disc pl-6 space-y-1 max-h-32 overflow-y-auto'>
                   {result.warnings.map((warn, i) => (
-                    <li key={i}>{warn}</li>
+                    <li
+                      key={`warning_${
+                        // biome-ignore lint/suspicious/noArrayIndexKey: i is ok with warning_
+                        i
+                      }`}
+                    >
+                      {warn}
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {result.unmappedAnswers.length > 0 && (
-              <div className="text-xs text-muted-foreground">
+              <div className='text-xs text-muted-foreground'>
                 {result.unmappedAnswers.length} answers were not mapped to form fields
               </div>
             )}
@@ -194,18 +208,18 @@ export function ImportOpenXecoDialog({ onImport }: ImportOpenXecoDialogProps) {
         <DialogFooter>
           {!result ? (
             <>
-              <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
+              <Button variant='outline' onClick={() => handleOpenChange(false)} disabled={loading}>
                 Cancel
               </Button>
               <Button onClick={handleImport} disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {loading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                 {loading ? 'Importing...' : 'Import'}
               </Button>
             </>
           ) : (
             <>
               <Button
-                variant="outline"
+                variant='outline'
                 onClick={() => {
                   setResult(null)
                   setEmail('')

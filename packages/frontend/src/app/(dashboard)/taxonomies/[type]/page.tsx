@@ -13,16 +13,16 @@ export default async function TaxonomyDetailsPage({ params }: { params: Promise<
 
   return (
     <>
-      <div className="mb-6 flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <Link href={`/taxonomies`} variant={'ghost'}>
-            <ArrowLeft className="h-5 w-5" />
+      <div className='mb-6 flex items-start justify-between'>
+        <div className='flex items-center gap-4'>
+          <Link href={'/taxonomies'} variant={'ghost'}>
+            <ArrowLeft className='h-5 w-5' />
           </Link>
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">
+            <h2 className='text-2xl font-bold tracking-tight'>
               {taxonomyInfo ? taxonomyInfo.label : 'Taxonomy type not found.'}
             </h2>
-            {taxonomyInfo && <p className="text-muted-foreground">{taxonomyInfo.description}</p>}
+            {taxonomyInfo && <p className='text-muted-foreground'>{taxonomyInfo.description}</p>}
           </div>
         </div>
         {taxonomyInfo && <SyncTypeButton type={type} />}

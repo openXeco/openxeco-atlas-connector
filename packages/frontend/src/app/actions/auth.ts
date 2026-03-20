@@ -1,12 +1,12 @@
 'use server'
 
 import { getApiClient } from '@/lib/api-client'
-import { ActionStateWithErrors, ActionState } from '@/types'
+import type { ActionStateWithErrors, ActionState } from '@/types'
 import { loginSchema, changePasswordSchema, editUserSchema, newUserSchema } from '@/schema'
 
 export const login = async (
   _initialState: unknown,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionStateWithErrors & { email: string }> => {
   const apiClient = await getApiClient()
   const result = loginSchema.safeParse({ email: formData.get('email'), password: formData.get('password') })
@@ -49,7 +49,7 @@ export const logout = async (): Promise<{ success: boolean }> => {
 
 export const createUser = async (
   _initialState: unknown,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionStateWithErrors & { email: string }> => {
   const raw = {
     email: formData.get('email') || '',
@@ -63,7 +63,7 @@ export const createUser = async (
     return {
       success: false,
       error: 'Backend validation failed.',
-      fieldErrors: parsed.error.flatten()['fieldErrors'],
+      fieldErrors: parsed.error.flatten().fieldErrors,
       email: String(raw.email),
     }
   }
@@ -73,7 +73,7 @@ export const createUser = async (
     await apiClient.post(
       '/users',
       { email: parsed.data.email, password: parsed.data.password },
-      { credentials: 'include' }
+      { credentials: 'include' },
     )
 
     return {
@@ -82,6 +82,7 @@ export const createUser = async (
       email: parsed.data.email,
     }
   } catch (e) {
+    // biome-ignore lint/suspicious/noConsole: Needed
     console.error(e)
     return {
       success: false,
@@ -92,8 +93,8 @@ export const createUser = async (
 }
 
 export const updateUser = async (
-  initialState: unknown,
-  formData: FormData
+  _initialState: unknown,
+  formData: FormData,
 ): Promise<ActionStateWithErrors & { email: string }> => {
   const raw = {
     email: formData.get('email') || '',
@@ -106,7 +107,7 @@ export const updateUser = async (
     return {
       success: false,
       error: 'Backend validation failed.',
-      fieldErrors: parsed.error.flatten()['fieldErrors'],
+      fieldErrors: parsed.error.flatten().fieldErrors,
       email: String(raw.email),
     }
   }
@@ -121,6 +122,7 @@ export const updateUser = async (
       email: parsed.data.email,
     }
   } catch (e) {
+    // biome-ignore lint/suspicious/noConsole: Needed to know the error
     console.error(e)
     return {
       success: false,
@@ -143,7 +145,7 @@ export const changePassword = async (_initialState: unknown, formData: FormData)
     return {
       success: false,
       error: 'Backend validation failed.',
-      fieldErrors: parsed.error.flatten()['fieldErrors'],
+      fieldErrors: parsed.error.flatten().fieldErrors,
     }
   }
 
@@ -152,7 +154,7 @@ export const changePassword = async (_initialState: unknown, formData: FormData)
     await apiClient.patch(
       `/users/${parsed.data.id}/password`,
       { password: parsed.data.password },
-      { credentials: 'include' }
+      { credentials: 'include' },
     )
 
     return {
@@ -160,6 +162,7 @@ export const changePassword = async (_initialState: unknown, formData: FormData)
       message: 'User successfully updated!',
     }
   } catch (e) {
+    // biome-ignore lint/suspicious/noConsole: Needed
     console.error(e)
     return {
       success: false,
@@ -189,6 +192,7 @@ export const deleteUser = async (_initialState: unknown, formData: FormData): Pr
       message: 'User successfully deleted!',
     }
   } catch (e) {
+    // biome-ignore lint/suspicious/noConsole: Needed
     console.error(e)
     return {
       success: false,

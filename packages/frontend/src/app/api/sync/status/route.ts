@@ -1,7 +1,7 @@
 'use server'
 
 import { NextResponse } from 'next/server'
-import { SyncStatus } from '@/types'
+import type { SyncStatus } from '@/types'
 import { getApiClient } from '@/lib/api-client'
 
 export async function GET() {

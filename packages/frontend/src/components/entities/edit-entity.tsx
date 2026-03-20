@@ -3,7 +3,7 @@
 import type { Entity, EntityTaxonomies, EntityFormData } from '@/types'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ManageEntityState, EntityWizard } from '@/components/entities/entity-wizard'
+import { type ManageEntityState, EntityWizard } from '@/components/entities/entity-wizard'
 import { useForm } from 'react-hook-form'
 import { entityToForm } from '@/data/entities'
 import { useActionState, useEffect } from 'react'

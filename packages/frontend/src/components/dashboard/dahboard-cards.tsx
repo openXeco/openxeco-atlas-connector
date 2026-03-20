@@ -26,8 +26,8 @@ export const DashboardCards = () => {
 
   if (syncError || taxError) {
     return (
-      <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-        <AlertCircle className="h-4 w-4" />
+      <div className='flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive'>
+        <AlertCircle className='h-4 w-4' />
         <span>There was an error while loading the statistics. Please check the logs.</span>
       </div>
     )
@@ -46,15 +46,15 @@ export const DashboardCards = () => {
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
       {stats.map((stat) => (
         <Card key={stat.name}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{stat.name}</CardTitle>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>{stat.name}</CardTitle>
             <stat.icon className={`h-5 w-5 ${stat.color}`} />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stat.value.toLocaleString()}</div>
+            <div className='text-3xl font-bold'>{stat.value.toLocaleString()}</div>
           </CardContent>
         </Card>
       ))}

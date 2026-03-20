@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { db } from '../config/database.js'
@@ -159,7 +159,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
       // Add basic auth if credentials are provided
       if (username && password) {
         const auth = Buffer.from(`${username}:${password}`).toString('base64')
-        headers['Authorization'] = `Basic ${auth}`
+        headers.Authorization = `Basic ${auth}`
       }
 
       const response = await fetch(testUrl, {
@@ -173,12 +173,11 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
           success: true,
           message: 'Connection successful',
         })
-      } else {
-        return reply.status(response.status).send({
-          success: false,
-          message: `Connection failed: ${response.status} ${response.statusText}`,
-        })
       }
+      return reply.status(response.status).send({
+        success: false,
+        message: `Connection failed: ${response.status} ${response.statusText}`,
+      })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       fastify.log.error(error instanceof Error ? error : { message }, 'ATLAS connection test failed')

@@ -1,6 +1,6 @@
 'use server'
 
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { getApiClient } from '@/lib/api-client'
 import { deleteEntity } from '@/app/actions/entities'
 

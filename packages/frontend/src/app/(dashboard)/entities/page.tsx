@@ -6,13 +6,13 @@ import { Link } from '@/components/ui/link'
 export default async function EntitiesPage() {
   return (
     <>
-      <div className="mb-8 flex items-center justify-between">
+      <div className='mb-8 flex items-center justify-between'>
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Entities</h2>
-          <p className="text-muted-foreground">Manage cluster entities and sync with ATLAS</p>
+          <h2 className='text-2xl font-bold tracking-tight'>Entities</h2>
+          <p className='text-muted-foreground'>Manage cluster entities and sync with ATLAS</p>
         </div>
-        <Link href={'/entities/new'} variant="default">
-          <Plus className="h-4 w-4" />
+        <Link href={'/entities/new'} variant='default'>
+          <Plus className='h-4 w-4' />
           Create Entity
         </Link>
       </div>

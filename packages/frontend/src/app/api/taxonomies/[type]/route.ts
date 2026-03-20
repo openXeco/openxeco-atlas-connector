@@ -1,9 +1,9 @@
 'use server'
 
-import { NextResponse, NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { getApiClient } from '@/lib/api-client'
 
-export async function GET(req: NextRequest, ctx: RouteContext<'/api/taxonomies/[type]'>) {
+export async function GET(_req: NextRequest, ctx: RouteContext<'/api/taxonomies/[type]'>) {
   const { type } = await ctx.params
 
   try {

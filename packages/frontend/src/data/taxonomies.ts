@@ -1,4 +1,4 @@
-import { TaxonomyTypeInfo } from '@/types'
+import type { TaxonomyTypeInfo } from '@/types'
 
 export const TAXONOMY_TYPES: TaxonomyTypeInfo[] = [
   { type: 'country', label: 'Countries', description: 'Geographic locations' },

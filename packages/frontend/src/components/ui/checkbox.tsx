@@ -16,8 +16,10 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     }
 
     return (
-      <div className="relative inline-flex items-center">
-        <input type="checkbox" className="peer sr-only" ref={ref} onChange={handleChange} {...props} />
+      <div className='relative inline-flex items-center'>
+        <input type='checkbox' className='peer sr-only' ref={ref} onChange={handleChange} {...props} />
+        {/** biome-ignore lint/a11y/noStaticElementInteractions: TODO */}
+        {/** biome-ignore lint/a11y/useKeyWithClickEvents: TODO */}
         <div
           className={cn(
             'h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background',
@@ -25,7 +27,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             'peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
             'peer-checked:bg-primary peer-checked:text-primary-foreground',
             'flex items-center justify-center cursor-pointer',
-            className
+            className,
           )}
           onClick={() => {
             const input = ref && 'current' in ref ? ref.current : null
@@ -34,11 +36,11 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             }
           }}
         >
-          {props.checked && <Check className="h-3 w-3 text-primary-foreground" />}
+          {props.checked && <Check className='h-3 w-3 text-primary-foreground' />}
         </div>
       </div>
     )
-  }
+  },
 )
 Checkbox.displayName = 'Checkbox'
 

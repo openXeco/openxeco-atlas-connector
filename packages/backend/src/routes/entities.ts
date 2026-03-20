@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { eq, desc, and, count as countFn } from 'drizzle-orm'
 import { db } from '@/config/database.js'
@@ -93,7 +93,7 @@ const createEntitySchema = baseEntitySchema
     {
       message: 'Headquarter information is required when organization is not the main headquarter',
       path: ['headquarterInfo'],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -102,7 +102,7 @@ const createEntitySchema = baseEntitySchema
     {
       message: 'Subsidiaries details are required when organization has subsidiaries',
       path: ['subsidiariesDetails'],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -111,7 +111,7 @@ const createEntitySchema = baseEntitySchema
     {
       message: 'Majority shares details are required when organization holds majority shares',
       path: ['majoritySharesDetails'],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -120,7 +120,7 @@ const createEntitySchema = baseEntitySchema
     {
       message: 'Data protection consent is required for publication',
       path: ['dataProtectionConsent'],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -129,7 +129,7 @@ const createEntitySchema = baseEntitySchema
     {
       message: 'Form completion confirmation is required for publication',
       path: ['formCompletionConfirmed'],
-    }
+    },
   )
 
 // Update schema (partial of base schema, refinements applied at validation time if needed)
@@ -301,7 +301,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             body.thematicAreaIds.map((taxonomyId) => ({
               entityId: entity.id,
               taxonomyId,
-            }))
+            })),
           )
         }
 
@@ -310,7 +310,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             body.sectorIds.map((taxonomyId) => ({
               entityId: entity.id,
               taxonomyId,
-            }))
+            })),
           )
         }
 
@@ -319,7 +319,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             body.technologyIds.map((taxonomyId) => ({
               entityId: entity.id,
               taxonomyId,
-            }))
+            })),
           )
         }
 
@@ -328,7 +328,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             body.useCaseIds.map((taxonomyId) => ({
               entityId: entity.id,
               taxonomyId,
-            }))
+            })),
           )
         }
 
@@ -337,7 +337,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             body.fieldsOfActivityIds.map((taxonomyId) => ({
               entityId: entity.id,
               taxonomyId,
-            }))
+            })),
           )
         }
 
@@ -485,7 +485,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
               body.thematicAreaIds.map((taxonomyId) => ({
                 entityId: id,
                 taxonomyId,
-              }))
+              })),
             )
           }
         }
@@ -497,7 +497,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
               body.sectorIds.map((taxonomyId) => ({
                 entityId: id,
                 taxonomyId,
-              }))
+              })),
             )
           }
         }
@@ -509,7 +509,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
               body.technologyIds.map((taxonomyId) => ({
                 entityId: id,
                 taxonomyId,
-              }))
+              })),
             )
           }
         }
@@ -521,7 +521,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
               body.useCaseIds.map((taxonomyId) => ({
                 entityId: id,
                 taxonomyId,
-              }))
+              })),
             )
           }
         }
@@ -533,7 +533,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
               body.fieldsOfActivityIds.map((taxonomyId) => ({
                 entityId: id,
                 taxonomyId,
-              }))
+              })),
             )
           }
         }
@@ -546,7 +546,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           .limit(1)
 
         const lastVersion = versions[0]
-        const lastMajor = lastVersion ? parseInt(lastVersion.version) || 0 : 0
+        const lastMajor = lastVersion ? Number.parseInt(lastVersion.version, 10) || 0 : 0
         const newVersion = `${lastMajor + 1}.0`
 
         // Capture current taxonomy relationships for the version snapshot
@@ -649,12 +649,11 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           data: result.atlasId,
           message: 'Entity synced to ATLAS successfully',
         })
-      } else {
-        return reply.status(result.error === 'CONFLICT' ? 409 : 500).send({
-          error: result.error || 'Sync Failed',
-          message: result.message,
-        })
       }
+      return reply.status(result.error === 'CONFLICT' ? 409 : 500).send({
+        error: result.error || 'Sync Failed',
+        message: result.message,
+      })
     } catch (error) {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({

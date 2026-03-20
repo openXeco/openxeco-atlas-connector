@@ -1,8 +1,8 @@
 'use server'
 
-import { NextResponse, NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { getApiClient } from '@/lib/api-client'
-import { Entity } from '@/types'
+import type { Entity } from '@/types'
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   } catch (e) {
     return NextResponse.json(
       { message: `Unable to get the sync status. Reason: ${(e as Error).message}` },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

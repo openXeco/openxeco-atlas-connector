@@ -39,6 +39,7 @@ export function GeneralTab() {
     }
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: TODO
   useEffect(() => {
     loadSettings()
   }, [])
@@ -66,7 +67,7 @@ export function GeneralTab() {
   if (loading) {
     return (
       <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">Loading settings...</CardContent>
+        <CardContent className='py-8 text-center text-muted-foreground'>Loading settings...</CardContent>
       </Card>
     )
   }
@@ -77,56 +78,56 @@ export function GeneralTab() {
         <CardTitle>General Settings</CardTitle>
         <CardDescription>Configure general application behavior and preferences</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {error && <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+      <CardContent className='space-y-6'>
+        {error && <div className='rounded-md bg-destructive/10 p-4 text-sm text-destructive'>{error}</div>}
 
-        {success && <div className="rounded-md bg-green-500/10 p-4 text-sm text-green-600">{success}</div>}
+        {success && <div className='rounded-md bg-green-500/10 p-4 text-sm text-green-600'>{success}</div>}
 
-        <div className="grid gap-6">
-          <div className="grid gap-2">
-            <Label htmlFor="appName">Application Name</Label>
+        <div className='grid gap-6'>
+          <div className='grid gap-2'>
+            <Label htmlFor='appName'>Application Name</Label>
             <Input
-              id="appName"
-              type="text"
+              id='appName'
+              type='text'
               value={settings.appName}
               onChange={(e) => handleChange('appName', e.target.value)}
-              placeholder="ATLAS Connector"
+              placeholder='ATLAS Connector'
             />
-            <p className="text-sm text-muted-foreground">Displayed in the header and browser title</p>
+            <p className='text-sm text-muted-foreground'>Displayed in the header and browser title</p>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="autoSync">Auto-sync on Publish</Label>
-              <p className="text-sm text-muted-foreground">
+          <div className='flex items-center justify-between rounded-lg border p-4'>
+            <div className='space-y-0.5'>
+              <Label htmlFor='autoSync'>Auto-sync on Publish</Label>
+              <p className='text-sm text-muted-foreground'>
                 Automatically sync entities to ATLAS when status changes to published
               </p>
             </div>
             <Switch
-              id="autoSync"
+              id='autoSync'
               checked={settings.autoSyncOnPublish}
               onCheckedChange={(checked) => handleChange('autoSyncOnPublish', checked)}
             />
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="conflictResolution">Sync Conflict Resolution</Label>
+          <div className='grid gap-2'>
+            <Label htmlFor='conflictResolution'>Sync Conflict Resolution</Label>
             <Select
               value={settings.syncConflictResolution}
               onValueChange={(value) =>
                 handleChange('syncConflictResolution', value as GeneralSettings['syncConflictResolution'])
               }
             >
-              <SelectTrigger id="conflictResolution">
-                <SelectValue placeholder="Select resolution strategy" />
+              <SelectTrigger id='conflictResolution'>
+                <SelectValue placeholder='Select resolution strategy' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="manual">Manual - Review each conflict</SelectItem>
-                <SelectItem value="local_wins">Local Wins - Keep local changes</SelectItem>
-                <SelectItem value="remote_wins">Remote Wins - Accept remote changes</SelectItem>
+                <SelectItem value='manual'>Manual - Review each conflict</SelectItem>
+                <SelectItem value='local_wins'>Local Wins - Keep local changes</SelectItem>
+                <SelectItem value='remote_wins'>Remote Wins - Accept remote changes</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground">
+            <p className='text-sm text-muted-foreground'>
               How to handle conflicts when local and remote data differ during sync
             </p>
           </div>
