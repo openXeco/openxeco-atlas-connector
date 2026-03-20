@@ -1,7 +1,7 @@
 'use server'
 
-import { ManageEntityState } from '@/components/entities/entity-wizard'
-import { EntityFormData, type ActionState } from '@/types'
+import type { ManageEntityState } from '@/components/entities/entity-wizard'
+import type { EntityFormData, ActionState } from '@/types'
 import { parseFormData } from '@/lib/utils'
 import { getApiClient } from '@/lib/api-client'
 
@@ -9,7 +9,7 @@ import { entitySchema } from '@/schema'
 
 export async function createEntity(
   _prevState: ManageEntityState | null,
-  formData: FormData
+  formData: FormData,
 ): Promise<ManageEntityState> {
   const values = parseEntity(formData)
 
@@ -43,7 +43,7 @@ export async function createEntity(
 
 export async function updateEntity(
   _prevState: ManageEntityState | null,
-  formData: FormData
+  formData: FormData,
 ): Promise<ManageEntityState> {
   const id = formData.get('id') as string
   const values = parseEntity(formData)
@@ -81,22 +81,23 @@ export async function deleteEntity(id: string) {
   try {
     await apiClient.delete(`/entities/${id}`, { credentials: 'include' })
   } catch (_e) {
+    // biome-ignore lint/suspicious/noConsole: Needed
     console.error(_e)
   }
 }
 
-export async function deleteEntityFormAction(prevState: unknown, formData: FormData): Promise<ActionState> {
+export async function deleteEntityFormAction(_prevState: unknown, formData: FormData): Promise<ActionState> {
   const id = formData.get('id')
 
   await deleteEntity(id as string)
 
   return {
     success: true,
-    message: `Deleted`,
+    message: 'Deleted',
   }
 }
 
-export async function syncEntity(prevState: unknown, formData: FormData): Promise<ActionState> {
+export async function syncEntity(_prevState: unknown, formData: FormData): Promise<ActionState> {
   const id = formData.get('id')
   const apiClient = await getApiClient()
 

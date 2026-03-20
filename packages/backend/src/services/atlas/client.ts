@@ -1,6 +1,6 @@
 import { ProxyAgent } from 'undici'
 import { config } from '@/config/index.js'
-import { Logger, getLogger } from '@/utils/logger.js'
+import { type Logger, getLogger } from '@/utils/logger.js'
 import { mapResourceToCluster } from './transformer.js'
 import type {
   AtlasConfig,
@@ -58,7 +58,7 @@ class AtlasClient {
     options?: {
       body?: unknown
       params?: QueryParams
-    }
+    },
   ): Promise<JsonApiDocument<T>> {
     await this.prepareAuthentication()
 
@@ -148,7 +148,7 @@ class AtlasClient {
               errors: apiErrors,
               url: logUrl.toString(),
             },
-            'ATLAS API error:'
+            'ATLAS API error:',
           )
           throw new Error(`ATLAS API error ${response.status}: ${errorDetail}`)
         }
@@ -166,7 +166,7 @@ class AtlasClient {
           const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
           const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
           this.logger.warn(
-            `ATLAS API network error (attempt ${attempt}/${maxRetries}): ${cause}, retrying in ${delay}ms...`
+            `ATLAS API network error (attempt ${attempt}/${maxRetries}): ${cause}, retrying in ${delay}ms...`,
           )
           await new Promise((resolve) => setTimeout(resolve, delay))
           continue
@@ -180,7 +180,7 @@ class AtlasClient {
               cause,
               url: logUrl.toString(),
             },
-            'ATLAS API network error (final):'
+            'ATLAS API network error (final):',
           )
           throw new Error(`ATLAS API network error: ${cause}`)
         }

@@ -1,7 +1,7 @@
 'use server'
 
 import { getApiClient } from '@/lib/api-client'
-import { ActionState, EntityTaxonomies, type Taxonomy } from '@/types'
+import type { ActionState, EntityTaxonomies, Taxonomy } from '@/types'
 import { refresh } from 'next/cache'
 
 export async function syncAll(): Promise<ActionState> {
@@ -20,7 +20,7 @@ export async function syncAll(): Promise<ActionState> {
   }
 }
 
-export async function syncByType(prevState: unknown, formData: FormData): Promise<ActionState> {
+export async function syncByType(_prevState: unknown, formData: FormData): Promise<ActionState> {
   const type = formData.get('type')
   const apiClient = await getApiClient()
 
@@ -51,7 +51,7 @@ export const getTaxonomies = async (): Promise<EntityTaxonomies> => {
       apiClient.get<{ data: Taxonomy[] }>('/taxonomies/sectors', { credentials: 'include' }),
       apiClient.get<{ data: Taxonomy[] }>('/taxonomies/technologies', { credentials: 'include' }),
       apiClient.get<{ data: Taxonomy[] }>('/taxonomies/use_cases', { credentials: 'include' }),
-    ]
+    ],
   )
 
   return {

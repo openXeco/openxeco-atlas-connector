@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { eq, desc, and, gte, lte, count } from 'drizzle-orm'
 import { db } from '../config/database.js'
@@ -255,16 +255,16 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         total += row.count
       }
 
-      const local = counts['local'] || 0
-      const conflict = counts['conflict'] || 0
+      const local = counts.local || 0
+      const conflict = counts.conflict || 0
 
       return reply.send({
         data: {
           total,
           local,
-          synced: counts['synced'] || 0,
+          synced: counts.synced || 0,
           conflict,
-          failed: counts['failed'] || 0,
+          failed: counts.failed || 0,
           pendingPush: local + conflict,
         },
       })
@@ -303,7 +303,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       if (conditions.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: Drizzle-orm magic
         query = query.where(and(...conditions)) as any
       }
 

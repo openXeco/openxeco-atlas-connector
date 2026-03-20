@@ -30,9 +30,9 @@ export function Message({ message, success, duration = 3 }: MessageProps) {
   return (
     <div>
       {success ? (
-        <div className="rounded-md bg-green-500/10 py-2 px-4 text-sm text-green-700">{message}</div>
+        <div className='rounded-md bg-green-500/10 py-2 px-4 text-sm text-green-700'>{message}</div>
       ) : (
-        <div className="rounded-md bg-destructive/10 py-2 px-4 text-sm text-destructive">{message}</div>
+        <div className='rounded-md bg-destructive/10 py-2 px-4 text-sm text-destructive'>{message}</div>
       )}
     </div>
   )

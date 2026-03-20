@@ -17,7 +17,7 @@ export function errorHandler(error: FastifyError, _request: FastifyRequest, repl
       statusCode: error.statusCode,
       stack: error.stack,
     },
-    'Request error'
+    'Request error',
   )
 
   const statusCode = error.statusCode ?? 500

@@ -39,7 +39,7 @@ export const EntitiesList = () => {
   const { data, error, isLoading, mutate } = useSWR<{ data: Entity[] }>(
     `/api/entities?${params.toString()}`,
     apiFetcher,
-    swrDefaultOptions
+    swrDefaultOptions,
   )
 
   const entities = data?.data ?? []
@@ -74,23 +74,23 @@ export const EntitiesList = () => {
   return (
     <>
       {error && (
-        <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">Failed to load entities</div>
+        <div className='mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive'>Failed to load entities</div>
       )}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className='flex items-center justify-between'>
             <div>
               <CardTitle>All Entities</CardTitle>
               <CardDescription>{filteredEntities.length} entities found</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className='flex items-center gap-2'>
+              <div className='relative'>
+                <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
                 <Input
-                  placeholder="Search entities..."
+                  placeholder='Search entities...'
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64 pl-9"
+                  className='w-64 pl-9'
                 />
               </div>
             </div>

@@ -49,7 +49,9 @@ function loadConfig(): Env {
   const result = envSchema.safeParse(process.env)
 
   if (!result.success) {
+    // biome-ignore lint/suspicious/noConsole: Here is fine
     console.error('❌ Invalid environment variables:')
+    // biome-ignore lint/suspicious/noConsole: Here is fine
     console.error(result.error.format())
     process.exit(1)
   }

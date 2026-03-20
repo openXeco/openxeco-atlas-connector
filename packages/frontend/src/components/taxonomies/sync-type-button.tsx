@@ -2,7 +2,7 @@
 
 import { syncByType } from '@/app/actions/taxonomies'
 import { useActionState, useEffect } from 'react'
-import { TaxonomyType } from '@/types'
+import type { TaxonomyType } from '@/types'
 import { ActionButton } from '@/components/ui/action-button'
 import { mutate } from 'swr'
 
@@ -13,14 +13,14 @@ export const SyncTypeButton = ({ type }: { type: TaxonomyType }) => {
     if (state?.success) {
       mutate(`/api/taxonomies/${type}`)
     }
-  }, [state, mutate])
+  }, [state, type])
 
   return (
     <ActionButton
       pending={pending}
       formAction={formAction}
       state={state}
-      hiddenFields={<input type="hidden" name="type" value={type} />}
+      hiddenFields={<input type='hidden' name='type' value={type} />}
     />
   )
 }

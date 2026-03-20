@@ -1,5 +1,5 @@
-import { WizardStep } from '@/components/ui/wizard'
-import { Entity, EntityFormData } from '@/types'
+import type { WizardStep } from '@/components/ui/wizard'
+import type { Entity, EntityFormData } from '@/types'
 
 export const GDPR_DISCLAIMER = `<p>The NCC, to which the application will be submitted, will process personal data in accordance with the Regulation (EU) 2016/679 (GDPR) and the ECCC will process personal data in accordance with the Regulation (EU) 2018/1725 (EUDPR). The legal basis for the processing operation is art. 6(1)(e) GDPR and art. 5(1)(a) EUDPR on the basis of articles 7 and 8 of Regulation (EU) 2021/887.</p>
 <p>Additional information on the personal data processed, possible processors and retention periods will be specified in the relevant Data Protection Notices.</p>

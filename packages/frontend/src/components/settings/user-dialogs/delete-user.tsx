@@ -1,4 +1,4 @@
-import { UserDialogProps } from '@/components/settings/user-dialogs/types'
+import type { UserDialogProps } from '@/components/settings/user-dialogs/types'
 import { useActionState } from 'react'
 import * as React from 'react'
 import {
@@ -33,8 +33,8 @@ export const DeleteUserDialog = ({ open, user, onOpenChangeAction, onSuccessActi
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        {state?.success == false && state?.error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{state.error}</div>
+        {state?.success === false && state?.error && (
+          <div className='rounded-md bg-destructive/10 p-3 text-sm text-destructive'>{state.error}</div>
         )}
 
         <AlertDialogFooter>
@@ -44,7 +44,7 @@ export const DeleteUserDialog = ({ open, user, onOpenChangeAction, onSuccessActi
             <AlertDialogAction
               type={'submit'}
               disabled={pending || !user}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             >
               {pending ? 'Deleting...' : 'Delete User'}
             </AlertDialogAction>

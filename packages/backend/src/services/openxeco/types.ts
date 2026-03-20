@@ -144,9 +144,9 @@ export const QUESTION_TO_ENTITY_MAPPING: FieldMapping[] = [
 
 // Lookup maps for fast access
 export const MAPPING_BY_QUESTION_REF = new Map<string, FieldMapping>(
-  QUESTION_TO_ENTITY_MAPPING.map((m) => [m.questionRef, m])
+  QUESTION_TO_ENTITY_MAPPING.map((m) => [m.questionRef, m]),
 )
 
 export const MAPPING_BY_ENTITY_FIELD = new Map<string, FieldMapping>(
-  QUESTION_TO_ENTITY_MAPPING.map((m) => [m.entityField, m])
+  QUESTION_TO_ENTITY_MAPPING.map((m) => [m.entityField, m]),
 )

@@ -4,8 +4,13 @@
  * Handles authentication and data fetching from the cybersecurity.lu platform
  */
 
+type QuestionParams = {
+  formId?: number
+  session: OpenXecoSession
+}
+
 import type { OpenXecoFormQuestion, OpenXecoFormAnswer } from './types.js'
-import { Logger, getLogger } from '@/utils/logger.js'
+import { type Logger, getLogger } from '@/utils/logger.js'
 
 const OPENXECO_API_BASE = 'https://api.cybersecurity.lu'
 const ECCC_FORM_ID = 11
@@ -25,7 +30,7 @@ export class OpenXecoClient {
   private readonly timeout: number
   private readonly logger: Logger
 
-  constructor(baseUrl: string = OPENXECO_API_BASE, timeout: number = 30000) {
+  constructor(baseUrl: string = OPENXECO_API_BASE, timeout = 30000) {
     this.baseUrl = baseUrl
     this.timeout = timeout
     this.logger = getLogger()
@@ -74,7 +79,7 @@ export class OpenXecoClient {
             statusText: response.statusText,
             errorBody: errorBody.substring(0, 500),
           },
-          'OpenXeco: Login failed'
+          'OpenXeco: Login failed',
         )
 
         if (status === 401) {
@@ -97,9 +102,9 @@ export class OpenXecoClient {
       this.logger.debug(
         {
           setCookieCount: setCookieHeaders.length,
-          setCookieHeaders: setCookieHeaders.map((c) => c?.substring(0, 50) + '...'),
+          setCookieHeaders: setCookieHeaders.map((c) => `${c?.substring(0, 50)}...`),
         },
-        'OpenXeco: Login response headers'
+        'OpenXeco: Login response headers',
       )
 
       for (const cookie of setCookieHeaders) {
@@ -148,7 +153,7 @@ export class OpenXecoClient {
   /**
    * Get form questions structure
    */
-  async getFormQuestions(formId: number = ECCC_FORM_ID, session: OpenXecoSession): Promise<OpenXecoFormQuestion[]> {
+  async getFormQuestions({ formId = ECCC_FORM_ID, session }: QuestionParams): Promise<OpenXecoFormQuestion[]> {
     const url = `${this.baseUrl}/private/get_my_form_questions?form_id=${formId}`
 
     this.logger.info({ formId }, 'OpenXeco: Fetching form questions')
@@ -170,7 +175,7 @@ export class OpenXecoClient {
   /**
    * Get user's form answers
    */
-  async getFormAnswers(formId: number = ECCC_FORM_ID, session: OpenXecoSession): Promise<OpenXecoFormAnswer[]> {
+  async getFormAnswers({ formId = ECCC_FORM_ID, session }: QuestionParams): Promise<OpenXecoFormAnswer[]> {
     // Use the private endpoint for user-specific answers
     const url = `${this.baseUrl}/private/get_my_form_answers?form_id=${formId}`
 
@@ -204,13 +209,13 @@ export class OpenXecoClient {
 
       // Send both Authorization header and Cookie for maximum compatibility
       if (session.accessToken) {
-        headers['Authorization'] = `Bearer ${session.accessToken}`
+        headers.Authorization = `Bearer ${session.accessToken}`
         // Also send as cookie
         const cookies = [`access_token_cookie=${session.accessToken}`]
         if (session.refreshToken) {
           cookies.push(`refresh_token_cookie=${session.refreshToken}`)
         }
-        headers['Cookie'] = cookies.join('; ')
+        headers.Cookie = cookies.join('; ')
       }
 
       this.logger.debug({ url }, 'OpenXeco: Making authenticated request')

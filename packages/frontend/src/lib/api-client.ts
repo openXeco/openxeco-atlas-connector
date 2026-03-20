@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { ApiClientOptions, ApiClientError as IApiClientError, User } from '@/types'
+import type { ApiClientOptions, ApiClientError as IApiClientError, User } from '@/types'
 import path from 'node:path'
 import { cookies } from 'next/headers'
 import { encryptSession, decryptSession } from '@/lib/session'
@@ -88,7 +88,7 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
           accessToken,
           refreshToken,
         },
-        secretKey
+        secretKey,
       ),
       {
         httpOnly: true,
@@ -96,7 +96,7 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
         sameSite: 'strict',
         path: '/',
         maxAge: refreshTokenExpiresIn,
-      }
+      },
     )
   }
 
@@ -130,7 +130,7 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
           {
             method: 'POST',
             body: JSON.stringify({ refreshToken }),
-          }
+          },
         )
 
         await createSession(data.accessToken, data.refreshToken, data.refreshTokenExpiresIn)
@@ -202,6 +202,6 @@ export const getApiClient = async () => {
   return apiClient(
     process.env.BACKEND_INTERNAL_URL,
     process.env.FRONTEND_SECRET_KEY,
-    process.env.FRONTEND_SESSION_COOKIE_NAME
+    process.env.FRONTEND_SESSION_COOKIE_NAME,
   )
 }

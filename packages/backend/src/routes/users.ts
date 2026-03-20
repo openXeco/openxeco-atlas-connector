@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { eq, count } from 'drizzle-orm'
 import { db } from '../config/database.js'

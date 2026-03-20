@@ -3,9 +3,9 @@
 import { startTransition } from 'react'
 import { Wizard } from '@/components/ui/wizard'
 import { WIZARD_STEPS } from '@/data/entities'
-import { EntityTaxonomies } from '@/types'
+import type { EntityTaxonomies } from '@/types'
 import { getCard } from '@/components/entities/entity-wizard/entity-wizard-cards'
-import { Step, CardProps } from '@/components/entities/entity-wizard/types'
+import type { Step, CardProps } from '@/components/entities/entity-wizard/types'
 
 type EntityWizardProps = {
   onCancelAction: () => void
@@ -34,7 +34,9 @@ export const EntityWizard = ({
 
     Object.entries(data).forEach(([key, value]) => {
       if (Array.isArray(value)) {
-        value.forEach((v) => formData.append(key, v))
+        value.forEach((v) => {
+          formData.append(key, v)
+        })
       } else {
         formData.append(key, String(value))
       }

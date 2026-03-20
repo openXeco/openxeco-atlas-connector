@@ -1,4 +1,4 @@
-import { FastifyRequest, FastifyReply } from 'fastify'
+import type { FastifyRequest, FastifyReply } from 'fastify'
 import { verifyAccessToken } from '../services/jwt.js'
 import type { JwtPayload } from '../services/jwt.js'
 

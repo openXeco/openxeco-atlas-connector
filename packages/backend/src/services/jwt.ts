@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { config } from '../config/index.js'
 
 export interface JwtPayload {
@@ -18,14 +18,14 @@ export function generateTokens(fastify: FastifyInstance, payload: Omit<JwtPayloa
     { ...payload, type: 'access' },
     {
       expiresIn: config.JWT_EXPIRES_IN,
-    }
+    },
   )
 
   const refreshToken = fastify.jwt.sign(
     { ...payload, type: 'refresh' },
     {
       expiresIn: config.JWT_REFRESH_EXPIRES_IN,
-    }
+    },
   )
 
   return { accessToken, refreshToken }

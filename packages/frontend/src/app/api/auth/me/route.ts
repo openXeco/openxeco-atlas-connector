@@ -14,6 +14,7 @@ export async function GET() {
 
     return NextResponse.json({ data: user })
   } catch (e) {
+    // biome-ignore lint/suspicious/noConsole: Needed
     console.error(e)
     await apiClient.logoutUser()
     return NextResponse.json({ error: (e as Error).message }, { status: 401 })

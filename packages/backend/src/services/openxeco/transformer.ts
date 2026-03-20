@@ -13,7 +13,7 @@ import {
   type OpenXecoFormAnswer,
   type FieldMapping,
 } from './types.js'
-import { Logger } from 'pino'
+import type { Logger } from 'pino'
 import { getLogger } from '@/utils/logger.js'
 
 export interface TransformResult {
@@ -99,7 +99,7 @@ export class OpenXecoFormTransformer {
         result.errors.push(
           `Failed to transform ${mapping.questionRef} -> ${mapping.entityField}: ${
             error instanceof Error ? error.message : 'Unknown error'
-          }`
+          }`,
         )
       }
     }
@@ -121,7 +121,7 @@ export class OpenXecoFormTransformer {
     mapping: FieldMapping,
     value: string,
     answerLookup: AnswerLookup,
-    result: TransformResult
+    result: TransformResult,
   ): Promise<unknown> {
     switch (mapping.fieldType) {
       case 'string':
@@ -183,7 +183,7 @@ export class OpenXecoFormTransformer {
   private async transformTaxonomySingle(
     value: string,
     mapping: FieldMapping,
-    result: TransformResult
+    result: TransformResult,
   ): Promise<string | undefined> {
     if (!mapping.taxonomyType) {
       result.errors.push(`No taxonomy type specified for ${mapping.questionRef}`)
@@ -194,7 +194,7 @@ export class OpenXecoFormTransformer {
 
     if (!uuid) {
       result.warnings.push(
-        `Taxonomy term not found: "${value}" in type "${mapping.taxonomyType}" for ${mapping.questionRef}`
+        `Taxonomy term not found: "${value}" in type "${mapping.taxonomyType}" for ${mapping.questionRef}`,
       )
       return undefined
     }
@@ -205,7 +205,7 @@ export class OpenXecoFormTransformer {
   private async transformTaxonomyMulti(
     value: string,
     mapping: FieldMapping,
-    result: TransformResult
+    result: TransformResult,
   ): Promise<string[] | undefined> {
     if (!mapping.taxonomyType) {
       result.errors.push(`No taxonomy type specified for ${mapping.questionRef}`)
@@ -255,7 +255,7 @@ export class OpenXecoFormTransformer {
   private transformConditionalString(
     value: string,
     mapping: FieldMapping,
-    answerLookup: AnswerLookup
+    answerLookup: AnswerLookup,
   ): string | undefined {
     if (!mapping.conditionalOn) {
       return this.transformString(value)

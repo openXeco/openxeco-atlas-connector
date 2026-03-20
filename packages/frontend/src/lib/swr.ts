@@ -1,4 +1,4 @@
-import { SWRConfiguration } from 'swr'
+import type { SWRConfiguration } from 'swr'
 
 export async function apiFetcher<T>(url: string): Promise<T> {
   const response = await fetch(url, {

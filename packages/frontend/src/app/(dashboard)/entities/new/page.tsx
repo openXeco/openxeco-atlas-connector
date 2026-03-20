@@ -11,13 +11,13 @@ export default async function CreateEntityPage() {
 
   return (
     <>
-      <div className="mb-6 flex items-center gap-4">
-        <Link href={`/entities`} variant={'ghost'}>
-          <ArrowLeft className="h-5 w-5" />
+      <div className='mb-6 flex items-center gap-4'>
+        <Link href={'/entities'} variant={'ghost'}>
+          <ArrowLeft className='h-5 w-5' />
         </Link>
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Create New Entity</h2>
-          <p className="text-muted-foreground">Add a new cluster entity to the system</p>
+          <h2 className='text-2xl font-bold tracking-tight'>Create New Entity</h2>
+          <p className='text-muted-foreground'>Add a new cluster entity to the system</p>
         </div>
       </div>
 

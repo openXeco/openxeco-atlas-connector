@@ -8,6 +8,7 @@ import type {
   ClusterInput,
   TaxonomyTerm,
   JsonApiWebsite,
+  TaxonomyType,
 } from './types.js'
 
 /**
@@ -147,8 +148,8 @@ export class JsonApiTransformer {
         body: entity.description || '',
         field_logo: entity.logoUrl,
         field_website: entity.website,
-        field_latitude: entity.latitude ? parseFloat(entity.latitude) : undefined,
-        field_longitude: entity.longitude ? parseFloat(entity.longitude) : undefined,
+        field_latitude: entity.latitude ? Number.parseFloat(entity.latitude) : undefined,
+        field_longitude: entity.longitude ? Number.parseFloat(entity.longitude) : undefined,
         status: entity.status,
       },
       relationships,
@@ -251,7 +252,7 @@ export class JsonApiTransformer {
       technologyIds?: string[]
       useCaseIds?: string[]
       fieldsOfActivityIds?: string[]
-    }
+    },
   ): ClusterInput {
     return {
       // Basic information
@@ -265,8 +266,8 @@ export class JsonApiTransformer {
       city: entity.city || undefined,
       streetAddress: entity.streetAddress || undefined,
       postalCode: entity.postalCode || undefined,
-      latitude: entity.latitude ? parseFloat(entity.latitude) : undefined,
-      longitude: entity.longitude ? parseFloat(entity.longitude) : undefined,
+      latitude: entity.latitude ? Number.parseFloat(entity.latitude) : undefined,
+      longitude: entity.longitude ? Number.parseFloat(entity.longitude) : undefined,
 
       // Organisation details
       email: entity.email || undefined,
@@ -319,8 +320,7 @@ export class JsonApiTransformer {
     return {
       id: resource.id,
       atlasId: resource.id,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type: type as any,
+      type: type as TaxonomyType,
       name: (resource.attributes.name as string) || '',
       description: resource.attributes.description as string | undefined,
       parentId: resource.relationships?.parent?.data
@@ -330,13 +330,13 @@ export class JsonApiTransformer {
     }
   }
 
-  toTaxonomyFromTerm(term: TaxonomyTerm): Partial<Taxonomy> {
+  toTaxonomyFromTerm(term: TaxonomyTerm): Omit<Taxonomy, 'id'> {
     return {
       atlasId: term.atlasId,
       taxonomyType: term.type,
       name: term.name,
-      description: term.description,
-      parentId: term.parentId,
+      description: term.description || '',
+      parentId: term.parentId || null,
       metadata: term.metadata,
       lastSyncedAt: new Date(),
     }

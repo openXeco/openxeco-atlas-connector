@@ -62,5 +62,5 @@ export const relations = defineRelations(
         to: r.entityVersions.entityId,
       }),
     },
-  })
+  }),
 )

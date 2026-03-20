@@ -1,7 +1,7 @@
 'use client'
 
-import { EntityTaxonomies, EntityFormData } from '@/types'
-import { EntityWizard, ManageEntityState } from '@/components/entities/entity-wizard'
+import type { EntityTaxonomies, EntityFormData } from '@/types'
+import { EntityWizard, type ManageEntityState } from '@/components/entities/entity-wizard'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'

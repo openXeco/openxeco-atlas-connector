@@ -27,11 +27,12 @@ const linkVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 )
 
 export interface LinkProps
-  extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>, VariantProps<typeof linkVariants> {
+  extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>,
+    VariantProps<typeof linkVariants> {
   href: string
 }
 
