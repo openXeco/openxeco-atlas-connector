@@ -44,7 +44,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        refreshTokenExpiresIn: 7 * 24 * 60 * 60,
+        refreshTokenExpiresAt: tokens.refreshTokenExpiresAt,
         user: {
           id: user.id,
           email: user.email,
@@ -100,7 +100,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        refreshTokenExpiresIn: 7 * 24 * 60 * 60,
+        refreshTokenExpiresAt: tokens.refreshTokenExpiresAt,
       })
     } catch (error) {
       fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Token refresh failed')

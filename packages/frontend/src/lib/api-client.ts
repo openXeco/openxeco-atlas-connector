@@ -4,6 +4,7 @@ import type { ApiClientOptions, ApiClientError as IApiClientError, User } from '
 import path from 'node:path'
 import { cookies } from 'next/headers'
 import { encryptSession, decryptSession } from '@/lib/session'
+import { cache } from 'react'
 
 class ApiClientError extends Error implements IApiClientError {
   readonly statusCode: number
@@ -45,13 +46,11 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
   const request = async <T>(endpoint: string, options: ApiClientOptions = {}): Promise<T> => {
     const { params, ...fetchOptions } = options
 
-    let accessToken: string | undefined
-
-    if (options.forceAccessToken) {
-      accessToken = options.forceAccessToken
-    } else if (options.credentials === 'include') {
-      accessToken = await getAccessToken()
-    }
+    const accessToken: string | undefined = options.forceAccessToken
+      ? options.forceAccessToken
+      : options.credentials === 'include'
+        ? await getAccessToken()
+        : undefined
 
     let url = getUrl(endpoint)
 
@@ -78,7 +77,7 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
     return response.json()
   }
 
-  const createSession = async (accessToken: string, refreshToken: string, refreshTokenExpiresIn: number) => {
+  const createSession = async (accessToken: string, refreshToken: string, refreshTokenExpiresAt: number) => {
     const cookieStore = await cookies()
 
     cookieStore.set(
@@ -95,7 +94,7 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         path: '/',
-        maxAge: refreshTokenExpiresIn,
+        expires: refreshTokenExpiresAt,
       },
     )
   }
@@ -123,9 +122,8 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
       return accessToken
     } catch (e) {
       if ((e as ApiClientError).statusCode === 401) {
-        // console.debug('Access token expired. Refreshing...')
-        // try to refresh
-        const data = await request<{ accessToken: string; refreshToken: string; refreshTokenExpiresIn: number }>(
+        // Access token expired. Refreshing...
+        const data = await request<{ accessToken: string; refreshToken: string; refreshTokenExpiresAt: number }>(
           'auth/refresh',
           {
             method: 'POST',
@@ -133,7 +131,7 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
           },
         )
 
-        await createSession(data.accessToken, data.refreshToken, data.refreshTokenExpiresIn)
+        await createSession(data.accessToken, data.refreshToken, data.refreshTokenExpiresAt)
         return data.accessToken
       }
 
@@ -143,6 +141,11 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
   }
 
   return {
+    verifySession: cache(async () => {
+      console.debug('Verifying Session')
+      await getAccessToken()
+    }),
+
     async get<T>(endpoint: string, options?: ApiClientOptions) {
       return request<T>(endpoint, { ...options, method: 'GET' })
     },
@@ -167,19 +170,19 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
       return request<T>(endpoint, { ...options, method: 'DELETE' })
     },
 
-    async getCurrentUser() {
+    getCurrentUser: cache(async () => {
       const response = await request<{ user: User }>('/auth/me', { credentials: 'include' })
       return response.user
-    },
+    }),
 
     async loginUser(email: string, password: string) {
       const response = await this.post<{
         accessToken: string
         refreshToken: string
-        refreshTokenExpiresIn: number
+        refreshTokenExpiresAt: number
         user: User
       }>('/auth/login', { email, password })
-      await createSession(response.accessToken, response.refreshToken, response.refreshTokenExpiresIn)
+      await createSession(response.accessToken, response.refreshToken, response.refreshTokenExpiresAt)
 
       return response.user
     },

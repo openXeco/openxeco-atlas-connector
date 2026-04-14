@@ -20,7 +20,7 @@
     "dev:backend": "env-cmd -- pnpm -filter=@openxeco/atlas-connector-backend dev",
     "build": "pnpm -r build",
     "lint": "biome check .",
-    "lint:fix": "biome check .",
+    "lint:fix": "biome check  --write",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "clean": "pnpm -r clean && rimraf node_modules"

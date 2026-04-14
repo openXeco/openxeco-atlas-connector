@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { config } from '../config/index.js'
+import ms from 'ms'
 
 export interface JwtPayload {
   userId: string
@@ -11,6 +12,7 @@ export interface JwtPayload {
 export interface TokenPair {
   accessToken: string
   refreshToken: string
+  refreshTokenExpiresAt: number
 }
 
 export function generateTokens(fastify: FastifyInstance, payload: Omit<JwtPayload, 'type'>): TokenPair {
@@ -28,12 +30,16 @@ export function generateTokens(fastify: FastifyInstance, payload: Omit<JwtPayloa
     },
   )
 
-  return { accessToken, refreshToken }
+  return {
+    accessToken,
+    refreshToken,
+    refreshTokenExpiresAt: Date.now() + ms(config.JWT_REFRESH_EXPIRES_IN as ms.StringValue),
+  }
 }
 
 export async function verifyAccessToken(fastify: FastifyInstance, token: string): Promise<JwtPayload | null> {
   try {
-    const decoded = await fastify.jwt.verify<JwtPayload>(token)
+    const decoded = fastify.jwt.verify<JwtPayload>(token)
     if (decoded.type !== 'access') {
       return null
     }

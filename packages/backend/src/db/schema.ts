@@ -24,7 +24,7 @@ export const taxonomies = pgTable(
   'taxonomies',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    atlasId: varchar('atlas_id', { length: 255 }).unique(),
+    atlasId: varchar('atlas_id', { length: 255 }).unique().notNull(),
     taxonomyType: varchar('taxonomy_type', { length: 100 }).notNull(),
     name: varchar('name', { length: 500 }).notNull(),
     description: text('description'),

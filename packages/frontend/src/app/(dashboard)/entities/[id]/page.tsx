@@ -1,12 +1,12 @@
 import type { Entity, EntityVersion } from '@/types'
 import { ArrowLeft, Clock, FileText, Globe, ExternalLink, MapPin, Building2, Pencil } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
 import { SyncEntityButton } from '@/components/entities/sync-entity-button'
 import { DeleteEntityButton } from '@/components/entities/delete-entity-button'
 import { Link } from '@/components/ui/link'
 import { getApiClient } from '@/lib/api-client'
+import { StatusBadge } from '@/components/entities/status-badge'
 
 export default async function ViewEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -36,40 +36,6 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
     )
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'published':
-        return 'bg-green-500/10 text-green-700'
-      case 'ready_for_publication':
-        return 'bg-yellow-500/10 text-yellow-700'
-      case 'to_be_rejected':
-        return 'bg-orange-500/10 text-orange-700'
-      case 'draft':
-        return 'bg-gray-500/10 text-gray-700'
-      case 'rejected':
-        return 'bg-red-500/10 text-red-700'
-      default:
-        return 'bg-gray-500/10 text-gray-700'
-    }
-  }
-
-  const getSyncStatusColor = (syncStatus: string) => {
-    switch (syncStatus) {
-      case 'synced':
-        return 'bg-green-500/10 text-green-700'
-      case 'pending_push':
-        return 'bg-blue-500/10 text-blue-700'
-      case 'local':
-        return 'bg-gray-500/10 text-gray-700'
-      case 'failed':
-        return 'bg-red-500/10 text-red-700'
-      case 'conflict':
-        return 'bg-orange-500/10 text-orange-700'
-      default:
-        return 'bg-gray-500/10 text-gray-700'
-    }
-  }
-
   return (
     <>
       <div className='mb-6 flex items-center justify-between'>
@@ -80,12 +46,8 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
           <div>
             <h2 className='text-2xl font-bold tracking-tight'>{entity.name}</h2>
             <div className='mt-1 flex items-center gap-2'>
-              <Badge variant='secondary' className={getStatusColor(entity.status)}>
-                {entity.status}
-              </Badge>
-              <Badge variant='secondary' className={getSyncStatusColor(entity.syncStatus)}>
-                {entity.syncStatus.replace('_', ' ')}
-              </Badge>
+              <StatusBadge type={'entity'} status={entity.status} />
+              <StatusBadge type={'sync'} status={entity.syncStatus} />
             </div>
           </div>
         </div>

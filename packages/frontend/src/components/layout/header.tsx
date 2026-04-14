@@ -9,10 +9,8 @@ import { logout } from '@/app/actions/auth'
 import { useActionState, useEffect } from 'react'
 
 export function Header() {
-  // To check if the user is authorized
   const { data, error, isLoading } = useSWR<{ data: TUser }>('/api/auth/me', apiFetcher, {
     ...swrDefaultOptions,
-    refreshInterval: 300000,
   })
   const [state, formAction] = useActionState(logout, undefined)
 

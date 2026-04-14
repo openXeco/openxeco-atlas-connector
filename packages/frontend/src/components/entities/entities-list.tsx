@@ -3,13 +3,14 @@
 import { CardHeader, CardTitle, CardDescription, CardContent, Card } from '@/components/ui/card'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { EntityDataTable } from '@/components/entities/entity-data-table'
 import useSWR from 'swr'
 import type { Entity, EntityListParams } from '@/types'
 import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteEntity } from '@/app/actions/entities'
+import { DataTable } from '@/components/ui/data-table'
+import { columns } from '@/components/entities/entity-table/columns'
 
 export const EntitiesList = () => {
   const router = useRouter()
@@ -36,7 +37,7 @@ export const EntitiesList = () => {
     params.append('syncStatus', filters.syncStatus)
   }
 
-  const { data, error, isLoading, mutate } = useSWR<{ data: Entity[] }>(
+  const { data, error, mutate } = useSWR<{ data: Entity[] }>(
     `/api/entities?${params.toString()}`,
     apiFetcher,
     swrDefaultOptions,
@@ -97,12 +98,13 @@ export const EntitiesList = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <EntityDataTable
+          <DataTable
+            columns={columns({
+              onViewAction: handleViewEntity,
+              onDeleteAction: handleDeleteEntity,
+              onEditAction: handleEditEntity,
+            })}
             data={filteredEntities}
-            loading={isLoading}
-            onView={handleViewEntity}
-            onEdit={handleEditEntity}
-            onDelete={handleDeleteEntity}
           />
         </CardContent>
       </Card>
