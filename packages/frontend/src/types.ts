@@ -73,21 +73,18 @@ export interface Entity {
   name: string
   nameNational: string | null
   entityDepartment: string | null
-  description: string | null
   status: EntityStatus
   moderationState: EntityStatus | null
   syncStatus: SyncStatus
   countryCode: string | null
   city: string | null
   streetAddress: string | null
-  postalCode: string | null
   email: string | null
   phone: string | null
   registrationNumber: string | null
   countryId: string | null
   clusterTypeId: string | null
   organizationTypeId: string | null
-  logoUrl: string | null
   website: string | null
   latitude: string | null
   longitude: string | null

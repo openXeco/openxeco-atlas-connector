@@ -236,22 +236,17 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             name: body.name,
             nameNational: body.nameNational,
             entityDepartment: body.entityDepartment,
-            description: body.description,
 
             // Address
             countryCode: body.countryCode,
             city: body.city,
             streetAddress: body.streetAddress,
-            postalCode: body.postalCode,
-            latitude: body.latitude?.toString(),
-            longitude: body.longitude?.toString(),
 
             // Organisation details
             email: body.email,
             phone: body.phone,
             website: body.website,
             registrationNumber: body.registrationNumber,
-            logoUrl: body.logoUrl,
 
             // Headquarters
             isHeadquarter: body.isHeadquarter,
@@ -380,6 +375,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
       const body = updateEntitySchema.parse(request.body)
+      console.log(body)
 
       const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 

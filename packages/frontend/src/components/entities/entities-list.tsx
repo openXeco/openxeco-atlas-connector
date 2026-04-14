@@ -69,7 +69,7 @@ export const EntitiesList = () => {
   const filteredEntities = entities.filter((entity) => {
     if (!searchQuery) return true
     const query = searchQuery.toLowerCase()
-    return entity.name.toLowerCase().includes(query) || entity.description?.toLowerCase().includes(query)
+    return entity.name.toLowerCase().includes(query)
   })
 
   return (

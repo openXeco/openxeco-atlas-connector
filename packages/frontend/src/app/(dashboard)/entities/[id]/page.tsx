@@ -63,8 +63,6 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
-      {/*{error && <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}*/}
-
       <Tabs defaultValue='details' className='space-y-6'>
         <TabsList>
           <TabsTrigger value='details'>Details</TabsTrigger>
@@ -121,12 +119,6 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
                   <div>
                     <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Department</h4>
                     <p className='text-sm'>{entity.entityDepartment}</p>
-                  </div>
-                )}
-                {entity.description && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Description</h4>
-                    <p className='text-sm'>{entity.description}</p>
                   </div>
                 )}
                 {entity.website && (
@@ -210,7 +202,9 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
                       Holds majority shares outside Member States?
                     </h4>
                     <p className='text-sm'>{entity.hasSubsidiaries ? 'Yes' : 'No'}</p>
-                    {entity.majoritySharesDetails && <p className='text-sm'>{entity.majoritySharesDetails}</p>}
+                    {entity.majoritySharesDetails && entity.hasSubsidiaries && (
+                      <p className='text-sm'>{entity.majoritySharesDetails}</p>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -230,11 +224,11 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
                     <p className='text-sm'>{entity.country.name}</p>
                   </div>
                 )}
-                {(entity.streetAddress || entity.city || entity.postalCode || entity.countryCode) && (
+                {(entity.streetAddress || entity.city || entity.countryCode) && (
                   <div>
                     <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Address</h4>
                     <p className='text-sm'>
-                      {[entity.streetAddress, entity.postalCode, entity.city].filter(Boolean).join(', ')}
+                      {[entity.streetAddress, entity.city].filter(Boolean).join(', ')}
                       {entity.countryCode ? ` (${entity.countryCode})` : ''}
                     </p>
                   </div>

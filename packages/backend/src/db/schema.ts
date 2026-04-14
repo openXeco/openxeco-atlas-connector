@@ -1,15 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  varchar,
-  text,
-  timestamp,
-  decimal,
-  jsonb,
-  boolean,
-  index,
-  uniqueIndex,
-} from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, text, timestamp, jsonb, boolean, index, uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -49,7 +38,6 @@ export const entities = pgTable(
     name: varchar('name', { length: 500 }).notNull(), // title (English) *
     nameNational: varchar('name_national', { length: 400 }), // field_institution_name_in_nation *
     entityDepartment: varchar('entity_department', { length: 400 }), // field_entity_department
-    description: text('description'),
 
     // Status and workflow
     status: varchar('status', { length: 50 }).default('draft'), // draft, ready_for_publication, published, rejected
@@ -60,16 +48,12 @@ export const entities = pgTable(
     countryCode: varchar('country_code', { length: 2 }), // field_address.country_code *
     city: varchar('city', { length: 400 }), // field_address.locality *
     streetAddress: varchar('street_address', { length: 400 }), // field_address.address_line *
-    postalCode: varchar('postal_code', { length: 20 }), // field_address.postal_code
-    latitude: decimal('latitude', { precision: 10, scale: 8 }),
-    longitude: decimal('longitude', { precision: 11, scale: 8 }),
 
     // Organisation details (mandatory)
     email: varchar('email', { length: 255 }), // field_general_contact_e_mail *
     phone: varchar('phone', { length: 50 }), // field_phone_number
     website: varchar('website', { length: 500 }), // field_url.uri *
     registrationNumber: varchar('registration_number', { length: 100 }), // field_registration_number
-    logoUrl: varchar('logo_url', { length: 500 }),
 
     // Headquarters information
     isHeadquarter: boolean('is_headquarter'), // field_question_headquarter *

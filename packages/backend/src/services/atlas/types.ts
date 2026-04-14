@@ -107,22 +107,17 @@ export interface Cluster {
   name: string
   nameNational?: string
   entityDepartment?: string
-  description?: string
 
   // Address (structured)
   countryCode?: string
   city?: string
   streetAddress?: string
-  postalCode?: string
-  latitude?: number
-  longitude?: number
 
   // Organisation details
   email?: string
   phone?: string
   website?: string
   registrationNumber?: string
-  logoUrl?: string
 
   // Headquarters
   isHeadquarter?: boolean
@@ -177,22 +172,17 @@ export interface ClusterInput {
   name: string
   nameNational?: string
   entityDepartment?: string
-  description?: string
 
   // Address (structured)
   countryCode?: string
   city?: string
   streetAddress?: string
-  postalCode?: string
-  latitude?: number
-  longitude?: number
 
   // Organisation details
   email?: string
   phone?: string
   website?: string
   registrationNumber?: string
-  logoUrl?: string
 
   // Headquarters
   isHeadquarter?: boolean
