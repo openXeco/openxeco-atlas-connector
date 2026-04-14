@@ -1,5 +1,3 @@
-'use client'
-
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
 import { Label } from '@/components/ui/label'
@@ -69,7 +67,7 @@ export function ConsentCheckbox({
           </Label>
           {description && (
             <div
-              className='text-sm text-muted-foreground leading-relaxed prose prose-sm max-w-none'
+              className='paragraph text-sm text-muted-foreground leading-relaxed prose prose-sm max-w-none'
               // biome-ignore lint/security/noDangerouslySetInnerHtml: Fine here
               dangerouslySetInnerHTML={{ __html: description }}
             />

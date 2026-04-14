@@ -6,6 +6,7 @@ import { parseFormData } from '@/lib/utils'
 import { getApiClient } from '@/lib/api-client'
 
 import { entitySchema } from '@/schema'
+import { logger } from '@/lib/logger'
 
 export async function createEntity(
   _prevState: ManageEntityState | null,
@@ -80,9 +81,8 @@ export async function deleteEntity(id: string) {
   const apiClient = await getApiClient()
   try {
     await apiClient.delete(`/entities/${id}`, { credentials: 'include' })
-  } catch (_e) {
-    // biome-ignore lint/suspicious/noConsole: Needed
-    console.error(_e)
+  } catch (e) {
+    logger.error(e)
   }
 }
 

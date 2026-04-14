@@ -3,6 +3,7 @@
 import { getApiClient } from '@/lib/api-client'
 import type { ActionStateWithErrors, ActionState } from '@/types'
 import { loginSchema, changePasswordSchema, editUserSchema, newUserSchema } from '@/schema'
+import { logger } from '@/lib/logger'
 
 export const login = async (
   _initialState: unknown,
@@ -82,8 +83,7 @@ export const createUser = async (
       email: parsed.data.email,
     }
   } catch (e) {
-    // biome-ignore lint/suspicious/noConsole: Needed
-    console.error(e)
+    logger.error(e)
     return {
       success: false,
       error: 'Unexpected error. User not created.',
@@ -122,8 +122,7 @@ export const updateUser = async (
       email: parsed.data.email,
     }
   } catch (e) {
-    // biome-ignore lint/suspicious/noConsole: Needed to know the error
-    console.error(e)
+    logger.error(e)
     return {
       success: false,
       error: 'Unexpected error. User not updated.',
@@ -162,8 +161,7 @@ export const changePassword = async (_initialState: unknown, formData: FormData)
       message: 'User successfully updated!',
     }
   } catch (e) {
-    // biome-ignore lint/suspicious/noConsole: Needed
-    console.error(e)
+    logger.error(e)
     return {
       success: false,
       error: 'Unexpected error. Password not changed.',
@@ -192,8 +190,7 @@ export const deleteUser = async (_initialState: unknown, formData: FormData): Pr
       message: 'User successfully deleted!',
     }
   } catch (e) {
-    // biome-ignore lint/suspicious/noConsole: Needed
-    console.error(e)
+    logger.error(e)
     return {
       success: false,
       error: 'Unexpected error. User not deleted.',

@@ -140,6 +140,10 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     return reply.send({ user })
   })
 
+  fastify.get('/check', { preHandler: authenticate }, async (_request, reply) => {
+    return reply.send({ message: 'OK' })
+  })
+
   fastify.post('/logout', { preHandler: authenticate }, async (_request, reply) => {
     return reply.send({ message: 'Logged out successfully' })
   })

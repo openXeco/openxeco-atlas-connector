@@ -7,6 +7,7 @@ import { DeleteEntityButton } from '@/components/entities/delete-entity-button'
 import { Link } from '@/components/ui/link'
 import { getApiClient } from '@/lib/api-client'
 import { StatusBadge } from '@/components/entities/status-badge'
+import { logger } from '@/lib/logger'
 
 export default async function ViewEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -24,6 +25,7 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
     entity = entityRes.data
     versions = versionsRes.data
   } catch (_e) {
+    logger.error(_e)
     return (
       <div className='flex min-h-[50vh] items-center justify-center'>
         <div className='text-center'>

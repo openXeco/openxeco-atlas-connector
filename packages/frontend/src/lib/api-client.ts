@@ -5,6 +5,7 @@ import path from 'node:path'
 import { cookies } from 'next/headers'
 import { encryptSession, decryptSession } from '@/lib/session'
 import { cache } from 'react'
+import { logger } from '@/lib/logger'
 
 class ApiClientError extends Error implements IApiClientError {
   readonly statusCode: number
@@ -117,11 +118,13 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
     const { accessToken, refreshToken } = decryptSession(session, secretKey)
 
     try {
-      await request('auth/me', { forceAccessToken: accessToken })
+      logger.debug('Calling /auth/check')
+      await request('auth/check', { forceAccessToken: accessToken })
       // Everything good here. Return AccessToken
       return accessToken
     } catch (e) {
       if ((e as ApiClientError).statusCode === 401) {
+        logger.debug('Token expired. Requesting a new one')
         // Access token expired. Refreshing...
         const data = await request<{ accessToken: string; refreshToken: string; refreshTokenExpiresAt: number }>(
           'auth/refresh',
@@ -131,18 +134,18 @@ const apiClient = (baseUrl: string, secretKey: string, sessionCookieName = 'atla
           },
         )
 
+        logger.debug('New access token obtained. Creating a new session')
         await createSession(data.accessToken, data.refreshToken, data.refreshTokenExpiresAt)
         return data.accessToken
       }
 
-      // await destroySession()
       throw e
     }
   }
 
   return {
     verifySession: cache(async () => {
-      console.debug('Verifying Session')
+      logger.debug('Verifying session')
       await getAccessToken()
     }),
 

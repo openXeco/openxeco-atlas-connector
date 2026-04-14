@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { apiClient } from '@/lib/api'
 import type { Entity } from '@/types'
+import { logger } from '@/lib/logger'
 
 interface SyncStatusWidgetProps {
   onRefresh?: () => void
@@ -24,8 +25,7 @@ export function SyncStatusWidget({ onRefresh: _onRefresh }: SyncStatusWidgetProp
       const response = await apiClient.get<{ data: Entity[] }>('/api/entities?limit=100')
       setEntities(response.data)
     } catch (err) {
-      // biome-ignore lint/suspicious/noConsole: OK
-      console.error('Failed to load entities:', err)
+      logger.error('Failed to load entities:', err)
     } finally {
       setLoading(false)
     }

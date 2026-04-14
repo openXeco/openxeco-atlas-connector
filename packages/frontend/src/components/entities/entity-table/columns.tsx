@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Link } from '@/components/ui/link'
 
 export const columns = ({
   onViewAction,
@@ -30,7 +31,9 @@ export const columns = ({
     cell: ({ row }) => {
       return (
         <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('name')}</span>
+          <Link href={`/entities/${row.original.id}`} variant={'link'} className={'justify-start max-w-min'}>
+            {row.getValue('name')}
+          </Link>
         </div>
       )
     },
