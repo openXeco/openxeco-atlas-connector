@@ -1,7 +1,7 @@
 // Auth
 export interface ApiClientOptions extends RequestInit {
   params?: Record<string, string>
-  forceAccessToken?: string
+  accessToken?: string
 }
 
 export interface ApiClientError extends Error {

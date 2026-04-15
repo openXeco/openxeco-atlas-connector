@@ -1,3 +1,5 @@
+'use client'
+
 import type { Entity, EntityVersion } from '@/types'
 import { ArrowLeft, Clock, FileText, Globe, ExternalLink, MapPin, Building2, Pencil } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -5,27 +7,25 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { SyncEntityButton } from '@/components/entities/sync-entity-button'
 import { DeleteEntityButton } from '@/components/entities/delete-entity-button'
 import { Link } from '@/components/ui/link'
-import { getApiClient } from '@/lib/api-client'
 import { StatusBadge } from '@/components/entities/status-badge'
-import { logger } from '@/lib/logger'
+import { EntityDisplayField } from '@/components/entities/entity-display-field'
+import { formatDate } from '@/lib/utils'
+import useSWR from 'swr'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
+import React from 'react'
 
-export default async function ViewEntityPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const apiClient = await getApiClient()
+export default function ViewEntityPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params)
 
-  let entity: Entity
-  let versions: EntityVersion[]
+  const { data } = useSWR<{ data: { entity: Entity; versions: EntityVersion[] } }>(
+    `/api/entities/${id}`,
+    apiFetcher,
+    swrDefaultOptions,
+  )
 
-  try {
-    const [entityRes, versionsRes] = await Promise.all([
-      apiClient.get<{ data: Entity }>(`/entities/${id}`, { credentials: 'include' }),
-      apiClient.get<{ data: EntityVersion[] }>(`/entities/${id}/versions`, { credentials: 'include' }),
-    ])
+  const { entity, versions } = data?.data || {}
 
-    entity = entityRes.data
-    versions = versionsRes.data
-  } catch (_e) {
-    logger.error(_e)
+  if (!entity || !versions) {
     return (
       <div className='flex min-h-[50vh] items-center justify-center'>
         <div className='text-center'>
@@ -78,29 +78,16 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
               </CardTitle>
             </CardHeader>
             <CardContent className='space-y-4'>
-              <div>
-                <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Created</h4>
-                <p className='text-sm'>{new Date(entity.createdAt).toLocaleString('en-UK')}</p>
-              </div>
-              <div>
-                <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Last Updated</h4>
-                <p className='text-sm'>{new Date(entity.updatedAt).toLocaleString('en-UK')}</p>
-              </div>
+              <EntityDisplayField title={'Created'} value={formatDate(entity.createdAt.toString(), true)} />
+              <EntityDisplayField title={'Last Updated'} value={formatDate(entity.updatedAt.toString(), true)} />
+
               {entity.lastSyncedAt && (
-                <div>
-                  <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Last Synced</h4>
-                  <p className='text-sm'>{new Date(entity.lastSyncedAt).toLocaleString()}</p>
-                </div>
+                <EntityDisplayField title={'Last Synced'} value={formatDate(entity.lastSyncedAt.toString(), true)} />
               )}
-              {entity.atlasId && (
-                <div>
-                  <h4 className='mb-2 text-sm font-medium text-muted-foreground'>ATLAS ID</h4>
-                  <p className='text-sm font-mono'>{entity.atlasId}</p>
-                </div>
-              )}
+              {entity.atlasId && <EntityDisplayField title={'Atlas ID'} value={entity.atlasId} />}
             </CardContent>
           </Card>
-          <div className={'grid grid-cols-1 xl:grid-cols-2 gap-4'}>
+          <div className={'grid grid-cols-1 xl:grid-cols-3 gap-4'}>
             <Card>
               <CardHeader>
                 <CardTitle className='flex items-center gap-2'>
@@ -110,20 +97,12 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
               </CardHeader>
               <CardContent className='space-y-4'>
                 {entity.nameNational && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Name (National Language)</h4>
-                    <p className='text-sm'>{entity.nameNational}</p>
-                  </div>
+                  <EntityDisplayField title={'Name (National Language)'} value={entity.nameNational} />
                 )}
-                {entity.entityDepartment && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Department</h4>
-                    <p className='text-sm'>{entity.entityDepartment}</p>
-                  </div>
-                )}
+
+                {entity.entityDepartment && <EntityDisplayField title={'Department'} value={entity.entityDepartment} />}
                 {entity.website && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Website</h4>
+                  <EntityDisplayField title={'Website'}>
                     <a
                       href={entity.website}
                       target='_blank'
@@ -134,31 +113,15 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
                       {entity.website}
                       <ExternalLink className='h-3 w-3' />
                     </a>
-                  </div>
+                  </EntityDisplayField>
                 )}
-                {entity.email && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Organisation Email</h4>
-                    <p className='text-sm'>{entity.email}</p>
-                  </div>
-                )}
-                {entity.phone && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Organisation Phone</h4>
-                    <p className='text-sm'>{entity.phone}</p>
-                  </div>
-                )}
+                {entity.email && <EntityDisplayField title={'Organisation Email'} value={entity.email} />}
+                {entity.phone && <EntityDisplayField title={'Organisation Phone'} value={entity.phone} />}
                 {entity.registrationNumber && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Registration Number</h4>
-                    <p className='text-sm'>{entity.registrationNumber}</p>
-                  </div>
+                  <EntityDisplayField title={'Registration Number'} value={entity.registrationNumber} />
                 )}
                 {entity.clusterType && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Organisation Type</h4>
-                    <p className='text-sm'>{entity.clusterType.name}</p>
-                  </div>
+                  <EntityDisplayField title={'Organisation Type'} value={entity.clusterType.name} />
                 )}
               </CardContent>
             </Card>
@@ -172,40 +135,32 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
               </CardHeader>
               <CardContent className='space-y-4'>
                 {(entity.contactFirstName || entity.contactLastName) && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Contact Person</h4>
+                  <EntityDisplayField title={'Contact Person'}>
                     <p className='text-sm'>
                       {[entity.contactFirstName, entity.contactLastName].filter(Boolean).join(' ')}
                     </p>
                     {entity.contactEmail && <p className='text-sm text-muted-foreground'>{entity.contactEmail}</p>}
-                  </div>
+                  </EntityDisplayField>
                 )}
                 {(entity.article138Compliance !== null || entity.dataShareConsent !== null) && (
                   <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Compliance</h4>
-                    <p className='text-sm'>Article 138 Compliance: {entity.article138Compliance ? 'Yes' : 'No'}</p>
-                    <p className='text-sm'>Data Sharing Consent: {entity.dataShareConsent ? 'Yes' : 'No'}</p>
+                    <EntityDisplayField title={'Compliance'}>
+                      <p className='text-sm'>Article 138 Compliance: {entity.article138Compliance ? 'Yes' : 'No'}</p>
+                      <p className='text-sm'>Data Sharing Consent: {entity.dataShareConsent ? 'Yes' : 'No'}</p>
+                    </EntityDisplayField>
                   </div>
                 )}
                 {entity.hasSubsidiaries !== null && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>
-                      Has subsidiaries in EU Member States?
-                    </h4>
+                  <EntityDisplayField title={'Has subsidiaries in EU Member States?'}>
                     <p className='text-sm'>{entity.hasSubsidiaries ? 'Yes' : 'No'}</p>
                     {entity.hasSubsidiaries && <p className='text-sm'>{entity.subsidiariesDetails}</p>}
-                  </div>
+                  </EntityDisplayField>
                 )}
                 {entity.hasMajorityShares !== null && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>
-                      Holds majority shares outside Member States?
-                    </h4>
-                    <p className='text-sm'>{entity.hasSubsidiaries ? 'Yes' : 'No'}</p>
-                    {entity.majoritySharesDetails && entity.hasSubsidiaries && (
-                      <p className='text-sm'>{entity.majoritySharesDetails}</p>
-                    )}
-                  </div>
+                  <EntityDisplayField title={'Holds majority shares outside Member States?'}>
+                    <p className='text-sm'>{entity.hasMajorityShares ? 'Yes' : 'No'}</p>
+                    {entity.hasMajorityShares && <p className='text-sm'>{entity.majoritySharesDetails}</p>}
+                  </EntityDisplayField>
                 )}
               </CardContent>
             </Card>
@@ -218,25 +173,18 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
                 </CardTitle>
               </CardHeader>
               <CardContent className='space-y-4'>
-                {entity.country && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Country</h4>
-                    <p className='text-sm'>{entity.country.name}</p>
-                  </div>
-                )}
+                {entity.country && <EntityDisplayField title={'Country'} value={entity.country.name} />}
                 {(entity.streetAddress || entity.city || entity.countryCode) && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Address</h4>
-                    <p className='text-sm'>
-                      {[entity.streetAddress, entity.city].filter(Boolean).join(', ')}
-                      {entity.countryCode ? ` (${entity.countryCode})` : ''}
-                    </p>
-                  </div>
+                  <EntityDisplayField
+                    title={'Address'}
+                    value={`${[entity.streetAddress, entity.city].filter(Boolean).join(', ')}
+                      ${entity.countryCode ? `(${entity.countryCode})` : ''}`}
+                  />
                 )}
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className={' col-span-3'}>
               <CardHeader>
                 <CardTitle className='flex items-center gap-2'>
                   <Building2 className='h-5 w-5' />
@@ -245,92 +193,47 @@ export default async function ViewEntityPage({ params }: { params: Promise<{ id:
               </CardHeader>
               <CardContent className='space-y-4'>
                 {entity.fieldsOfActivity && entity.fieldsOfActivity.length > 0 && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>
-                      Organisation&#39;s expertise - Article 8 (3)
-                    </h4>
-                    <div className='flex flex-wrap gap-1'>
-                      {entity.fieldsOfActivity.map((a) => (
-                        <span
-                          key={`field_${a.id}`}
-                          className='inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium'
-                        >
-                          {a.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  <EntityDisplayField
+                    title={"Organisation's expertise - Article 8 (3)"}
+                    value={entity.fieldsOfActivity.map((a) => a.name)}
+                    fieldName={'fieldOfActivity'}
+                  />
                 )}
 
                 {entity.expertiseDescription && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Expertise Description</h4>
-                    <p className='text-sm'>{entity.expertiseDescription}</p>
-                  </div>
+                  <EntityDisplayField title={'Expertise Description'} value={entity.expertiseDescription} />
                 )}
 
                 {entity.thematicAreas && entity.thematicAreas.length > 0 && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Knowledge Domains</h4>
-                    <div className='flex flex-wrap gap-1'>
-                      {entity.thematicAreas.map((a) => (
-                        <span
-                          key={`thematicArea_${a.id}`}
-                          className='inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium'
-                        >
-                          {a.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  <EntityDisplayField
+                    title={'Knowledge Domains'}
+                    value={entity.thematicAreas.map((a) => a.name)}
+                    fieldName={'fieldOfActivity'}
+                  />
                 )}
 
                 {entity.sectors && entity.sectors.length > 0 && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Sectors</h4>
-                    <div className='flex flex-wrap gap-1'>
-                      {entity.sectors.map((a) => (
-                        <span
-                          key={`sector_${a.id}`}
-                          className='inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium'
-                        >
-                          {a.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  <EntityDisplayField
+                    title={'Sectors'}
+                    value={entity.sectors.map((a) => a.name)}
+                    fieldName={'fieldOfActivity'}
+                  />
                 )}
 
                 {entity.technologies && entity.technologies.length > 0 && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Technologies</h4>
-                    <div className='flex flex-wrap gap-1'>
-                      {entity.technologies.map((a) => (
-                        <span
-                          key={`technology_${a.id}`}
-                          className='inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium'
-                        >
-                          {a.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  <EntityDisplayField
+                    title={'Technologies'}
+                    value={entity.technologies.map((a) => a.name)}
+                    fieldName={'fieldOfActivity'}
+                  />
                 )}
 
                 {entity.useCases && entity.useCases.length > 0 && (
-                  <div>
-                    <h4 className='mb-2 text-sm font-medium text-muted-foreground'>Use Cases</h4>
-                    <div className='flex flex-wrap gap-1'>
-                      {entity.useCases.map((a) => (
-                        <span
-                          key={`useCase_${a.id}`}
-                          className='inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium'
-                        >
-                          {a.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  <EntityDisplayField
+                    title={'Use Cases'}
+                    value={entity.useCases.map((a) => a.name)}
+                    fieldName={'fieldOfActivity'}
+                  />
                 )}
               </CardContent>
             </Card>

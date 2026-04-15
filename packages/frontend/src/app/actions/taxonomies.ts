@@ -5,7 +5,7 @@ import type { ActionState, EntityTaxonomies, Taxonomy } from '@/types'
 import { refresh } from 'next/cache'
 
 export async function syncAll(): Promise<ActionState> {
-  const apiClient = await getApiClient()
+  const apiClient = getApiClient()
   try {
     await apiClient.post('/taxonomies/sync', {}, { credentials: 'include' })
     return {
@@ -22,7 +22,7 @@ export async function syncAll(): Promise<ActionState> {
 
 export async function syncByType(_prevState: unknown, formData: FormData): Promise<ActionState> {
   const type = formData.get('type')
-  const apiClient = await getApiClient()
+  const apiClient = getApiClient()
 
   try {
     await apiClient.post(`/taxonomies/sync/${type}`, {}, { credentials: 'include' })
@@ -40,7 +40,7 @@ export async function syncByType(_prevState: unknown, formData: FormData): Promi
 }
 
 export const getTaxonomies = async (): Promise<EntityTaxonomies> => {
-  const apiClient = await getApiClient()
+  const apiClient = getApiClient()
 
   const [countries, clusterTypes, fieldsOfActivity, thematicAreas, sectors, technologies, useCases] = await Promise.all(
     [

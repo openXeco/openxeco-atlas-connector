@@ -1,22 +1,24 @@
 import { getApiClient } from '@/lib/api-client'
 import { NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
+import { getSessionManager } from '@/lib/session'
 
 export async function GET() {
-  const apiClient = await getApiClient()
+  const apiClient = getApiClient()
+  const session = getSessionManager()
 
   try {
     const user = await apiClient.getCurrentUser()
 
     if (!user) {
-      await apiClient.logoutUser()
+      await session.destroy()
       return NextResponse.json({ error: 'User not found' }, { status: 401 })
     }
 
     return NextResponse.json({ data: user })
   } catch (e) {
     logger.error(e)
-    await apiClient.logoutUser()
+    await session.destroy()
     return NextResponse.json({ error: (e as Error).message }, { status: 401 })
   }
 }

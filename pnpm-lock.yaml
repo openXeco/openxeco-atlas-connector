@@ -48,11 +48,11 @@ importers:
         specifier: ^17.4.2
         version: 17.4.2
       drizzle-orm:
-        specifier: 1.0.0-beta.9-e89174b
-        version: 1.0.0-beta.9-e89174b(@types/mssql@9.1.9(@azure/core-client@1.10.1))(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.9)
+        specifier: 1.0.0-beta.21
+        version: 1.0.0-beta.21(@types/mssql@9.1.9(@azure/core-client@1.10.1))(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.9)(zod@3.25.76)
       fastify:
-        specifier: 5.8.3
-        version: 5.8.3
+        specifier: 5.8.5
+        version: 5.8.5
       ms:
         specifier: ^2.1.3
         version: 2.1.3
@@ -1911,8 +1911,8 @@ packages:
     resolution: {integrity: sha512-Xrw3k8E2CbSZr+kqe3k5W4oxd2fbEyczjKtyGIkAq0x9Wqpa/VtAT6Mkh83sIzqG4OSN7lOoUafsDxSE/AR7RA==}
     hasBin: true
 
-  drizzle-orm@1.0.0-beta.9-e89174b:
-    resolution: {integrity: sha512-B5KR/qYMZ0JMOurK+0xi1ObpOQcgrjaC9wHUiU2eTJjLemuh2CoQIw6yur68NxZG6Xcd0b9qghUNC/78/bEfbg==}
+  drizzle-orm@1.0.0-beta.21:
+    resolution: {integrity: sha512-HZcIbVn5J9T/Z91Wj12Pn7Pi8/1aykS/GPJf2lXeZnEuPjxaBfQ+YAt0Sl+XI+9R/D1BpK+2fdIqbpuaTbcvqA==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=4'
@@ -1925,7 +1925,7 @@ packages:
       '@op-engineering/op-sqlite': '>=2'
       '@opentelemetry/api': ^1.4.1
       '@planetscale/database': '>=1.13'
-      '@prisma/client': '*'
+      '@sinclair/typebox': '>=0.34.8'
       '@sqlitecloud/drivers': '>=1.0.653'
       '@tidbcloud/serverless': '*'
       '@tursodatabase/database': '>=0.2.1'
@@ -1938,6 +1938,7 @@ packages:
       '@upstash/redis': '>=1.34.7'
       '@vercel/postgres': '>=0.8.0'
       '@xata.io/client': '*'
+      arktype: '>=2.0.0'
       better-sqlite3: '>=9.3.0'
       bun-types: '*'
       expo-sqlite: '>=14.0.0'
@@ -1946,9 +1947,11 @@ packages:
       mysql2: '>=2'
       pg: '>=8'
       postgres: '>=3'
-      prisma: '*'
       sql.js: '>=1'
       sqlite3: '>=5'
+      typebox: '>=1.0.0'
+      valibot: '>=1.0.0-beta.7'
+      zod: ^3.25.0 || ^4.0.0
     peerDependenciesMeta:
       '@aws-sdk/client-rds-data':
         optional: true
@@ -1972,7 +1975,7 @@ packages:
         optional: true
       '@planetscale/database':
         optional: true
-      '@prisma/client':
+      '@sinclair/typebox':
         optional: true
       '@sqlitecloud/drivers':
         optional: true
@@ -1996,6 +1999,8 @@ packages:
         optional: true
       '@xata.io/client':
         optional: true
+      arktype:
+        optional: true
       better-sqlite3:
         optional: true
       bun-types:
@@ -2010,11 +2015,15 @@ packages:
         optional: true
       postgres:
         optional: true
-      prisma:
-        optional: true
       sql.js:
         optional: true
       sqlite3:
+        optional: true
+      typebox:
+        optional: true
+      valibot:
+        optional: true
+      zod:
         optional: true
 
   ecdsa-sig-formatter@1.0.11:
@@ -2099,8 +2108,8 @@ packages:
   fastify-plugin@5.1.0:
     resolution: {integrity: sha512-FAIDA8eovSt5qcDgcBvDuX/v0Cjz0ohGhENZ/wpc3y+oZCY2afZ9Baqql3g/lC+OHRnciQol4ww7tuthOb9idw==}
 
-  fastify@5.8.3:
-    resolution: {integrity: sha512-XJXpRQ41+rsJ/GLeP9vyDC+fBXilcTlEXokMSexkdEkla4uf7ZQNaI5xl3el+kW5TZQulqYxLr659ey/KX7XmQ==}
+  fastify@5.8.5:
+    resolution: {integrity: sha512-Yqptv59pQzPgQUSIm87hMqHJmdkb1+GPxdE6vW6FRyVE9G86mt7rOghitiU4JHRaTyDUk9pfeKmDeu70lAwM4Q==}
 
   fastparallel@2.4.1:
     resolution: {integrity: sha512-qUmhxPgNHmvRjZKBFUNI0oZuuH9OlSIOXmJ98lhKPxMZZ7zS/Fi0wRHOihDSz0R1YiIOjxzOY4bq65YTcdBi2Q==}
@@ -4416,12 +4425,13 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.21.0
 
-  drizzle-orm@1.0.0-beta.9-e89174b(@types/mssql@9.1.9(@azure/core-client@1.10.1))(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.9):
+  drizzle-orm@1.0.0-beta.21(@types/mssql@9.1.9(@azure/core-client@1.10.1))(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.9)(zod@3.25.76):
     dependencies:
       '@types/mssql': 9.1.9(@azure/core-client@1.10.1)
       mssql: 11.0.1(@azure/core-client@1.10.1)
     optionalDependencies:
       postgres: 3.4.9
+      zod: 3.25.76
 
   ecdsa-sig-formatter@1.0.11:
     dependencies:
@@ -4555,7 +4565,7 @@ snapshots:
 
   fastify-plugin@5.1.0: {}
 
-  fastify@5.8.3:
+  fastify@5.8.5:
     dependencies:
       '@fastify/ajv-compiler': 4.0.5
       '@fastify/error': 4.2.0

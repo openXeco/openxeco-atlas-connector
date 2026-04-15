@@ -1,7 +1,7 @@
 'use server'
 
 import type { ManageEntityState } from '@/components/entities/entity-wizard'
-import type { EntityFormData, ActionState } from '@/types'
+import type { EntityFormData, ActionState, Entity, EntityVersion } from '@/types'
 import { parseFormData } from '@/lib/utils'
 import { getApiClient } from '@/lib/api-client'
 
@@ -25,7 +25,7 @@ export async function createEntity(
   }
 
   try {
-    const apiClient = await getApiClient()
+    const apiClient = getApiClient()
     await apiClient.post('/entities', parsed.data, { credentials: 'include' })
 
     return {
@@ -60,7 +60,7 @@ export async function updateEntity(
   }
 
   try {
-    const apiClient = await getApiClient()
+    const apiClient = getApiClient()
     await apiClient.patch(`/entities/${id}`, parsed.data, { credentials: 'include' })
 
     return {
@@ -78,7 +78,7 @@ export async function updateEntity(
 }
 
 export async function deleteEntity(id: string) {
-  const apiClient = await getApiClient()
+  const apiClient = getApiClient()
   try {
     await apiClient.delete(`/entities/${id}`, { credentials: 'include' })
   } catch (e) {
@@ -99,7 +99,7 @@ export async function deleteEntityFormAction(_prevState: unknown, formData: Form
 
 export async function syncEntity(_prevState: unknown, formData: FormData): Promise<ActionState> {
   const id = formData.get('id')
-  const apiClient = await getApiClient()
+  const apiClient = getApiClient()
 
   try {
     await apiClient.post(`/entities/${id}/sync`, {}, { credentials: 'include' })
@@ -113,6 +113,17 @@ export async function syncEntity(_prevState: unknown, formData: FormData): Promi
       error: 'Error syncing Entity. Please check the logs',
     }
   }
+}
+
+export async function getEntity(id: string): Promise<{ entity: Entity; versions: EntityVersion[] }> {
+  const apiClient = getApiClient()
+
+  const [entityRes, versionsRes] = await Promise.all([
+    apiClient.get<{ data: Entity }>(`/entities/${id}`, { credentials: 'include' }),
+    apiClient.get<{ data: EntityVersion[] }>(`/entities/${id}/versions`, { credentials: 'include' }),
+  ])
+
+  return { entity: entityRes.data, versions: versionsRes.data }
 }
 
 const parseEntity = (formData: FormData): EntityFormData => {
