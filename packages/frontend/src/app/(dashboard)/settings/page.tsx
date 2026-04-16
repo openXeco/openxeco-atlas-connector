@@ -1,3 +1,5 @@
+import { GeneralTab } from '@/components/settings/general-tab'
+
 export const dynamic = 'force-dynamic'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -5,9 +7,12 @@ import { UsersTab } from '@/components/settings/users-tab'
 import { getUserInfo } from '@/data/auth'
 import type { User } from '@/types'
 import { Badge } from '@/components/ui/badge'
+import { getTaxonomies } from '@/app/actions/taxonomies'
 
 export default async function SettingsPage() {
   const user = await getUserInfo()
+  const countries = (await getTaxonomies()).countries
+
   return (
     <>
       <div className='mb-8'>
@@ -21,11 +26,11 @@ export default async function SettingsPage() {
       <Tabs defaultValue='users' className='space-y-6'>
         <TabsList>
           <TabsTrigger value='users'>Users</TabsTrigger>
+          <TabsTrigger value='general' disabled={false}>
+            General
+          </TabsTrigger>
           <TabsTrigger value='atlas' disabled={true}>
             ATLAS API
-          </TabsTrigger>
-          <TabsTrigger value='general' disabled={true}>
-            General
           </TabsTrigger>
         </TabsList>
 
@@ -33,11 +38,11 @@ export default async function SettingsPage() {
           <UsersTab currentUser={user as User} />
         </TabsContent>
 
-        <TabsContent value='atlas'>
-          <>Coming soon...</>
+        <TabsContent value='general'>
+          <GeneralTab countries={countries} />
         </TabsContent>
 
-        <TabsContent value='general'>
+        <TabsContent value='atlas'>
           <>Coming soon...</>
         </TabsContent>
       </Tabs>

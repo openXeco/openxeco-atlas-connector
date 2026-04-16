@@ -1,3 +1,5 @@
+import { getGeneralSettings } from '@/data/settings'
+
 export const dynamic = 'force-dynamic'
 
 import { ArrowLeft } from 'lucide-react'
@@ -8,6 +10,7 @@ import { getTaxonomies } from '@/app/actions/taxonomies'
 
 export default async function CreateEntityPage() {
   const taxonomies = await getTaxonomies()
+  const settings = await getGeneralSettings()
 
   return (
     <>
@@ -21,7 +24,7 @@ export default async function CreateEntityPage() {
         </div>
       </div>
 
-      <CreateEntity taxonomies={taxonomies} />
+      <CreateEntity taxonomies={taxonomies} defaultCountry={settings.country} />
     </>
   )
 }

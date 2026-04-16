@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import { z } from 'zod'
+import { z, type ZodIssue } from 'zod'
 import { eq } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { atlasConfig } from '../db/schema.js'
@@ -14,6 +14,7 @@ const SETTINGS_KEYS = {
   APP_NAME: 'app_name',
   AUTO_SYNC_ON_PUBLISH: 'auto_sync_on_publish',
   SYNC_CONFLICT_RESOLUTION: 'sync_conflict_resolution',
+  COUNTRY: 'country',
 } as const
 
 const atlasSettingsSchema = z.object({
@@ -27,6 +28,7 @@ const generalSettingsSchema = z.object({
   appName: z.string().min(1, 'App name is required').max(100).optional(),
   autoSyncOnPublish: z.boolean().optional(),
   syncConflictResolution: z.enum(['manual', 'local_wins', 'remote_wins']).optional(),
+  country: z.string().uuid().optional(),
 })
 
 async function getSetting(key: string): Promise<string | null> {
@@ -102,7 +104,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   // Test ATLAS API connection
-  fastify.post('/atlas/test', { preHandler: authenticate }, async (request, reply) => {
+  fastify.get('/atlas/test', { preHandler: authenticate }, async (request, reply) => {
     try {
       const body = atlasSettingsSchema.parse(request.body)
 
@@ -190,10 +192,11 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Get general settings
   fastify.get('/general', { preHandler: authenticate }, async (_request, reply) => {
-    const [appName, autoSyncOnPublish, syncConflictResolution] = await Promise.all([
+    const [appName, autoSyncOnPublish, syncConflictResolution, country] = await Promise.all([
       getSetting(SETTINGS_KEYS.APP_NAME),
       getSetting(SETTINGS_KEYS.AUTO_SYNC_ON_PUBLISH),
       getSetting(SETTINGS_KEYS.SYNC_CONFLICT_RESOLUTION),
+      getSetting(SETTINGS_KEYS.COUNTRY),
     ])
 
     return reply.send({
@@ -201,6 +204,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
         appName: appName || 'ATLAS Connector',
         autoSyncOnPublish: autoSyncOnPublish === 'true',
         syncConflictResolution: syncConflictResolution || 'manual',
+        country,
       },
     })
   })
@@ -221,11 +225,36 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
       if (body.syncConflictResolution !== undefined) {
         updates.push(setSetting(SETTINGS_KEYS.SYNC_CONFLICT_RESOLUTION, body.syncConflictResolution))
       }
+      if (body.country !== undefined) {
+        const country = await db.query.taxonomies.findFirst({
+          where: {
+            id: body.country,
+            taxonomyType: 'country',
+          },
+        })
+
+        if (!country) {
+          fastify.log.error(`Not found (${country})`)
+          return reply.status(400).send({
+            error: 'Validation Error',
+            message: 'Invalid Input',
+            details: [
+              {
+                code: 'invalid_type',
+                message: 'Country not found in database',
+                path: ['body', 'country'],
+              },
+            ] as ZodIssue[],
+          })
+        }
+        updates.push(setSetting(SETTINGS_KEYS.COUNTRY, body.country))
+      }
 
       await Promise.all(updates)
 
       return reply.send({ message: 'General settings updated successfully' })
     } catch (error) {
+      fastify.log.error(error)
       if (error instanceof z.ZodError) {
         return reply.status(400).send({
           error: 'Validation Error',

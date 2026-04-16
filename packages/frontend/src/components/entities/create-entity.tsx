@@ -10,8 +10,15 @@ import { createEntity } from '@/app/actions/entities'
 import { Message } from '@/components/ui/message'
 
 import { entitySchema } from '@/schema'
+import { SettingsCheck } from '@/components/dashboard/settings-check'
 
-export const CreateEntity = ({ taxonomies }: { taxonomies: EntityTaxonomies }) => {
+export const CreateEntity = ({
+  taxonomies,
+  defaultCountry,
+}: {
+  taxonomies: EntityTaxonomies
+  defaultCountry?: string
+}) => {
   const router = useRouter()
 
   const useFormParams = useForm<EntityFormData>({
@@ -24,6 +31,7 @@ export const CreateEntity = ({ taxonomies }: { taxonomies: EntityTaxonomies }) =
       useCaseIds: [],
       dataProtectionConsent: false,
       formCompletionConfirmed: false,
+      countryId: defaultCountry,
     },
   })
 
@@ -37,6 +45,10 @@ export const CreateEntity = ({ taxonomies }: { taxonomies: EntityTaxonomies }) =
 
   return (
     <>
+      <div className={'pt-2 pb-6 w-3/5 m-auto'}>
+        <SettingsCheck />
+      </div>
+
       {state?.success === false && (
         <div className={'pt-2 pb-6 w-3/5 m-auto'}>
           <Message message={'Error while creating entity. Please check the logs'} success={false} duration={99} />

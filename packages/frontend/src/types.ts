@@ -209,3 +209,8 @@ export type ActionState = { success: true; message: string } | { success: false;
 export type ActionStateWithErrors =
   | { success: true; message: string }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> }
+
+// App
+export type GeneralSettings = {
+  country?: string
+}

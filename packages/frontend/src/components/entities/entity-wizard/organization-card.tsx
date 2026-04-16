@@ -2,6 +2,11 @@ import type { CardProps } from '@/components/entities/entity-wizard/types'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectValue, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
+import type { Taxonomy } from '@/types'
+
+const getCountryById = (id: string, countries: Taxonomy[]): Taxonomy | undefined => {
+  return countries.find((c) => c.id === id)
+}
 
 export const OrganizationCard = ({
   useFormParams: {
@@ -14,6 +19,7 @@ export const OrganizationCard = ({
   clusterTypes,
 }: CardProps) => {
   const formData = watch()
+
   return (
     <>
       <div className='space-y-2'>
@@ -35,35 +41,13 @@ export const OrganizationCard = ({
 
       <div className='space-y-2'>
         <Label htmlFor='FORM-ECCC-001-Q102'>Country *</Label>
-        <Select
-          value={formData.countryId}
-          onValueChange={(value: string) => {
-            setValue('countryId', value)
-            const selectedCountry = countries.find((c) => c.id === value)
-            if (selectedCountry) {
-              const meta = selectedCountry.metadata as { field_iso_code?: string } | null
-              if (meta?.field_iso_code) {
-                setValue('countryCode', meta.field_iso_code)
-              }
-            }
-          }}
-        >
-          <SelectTrigger id='FORM-ECCC-001-Q102'>
-            <SelectValue placeholder='Select a country' />
-          </SelectTrigger>
-          <SelectContent>
-            {countries.map((country) => (
-              <SelectItem key={country.id} value={country.id}>
-                {country.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <input type={'hidden'} id={'FORM-ECCC-001-Q102'} value={formData.countryId} />
+        <div className={'text-sm text-primary'}>{getCountryById(formData.countryId || '', countries)?.name}</div>
         {errors.countryId && <p className='text-sm text-destructive'>{errors.countryId.message}</p>}
       </div>
 
       <div className='space-y-2'>
-        <Label htmlFor='FORM-ECCC-001-Q103'>Street Address *</Label>
+        <Label htmlFor='FORM-ECCC-001-Q103'>Street Address (street and number, no special characters) *</Label>
         <Input id='FORM-ECCC-001-Q103' {...register('streetAddress')} placeholder='Street address' />
         {errors.streetAddress && <p className='text-sm text-destructive'>{errors.streetAddress.message}</p>}
       </div>
