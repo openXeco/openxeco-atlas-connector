@@ -17,13 +17,17 @@ import React from 'react'
 export default function ViewEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
 
-  const { data } = useSWR<{ data: { entity: Entity; versions: EntityVersion[] } }>(
+  const { data, isLoading } = useSWR<{ data: { entity: Entity; versions: EntityVersion[] } }>(
     `/api/entities/${id}`,
     apiFetcher,
     swrDefaultOptions,
   )
 
   const { entity, versions } = data?.data || {}
+
+  if (isLoading) {
+    return <>Loading...</>
+  }
 
   if (!entity || !versions) {
     return (

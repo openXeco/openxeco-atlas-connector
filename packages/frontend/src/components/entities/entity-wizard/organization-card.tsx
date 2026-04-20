@@ -20,6 +20,11 @@ export const OrganizationCard = ({
 }: CardProps) => {
   const formData = watch()
 
+  if (formData.countryId && !formData.countryCode) {
+    const country = getCountryById(formData.countryId, countries)
+    setValue('countryCode', country?.metadata?.field_iso_code as string)
+  }
+
   return (
     <>
       <div className='space-y-2'>
@@ -41,7 +46,8 @@ export const OrganizationCard = ({
 
       <div className='space-y-2'>
         <Label htmlFor='FORM-ECCC-001-Q102'>Country *</Label>
-        <input type={'hidden'} id={'FORM-ECCC-001-Q102'} value={formData.countryId} />
+        <input type={'hidden'} id={'FORM-ECCC-001-Q102'} defaultValue={formData.countryId} />
+        <input type={'hidden'} id={'countryCode'} defaultValue={formData.countryCode} />
         <div className={'text-sm text-primary'}>{getCountryById(formData.countryId || '', countries)?.name}</div>
         {errors.countryId && <p className='text-sm text-destructive'>{errors.countryId.message}</p>}
       </div>

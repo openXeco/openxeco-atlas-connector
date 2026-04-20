@@ -17,6 +17,7 @@ export async function createEntity(
   const parsed = entitySchema.safeParse(values)
 
   if (!parsed.success) {
+    logger.error(JSON.stringify(parsed.error.flatten().fieldErrors, null, 2))
     return {
       success: false,
       message: 'Backend validation failed',
@@ -34,6 +35,7 @@ export async function createEntity(
       entity: parsed.data,
     }
   } catch (e) {
+    logger.error(e)
     return {
       success: false,
       message: `Failed to create Entity. ${(e as Error).message}`,
@@ -49,9 +51,12 @@ export async function updateEntity(
   const id = formData.get('id') as string
   const values = parseEntity(formData)
 
+  console.log(values)
+
   const parsed = entitySchema.safeParse(values)
 
   if (!parsed.success) {
+    logger.error(JSON.stringify(parsed.error.flatten().fieldErrors, null, 2))
     return {
       success: false,
       message: 'Backend validation failed',

@@ -7,16 +7,22 @@ import { updateGeneralSettings } from '@/app/actions/settings'
 import { Label } from '@/components/ui/label'
 import useSWR from 'swr'
 import type { GeneralSettings, Taxonomy } from '@/types'
-import { apiFetcher } from '@/lib/swr'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 import { SelectTrigger, SelectValue, SelectContent, SelectItem, Select } from '@/components/ui/select'
 import { Message } from '@/components/ui/message'
 
-export const GeneralTab = ({ countries = [] }: { countries: Taxonomy[] }) => {
+export const GeneralTab = () => {
   const [state, formAction, pending] = useActionState(updateGeneralSettings, null)
 
-  const { data, mutate } = useSWR<{ data: { general: GeneralSettings } }>('/api/settings', apiFetcher)
+  const { data, mutate, isLoading } = useSWR<{ data: { general: GeneralSettings } }>('/api/settings', apiFetcher)
+  const { data: countriesData, isLoading: countriesLoading } = useSWR<{ data: Taxonomy[] }>(
+    '/api/taxonomies/country',
+    apiFetcher,
+    swrDefaultOptions,
+  )
 
   const settings = data?.data.general
+  const countries = countriesData?.data || []
 
   useEffect(() => {
     if (state?.success && state.country) {
@@ -33,7 +39,7 @@ export const GeneralTab = ({ countries = [] }: { countries: Taxonomy[] }) => {
     }
   }, [state, mutate])
 
-  if (!settings) {
+  if (isLoading || countriesLoading) {
     return <>Loading...</>
   }
 
@@ -53,13 +59,7 @@ export const GeneralTab = ({ countries = [] }: { countries: Taxonomy[] }) => {
           <div className='grid gap-6'>
             <div className='grid gap-2'>
               <Label htmlFor='appName'>NCC country</Label>
-              <Select
-                name={'country'}
-                defaultValue={settings?.country}
-                // onValueChange={(value: string) => {
-                //   setCountryId(value)
-                // }}
-              >
+              <Select name={'country'} defaultValue={settings?.country}>
                 <SelectTrigger id='FORM-ECCC-001-Q102'>
                   <SelectValue placeholder='Select a country' />
                 </SelectTrigger>
@@ -72,7 +72,11 @@ export const GeneralTab = ({ countries = [] }: { countries: Taxonomy[] }) => {
                 </SelectContent>
               </Select>
               <p className='text-sm text-muted-foreground'>
-                If set, this field will be used as "country" value for all entities.
+                This field will be used as "country" value for all entities.{' '}
+              </p>
+              <p className={'text-yellow-600 text-sm'}>
+                Please note that any entities previously submitted under a different country will need to be handled
+                manually.
               </p>
             </div>
           </div>

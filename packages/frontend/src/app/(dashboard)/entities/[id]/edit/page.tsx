@@ -1,27 +1,37 @@
+'use client'
+
 import { EditEntity } from '@/components/entities/edit-entity'
 import { Link } from '@/components/ui/link'
 import { ArrowLeft } from 'lucide-react'
-import type { Entity, EntityTaxonomies } from '@/types'
+import type { Entity, EntityTaxonomies, EntityVersion } from '@/types'
 
-import { getApiClient } from '@/lib/api-client'
-import { getTaxonomies } from '@/app/actions/taxonomies'
+import React from 'react'
+import useSWR from 'swr'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 
-export default async function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const apiClient = getApiClient()
+export default function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params)
 
-  let entity: Entity
-  let taxonomies: EntityTaxonomies
+  const { data, isLoading } = useSWR<{ data: { entity: Entity; versions: EntityVersion[] } }>(
+    `/api/entities/${id}`,
+    apiFetcher,
+    swrDefaultOptions,
+  )
+  const { data: taxonomiesData, isLoading: taxonomiesLoading } = useSWR<{ data: EntityTaxonomies }>(
+    '/api/taxonomies',
+    apiFetcher,
+    swrDefaultOptions,
+  )
 
-  try {
-    const [entityRes, taxonomiesRes] = await Promise.all([
-      apiClient.get<{ data: Entity }>(`/entities/${id}`, { credentials: 'include' }),
-      getTaxonomies(),
-    ])
+  if (isLoading || taxonomiesLoading) {
+    return <>Loading...</>
+  }
 
-    entity = entityRes.data
-    taxonomies = taxonomiesRes
-  } catch (_e) {
+  if (!taxonomiesData) {
+    return <>No taxonomies found.</>
+  }
+
+  if (!data) {
     return (
       <div className='flex min-h-[50vh] items-center justify-center'>
         <div className='text-center'>
@@ -33,6 +43,9 @@ export default async function EditEntityPage({ params }: { params: Promise<{ id:
       </div>
     )
   }
+
+  const entity = data.data.entity
+  const taxonomies = taxonomiesData.data
 
   return (
     <>

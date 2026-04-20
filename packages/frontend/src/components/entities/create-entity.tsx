@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useActionState, useEffect } from 'react'
 import { createEntity } from '@/app/actions/entities'
 import { Message } from '@/components/ui/message'
-
 import { entitySchema } from '@/schema'
 import { SettingsCheck } from '@/components/dashboard/settings-check'
 
@@ -18,6 +17,7 @@ export const CreateEntity = ({
 }: {
   taxonomies: EntityTaxonomies
   defaultCountry?: string
+  defaultCountryCode?: string
 }) => {
   const router = useRouter()
 
