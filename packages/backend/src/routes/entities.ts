@@ -375,7 +375,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
       const body = updateEntitySchema.parse(request.body)
-      console.log(body)
 
       const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 

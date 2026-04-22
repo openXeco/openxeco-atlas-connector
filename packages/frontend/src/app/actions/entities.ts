@@ -51,8 +51,6 @@ export async function updateEntity(
   const id = formData.get('id') as string
   const values = parseEntity(formData)
 
-  console.log(values)
-
   const parsed = entitySchema.safeParse(values)
 
   if (!parsed.success) {
