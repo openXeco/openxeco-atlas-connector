@@ -3,12 +3,16 @@
 import { getApiClient } from '@/lib/api-client'
 import type { ActionStateWithErrors, ActionState } from '@/types'
 import { loginSchema, changePasswordSchema, editUserSchema, newUserSchema } from '@/schema'
+import { logger } from '@/lib/logger'
+import { getSessionManager } from '@/lib/session'
 
 export const login = async (
   _initialState: unknown,
   formData: FormData,
 ): Promise<ActionStateWithErrors & { email: string }> => {
-  const apiClient = await getApiClient()
+  const apiClient = getApiClient()
+  const session = getSessionManager()
+
   const result = loginSchema.safeParse({ email: formData.get('email'), password: formData.get('password') })
 
   if (!result.success) {
@@ -21,7 +25,11 @@ export const login = async (
   }
 
   try {
-    await apiClient.loginUser(result.data.email, result.data.password)
+    const { accessToken, refreshToken, refreshTokenExpiresAt } = await apiClient.loginUser(
+      result.data.email,
+      result.data.password,
+    )
+    await session.create(accessToken, refreshToken, refreshTokenExpiresAt)
 
     return {
       success: true,
@@ -38,9 +46,9 @@ export const login = async (
 }
 
 export const logout = async (): Promise<{ success: boolean }> => {
-  const apiClient = await getApiClient()
+  const session = getSessionManager()
 
-  await apiClient.logoutUser()
+  await session.destroy()
 
   return {
     success: true,
@@ -69,7 +77,7 @@ export const createUser = async (
   }
 
   try {
-    const apiClient = await getApiClient()
+    const apiClient = getApiClient()
     await apiClient.post(
       '/users',
       { email: parsed.data.email, password: parsed.data.password },
@@ -82,8 +90,7 @@ export const createUser = async (
       email: parsed.data.email,
     }
   } catch (e) {
-    // biome-ignore lint/suspicious/noConsole: Needed
-    console.error(e)
+    logger.error(e)
     return {
       success: false,
       error: 'Unexpected error. User not created.',
@@ -113,7 +120,7 @@ export const updateUser = async (
   }
 
   try {
-    const apiClient = await getApiClient()
+    const apiClient = getApiClient()
     await apiClient.patch(`/users/${parsed.data.id}`, { email: parsed.data.email }, { credentials: 'include' })
 
     return {
@@ -122,8 +129,7 @@ export const updateUser = async (
       email: parsed.data.email,
     }
   } catch (e) {
-    // biome-ignore lint/suspicious/noConsole: Needed to know the error
-    console.error(e)
+    logger.error(e)
     return {
       success: false,
       error: 'Unexpected error. User not updated.',
@@ -150,7 +156,7 @@ export const changePassword = async (_initialState: unknown, formData: FormData)
   }
 
   try {
-    const apiClient = await getApiClient()
+    const apiClient = getApiClient()
     await apiClient.patch(
       `/users/${parsed.data.id}/password`,
       { password: parsed.data.password },
@@ -162,8 +168,7 @@ export const changePassword = async (_initialState: unknown, formData: FormData)
       message: 'User successfully updated!',
     }
   } catch (e) {
-    // biome-ignore lint/suspicious/noConsole: Needed
-    console.error(e)
+    logger.error(e)
     return {
       success: false,
       error: 'Unexpected error. Password not changed.',
@@ -179,12 +184,12 @@ export const deleteUser = async (_initialState: unknown, formData: FormData): Pr
   if (!parsed.success) {
     return {
       success: false,
-      error: 'Errod while deleting the user.',
+      error: 'Error while deleting the user.',
     }
   }
 
   try {
-    const apiClient = await getApiClient()
+    const apiClient = getApiClient()
     await apiClient.delete(`/users/${parsed.data.id}`, { credentials: 'include' })
 
     return {
@@ -192,8 +197,7 @@ export const deleteUser = async (_initialState: unknown, formData: FormData): Pr
       message: 'User successfully deleted!',
     }
   } catch (e) {
-    // biome-ignore lint/suspicious/noConsole: Needed
-    console.error(e)
+    logger.error(e)
     return {
       success: false,
       error: 'Unexpected error. User not deleted.',

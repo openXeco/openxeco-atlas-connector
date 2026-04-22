@@ -1,16 +1,6 @@
-import { eq, desc, lt, and, inArray } from 'drizzle-orm'
+import { eq, desc, lt } from 'drizzle-orm'
 import { db } from '@/config/database.js'
-import {
-  entities,
-  entityVersions,
-  syncLogs,
-  taxonomies,
-  entityThematicAreas,
-  entitySectors,
-  entityTechnologies,
-  entityUseCases,
-  entityFieldsOfActivity,
-} from '@/db/schema.js'
+import { entities, entityVersions, syncLogs } from '@/db/schema.js'
 import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
 import type { Entity } from '@/db/schema.js'
@@ -61,82 +51,42 @@ export class EntitySyncService {
     this.logger.info(`Pushing entity ${entityId} to ATLAS`)
 
     try {
-      const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1)
+      // const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1)
+      const entity = await db.query.entities.findFirst({
+        where: { id: entityId },
+        with: {
+          country: true,
+          clusterType: true,
+          thematicAreas: true,
+          sectors: true,
+          technologies: true,
+          useCases: true,
+          fieldsOfActivity: true,
+        },
+      })
 
       if (!entity) {
-        throw new Error('Entity not found')
-      }
-
-      let clusterTypeId: string | undefined
-
-      if (entity.clusterTypeId) {
-        const [clusterType] = await db
-          .select()
-          .from(taxonomies)
-          .where(and(eq(taxonomies.taxonomyType, 'cluster_type'), eq(taxonomies.id, entity.clusterTypeId)))
-          .limit(1)
-        clusterTypeId = clusterType?.atlasId || undefined
+        return {
+          success: false,
+          entityId,
+          message: "Entity doesn't exist",
+          error: 'NOT FOUND',
+        }
       }
 
       await db.update(entities).set({ syncStatus: 'pending_push' }).where(eq(entities.id, entityId))
 
-      // Load JRC taxonomy IDs from junction tables and resolve to ATLAS UUIDs
-      const [thematicRows, sectorRows, technologyRows, useCaseRows, fieldsOfActivityRows] = await Promise.all([
-        db
-          .select({ taxonomyId: entityThematicAreas.taxonomyId })
-          .from(entityThematicAreas)
-          .where(eq(entityThematicAreas.entityId, entityId)),
-        db
-          .select({ taxonomyId: entitySectors.taxonomyId })
-          .from(entitySectors)
-          .where(eq(entitySectors.entityId, entityId)),
-        db
-          .select({ taxonomyId: entityTechnologies.taxonomyId })
-          .from(entityTechnologies)
-          .where(eq(entityTechnologies.entityId, entityId)),
-        db
-          .select({ taxonomyId: entityUseCases.taxonomyId })
-          .from(entityUseCases)
-          .where(eq(entityUseCases.entityId, entityId)),
-        db
-          .select({ taxonomyId: entityFieldsOfActivity.taxonomyId })
-          .from(entityFieldsOfActivity)
-          .where(eq(entityFieldsOfActivity.entityId, entityId)),
-      ])
-
-      // Collect all local taxonomy IDs that need atlas ID resolution
-      const allLocalIds = [
-        ...thematicRows.map((r) => r.taxonomyId),
-        ...sectorRows.map((r) => r.taxonomyId),
-        ...technologyRows.map((r) => r.taxonomyId),
-        ...useCaseRows.map((r) => r.taxonomyId),
-        ...fieldsOfActivityRows.map((r) => r.taxonomyId),
-      ]
-
-      // Resolve local taxonomy IDs to ATLAS UUIDs in a single query
-      const localToAtlas = new Map<string, string>()
-      if (allLocalIds.length > 0) {
-        const taxRecords = await db
-          .select({ id: taxonomies.id, atlasId: taxonomies.atlasId })
-          .from(taxonomies)
-          .where(inArray(taxonomies.id, allLocalIds))
-        for (const t of taxRecords) {
-          localToAtlas.set(t.id, t.atlasId || t.id)
-        }
-      }
-
-      const resolveIds = (rows: { taxonomyId: string }[]): string[] | undefined => {
-        if (rows.length === 0) return undefined
-        return rows.map((r) => localToAtlas.get(r.taxonomyId) || r.taxonomyId)
-      }
-
-      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(entity, clusterTypeId, {
-        thematicAreaIds: resolveIds(thematicRows),
-        sectorIds: resolveIds(sectorRows),
-        technologyIds: resolveIds(technologyRows),
-        useCaseIds: resolveIds(useCaseRows),
-        fieldsOfActivityIds: resolveIds(fieldsOfActivityRows),
-      })
+      const clusterInput = jsonApiTransformer.toClusterInputFromEntity(
+        entity,
+        entity.clusterType?.atlasId || undefined,
+        {
+          thematicAreaIds: entity.thematicAreas.map((t) => t.atlasId) || [],
+          sectorIds: entity.sectors.map((s) => s.atlasId) || [],
+          technologyIds: entity.technologies.map((t) => t.atlasId) || [],
+          useCaseIds: entity.useCases.map((u) => u.atlasId) || [],
+          fieldsOfActivityIds: entity.fieldsOfActivity.map((f) => f.atlasId) || [],
+        },
+      )
 
       let cluster: Cluster
 
@@ -172,25 +122,27 @@ export class EntitySyncService {
         cluster = await atlasClient.createCluster(clusterInput)
       }
 
-      await db
-        .update(entities)
-        .set({
-          atlasId: cluster.atlasId,
-          syncStatus: 'synced',
-          lastSyncedAt: new Date(),
-        })
-        .where(eq(entities.id, entityId))
-        .returning()
+      await db.transaction(async (tx) => {
+        await tx
+          .update(entities)
+          .set({
+            atlasId: cluster.atlasId,
+            syncStatus: 'synced',
+            lastSyncedAt: new Date(),
+          })
+          .where(eq(entities.id, entityId))
+          .returning()
 
-      await db.insert(syncLogs).values({
-        entityType: 'entity',
-        entityId,
-        operation: 'push',
-        status: 'success',
-        details: {
-          atlasId: cluster.atlasId,
-          action: entity.atlasId ? 'update' : 'create',
-        },
+        await tx.insert(syncLogs).values({
+          entityType: 'entity',
+          entityId,
+          operation: 'push',
+          status: 'success',
+          details: {
+            atlasId: cluster.atlasId,
+            action: entity.atlasId ? 'update' : 'create',
+          },
+        })
       })
 
       this.logger.info(`Successfully pushed entity ${entityId} to ATLAS`)
@@ -462,13 +414,9 @@ export class EntitySyncService {
         'name',
         'nameNational',
         'entityDepartment',
-        'description',
         'streetAddress',
         'city',
         'countryCode',
-        'postalCode',
-        'latitude',
-        'longitude',
         'email',
         'phone',
         'website',

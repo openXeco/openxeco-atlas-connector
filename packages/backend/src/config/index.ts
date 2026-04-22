@@ -30,7 +30,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().url().optional(),
 
   JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('1h'),
+  JWT_EXPIRES_IN: z.string().default('5m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
   ATLAS_BASE_URL: z.string().url(),

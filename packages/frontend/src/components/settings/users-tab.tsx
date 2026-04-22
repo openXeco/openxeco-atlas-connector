@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, Pencil, Key, Trash2 } from 'lucide-react'
 import useSWR from 'swr'
 import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
-import type { User } from '@/types'
+import type { User, User as TUser } from '@/types'
 import { Message } from '@/components/ui/message'
 import { useState } from 'react'
 import { ManageUserDialog } from '@/components/settings/user-dialogs/manage-user'
@@ -14,7 +14,7 @@ import { DeleteUserDialog } from '@/components/settings/user-dialogs/delete-user
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '@/components/ui/table'
 import { formatDate } from '@/lib/utils'
 
-export const UsersTab = ({ currentUser }: { currentUser: User }) => {
+export const UsersTab = () => {
   const [userDialogOpen, setUserDialogOpen] = useState(false)
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -52,12 +52,16 @@ export const UsersTab = ({ currentUser }: { currentUser: User }) => {
   }
 
   const { data, error, isLoading, mutate } = useSWR<{ data: User[] }>('/api/users', apiFetcher, swrDefaultOptions)
+  const { data: userData, isLoading: userLoading } = useSWR<{ data: TUser }>('/api/auth/me', apiFetcher, {
+    ...swrDefaultOptions,
+  })
 
-  if (!data || isLoading) {
+  if (!data || isLoading || !userData || userLoading) {
     return <>Loading...</>
   }
 
   const users = data?.data || []
+  const currentUser = userData?.data
 
   return (
     <>

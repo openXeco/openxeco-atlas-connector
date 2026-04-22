@@ -34,25 +34,17 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
     name: (attrs.title as string) || (attrs.name as string) || '',
     nameNational: attrs.field_institution_name_in_nation as string | undefined,
     entityDepartment: attrs.field_entity_department as string | undefined,
-    description:
-      typeof attrs.body === 'object' && attrs.body !== null
-        ? (attrs.body as { value?: string }).value || ''
-        : (attrs.body as string | undefined),
 
     // Address
     countryCode: address?.country_code,
     city: address?.locality,
     streetAddress: address?.address_line1,
-    postalCode: address?.postal_code,
-    latitude: attrs.field_latitude as number | undefined,
-    longitude: attrs.field_longitude as number | undefined,
 
     // Organisation details
     email: attrs.field_general_contact_e_mail as string | undefined,
     phone: attrs.field_phone_number as string | undefined,
     website,
     registrationNumber: attrs.field_registration_number as string | undefined,
-    logoUrl: attrs.field_logo as string | undefined,
 
     // Headquarters
     isHeadquarter: attrs.field_question_headquarter as boolean | undefined,
@@ -145,11 +137,8 @@ export class JsonApiTransformer {
       id: entity.atlasId || entity.id,
       attributes: {
         title: entity.name,
-        body: entity.description || '',
-        field_logo: entity.logoUrl,
+        body: '', // @TODO keeping for ATLAS compatibility / check if it works removing it
         field_website: entity.website,
-        field_latitude: entity.latitude ? Number.parseFloat(entity.latitude) : undefined,
-        field_longitude: entity.longitude ? Number.parseFloat(entity.longitude) : undefined,
         status: entity.status,
       },
       relationships,
@@ -186,22 +175,17 @@ export class JsonApiTransformer {
       name: cluster.name,
       nameNational: cluster.nameNational,
       entityDepartment: cluster.entityDepartment,
-      description: cluster.description,
 
       // Address (structured)
       countryCode: cluster.countryCode,
       city: cluster.city,
       streetAddress: cluster.streetAddress,
-      postalCode: cluster.postalCode,
-      latitude: cluster.latitude?.toString(),
-      longitude: cluster.longitude?.toString(),
 
       // Organisation details
       email: cluster.email,
       phone: cluster.phone,
       website: cluster.website,
       registrationNumber: cluster.registrationNumber,
-      logoUrl: cluster.logoUrl,
 
       // Headquarters
       isHeadquarter: cluster.isHeadquarter,
@@ -259,22 +243,17 @@ export class JsonApiTransformer {
       name: entity.name,
       nameNational: entity.nameNational || undefined,
       entityDepartment: entity.entityDepartment || undefined,
-      description: entity.description || undefined,
 
       // Address (structured)
       countryCode: entity.countryCode || undefined,
       city: entity.city || undefined,
       streetAddress: entity.streetAddress || undefined,
-      postalCode: entity.postalCode || undefined,
-      latitude: entity.latitude ? Number.parseFloat(entity.latitude) : undefined,
-      longitude: entity.longitude ? Number.parseFloat(entity.longitude) : undefined,
 
       // Organisation details
       email: entity.email || undefined,
       phone: entity.phone || undefined,
       website: entity.website || undefined,
       registrationNumber: entity.registrationNumber || undefined,
-      logoUrl: entity.logoUrl || undefined,
 
       // Headquarters
       isHeadquarter: entity.isHeadquarter ?? undefined,

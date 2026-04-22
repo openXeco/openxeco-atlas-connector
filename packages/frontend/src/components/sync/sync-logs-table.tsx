@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { apiClient } from '@/lib/api'
+import { logger } from '@/lib/logger'
 
 interface SyncLog {
   id: string
@@ -36,8 +37,7 @@ export function SyncLogsTable() {
       const response = await apiClient.get<{ data: SyncLog[] }>(`/api/sync/logs?${params.toString()}`)
       setLogs(response.data)
     } catch (err) {
-      // biome-ignore lint/suspicious/noConsole: OK
-      console.error('Failed to load sync logs:', err)
+      logger.error('Failed to load sync logs:', err)
     } finally {
       setLoading(false)
     }

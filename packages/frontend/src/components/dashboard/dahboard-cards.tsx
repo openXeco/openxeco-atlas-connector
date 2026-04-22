@@ -21,7 +21,7 @@ export const DashboardCards = () => {
   const isLoading = syncLoading || taxLoading
 
   if (isLoading) {
-    return undefined
+    return <>Loading...</>
   }
 
   if (syncError || taxError) {

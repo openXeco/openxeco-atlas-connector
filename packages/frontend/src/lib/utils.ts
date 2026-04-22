@@ -5,12 +5,24 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('en-UK', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+export function formatDate(dateString: string, full = false) {
+  const date = new Date(dateString)
+
+  return full
+    ? date.toLocaleDateString('en-UK', {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        hourCycle: 'h24',
+        minute: 'numeric',
+        second: 'numeric',
+      })
+    : date.toLocaleDateString('en-UK', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
 }
 
 type FieldKeys<T> = Extract<keyof T, string>

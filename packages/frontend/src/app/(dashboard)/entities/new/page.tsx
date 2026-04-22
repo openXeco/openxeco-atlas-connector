@@ -1,13 +1,34 @@
-export const dynamic = 'force-dynamic'
+'use client'
 
 import { ArrowLeft } from 'lucide-react'
 import { CreateEntity } from '@/components/entities/create-entity'
 import { Link } from '@/components/ui/link'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
+import useSWR from 'swr'
+import type { EntityTaxonomies, GeneralSettings } from '@/types'
 
-import { getTaxonomies } from '@/app/actions/taxonomies'
+export default function CreateEntityPage() {
+  const { data: taxonomiesData, isLoading: taxonomiesLoading } = useSWR<{ data: EntityTaxonomies }>(
+    '/api/taxonomies',
+    apiFetcher,
+    swrDefaultOptions,
+  )
+  const { data: settingsData, isLoading: settingsLoading } = useSWR<{ data: { general: GeneralSettings } }>(
+    '/api/settings',
+    apiFetcher,
+    swrDefaultOptions,
+  )
 
-export default async function CreateEntityPage() {
-  const taxonomies = await getTaxonomies()
+  if (taxonomiesLoading || settingsLoading) {
+    return <>Loading...</>
+  }
+
+  if (!taxonomiesData || !settingsData) {
+    return <>Error loading taxonomies. Please refresh</>
+  }
+
+  const taxonomies = taxonomiesData?.data
+  const defaultCountry = settingsData.data.general.country
 
   return (
     <>
@@ -21,7 +42,7 @@ export default async function CreateEntityPage() {
         </div>
       </div>
 
-      <CreateEntity taxonomies={taxonomies} />
+      <CreateEntity taxonomies={taxonomies} defaultCountry={defaultCountry} />
     </>
   )
 }

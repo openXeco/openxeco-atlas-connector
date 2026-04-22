@@ -89,3 +89,7 @@ export const changePasswordSchema = z
     message: 'Passwords do not match',
     path: ['confirmPassword'],
   })
+
+export const generalSettingSchema = z.object({
+  country: z.string({ message: 'Invalid country, please select one from the list.' }).uuid().optional(),
+})

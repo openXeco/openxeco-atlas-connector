@@ -68,3 +68,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .paragraph {
+    p {
+      @apply my-2;
+    }
+
+    ul {
+      @apply list-disc list-inside;
+    }
+  }
+}
