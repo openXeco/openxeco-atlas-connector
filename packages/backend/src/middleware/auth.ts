@@ -1,12 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { verifyAccessToken } from '../services/jwt.js'
-import type { JwtPayload } from '../services/jwt.js'
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    currentUser?: JwtPayload
-  }
-}
 
 export async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {

@@ -1,13 +1,8 @@
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
 import { getLogger } from '../utils/logger.js'
+import type { ApiError } from '@/types.js'
 
 const logger = getLogger()
-
-export interface ApiError {
-  statusCode: number
-  error: string
-  message: string
-}
 
 export function errorHandler(error: FastifyError, _request: FastifyRequest, reply: FastifyReply): void {
   logger.error(

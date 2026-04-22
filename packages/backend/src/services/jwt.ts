@@ -1,19 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { config } from '../config/index.js'
 import ms from 'ms'
-
-export interface JwtPayload {
-  userId: string
-  email: string
-  role: string
-  type: 'access' | 'refresh'
-}
-
-export interface TokenPair {
-  accessToken: string
-  refreshToken: string
-  refreshTokenExpiresAt: number
-}
+import type { TokenPair, JwtPayload } from '@/types.js'
 
 export function generateTokens(fastify: FastifyInstance, payload: Omit<JwtPayload, 'type'>): TokenPair {
   const accessToken = fastify.jwt.sign(

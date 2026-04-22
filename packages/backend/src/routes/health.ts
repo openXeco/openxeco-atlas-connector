@@ -1,14 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { sql } from 'drizzle-orm'
 import { db } from '../config/database.js'
-
-interface HealthResponse {
-  status: 'ok' | 'error'
-  timestamp: string
-  services: {
-    database: 'ok' | 'error'
-  }
-}
+import type { HealthResponse } from '@/types.js'
 
 export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/health', async (_request, reply) => {

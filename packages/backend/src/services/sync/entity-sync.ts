@@ -1,45 +1,13 @@
 import { eq, desc, lt } from 'drizzle-orm'
 import { db } from '@/config/database.js'
+import type { Entity } from '@/db/schema.js'
 import { entities, entityVersions, syncLogs } from '@/db/schema.js'
 import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
-import type { Entity } from '@/db/schema.js'
 import type { Logger } from 'pino'
 import { getLogger } from '@/utils/logger.js'
 import type { Cluster } from '@/services/atlas/types.js'
-
-export interface SyncResult {
-  success: boolean
-  entityId: string
-  atlasId?: string
-  message: string
-  error?: string
-}
-
-export interface ConflictReport {
-  hasConflict: boolean
-  localVersion: Entity
-  remoteVersion: Partial<Entity> | null
-  localUpdatedAt: Date
-  remoteUpdatedAt: Date
-  conflictFields: string[]
-}
-
-export interface EntityDiff {
-  field: string
-  // biome-ignore lint/suspicious/noExplicitAny: It's fine here
-  localValue: any
-  // biome-ignore lint/suspicious/noExplicitAny: It's fine here
-  remoteValue: any
-  isDifferent: boolean
-}
-
-export interface BatchSyncResult {
-  total: number
-  success: number
-  failed: number
-  results: SyncResult[]
-}
+import type { BatchSyncResult, EntityDiff, ConflictReport, SyncResult } from '@/services/sync/types.js'
 
 export class EntitySyncService {
   private readonly logger: Logger
