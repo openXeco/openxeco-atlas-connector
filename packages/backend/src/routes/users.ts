@@ -5,7 +5,7 @@ import { db } from '../config/database.js'
 import { users } from '../db/schema.js'
 import { hashPassword } from '../services/password.js'
 import { requireAdmin } from '../middleware/auth.js'
-import { sendErrorReply, handleZodError } from '@/utils/reply-helpers.js'
+import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
 
 const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -66,10 +66,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.status(201).send({ data: newUser })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      throw error
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -109,10 +106,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ data: updated })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      throw error
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -141,10 +135,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ message: 'Password updated successfully' })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      throw error
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -174,9 +165,8 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       await db.delete(users).where(eq(users.id, id))
       return reply.send({ message: 'User deleted successfully' })
-    } catch (err) {
-      fastify.log.error(err)
-      return sendErrorReply({ reply })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify)
     }
   })
 }

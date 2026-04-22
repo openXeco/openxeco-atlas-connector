@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { authenticate } from '../middleware/auth.js'
 import { taxonomySyncService } from '../services/atlas/taxonomy-sync.js'
 import type { TaxonomyType } from '../services/atlas/types.js'
-import { sendErrorReply, handleZodError } from '@/utils/reply-helpers.js'
+import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
 
 const taxonomyTypeSchema = z.enum([
   'activities_of_interest',
@@ -41,8 +41,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         data: { total: result.total },
       })
     } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to count taxonomies')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -54,8 +53,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         result,
       })
     } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to sync taxonomies')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -72,10 +70,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         count,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -95,10 +90,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -114,11 +106,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ data: taxonomy })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch taxonomy')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -139,10 +127,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 }

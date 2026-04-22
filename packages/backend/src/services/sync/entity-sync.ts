@@ -274,7 +274,7 @@ export class EntitySyncService {
   async detectConflicts(entityId: string): Promise<ConflictReport> {
     const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1)
 
-    if (!entity || !entity.atlasId) {
+    if (!entity?.atlasId) {
       return {
         hasConflict: false,
         localVersion: entity,
@@ -369,7 +369,7 @@ export class EntitySyncService {
   async getDiff(entityId: string): Promise<EntityDiff[]> {
     const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1)
 
-    if (!entity || !entity.atlasId) {
+    if (!entity?.atlasId) {
       return []
     }
 
@@ -438,7 +438,7 @@ export class EntitySyncService {
       }
       const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1)
 
-      if (!entity || !entity.atlasId) {
+      if (!entity?.atlasId) {
         throw new Error('Entity or ATLAS ID not found')
       }
 

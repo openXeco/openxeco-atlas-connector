@@ -5,7 +5,7 @@ import { db } from '../config/database.js'
 import { syncLogs, entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { entitySyncService } from '../services/sync/entity-sync.js'
-import { sendErrorReply, handleZodError } from '@/utils/reply-helpers.js'
+import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
 
 const idParamSchema = z.object({ id: z.string().uuid() })
 
@@ -49,11 +49,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to push entity')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -63,7 +59,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
 
       const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
-      if (!entity || !entity.atlasId) {
+      if (!entity?.atlasId) {
         return sendErrorReply({ reply, type: 'notFound', message: 'Entity not found or not synced to ATLAS' })
       }
 
@@ -82,11 +78,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to pull entity')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -104,11 +96,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to get diff')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -122,11 +110,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         data: conflict,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to detect conflicts')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -147,11 +131,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to resolve conflicts')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -175,10 +155,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Batch push completed: ${result.success} succeeded, ${result.failed} failed`,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -201,10 +178,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Batch pull completed: ${result.success} succeeded, ${result.failed} failed`,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -239,8 +213,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to get sync status')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -285,11 +258,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch sync logs')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -305,8 +274,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         deleted,
       })
     } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to cleanup sync logs')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 }

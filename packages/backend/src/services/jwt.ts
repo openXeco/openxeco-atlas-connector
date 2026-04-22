@@ -39,7 +39,7 @@ export async function verifyAccessToken(fastify: FastifyInstance, token: string)
 
 export async function verifyRefreshToken(fastify: FastifyInstance, token: string): Promise<JwtPayload | null> {
   try {
-    const decoded = await fastify.jwt.verify<JwtPayload>(token)
+    const decoded = fastify.jwt.verify<JwtPayload>(token)
     if (decoded.type !== 'refresh') {
       return null
     }

@@ -1,6 +1,6 @@
 import type { BasicErrorResponse } from '@/types.js'
-import type { FastifyReply } from 'fastify'
-import type { z } from 'zod'
+import type { FastifyReply, FastifyInstance } from 'fastify'
+import { z } from 'zod'
 
 const replies: Record<string, BasicErrorResponse> = {
   unauthorized: {
@@ -57,4 +57,13 @@ export const sendErrorReply = ({ type = 'unexpected', reply, message, additional
     ...(message ? { message } : undefined),
     ...(additionalPayload ? { ...additionalPayload } : undefined),
   })
+}
+
+export const handleRouteError = (error: unknown, reply: SendErrorReplyArgs['reply'], fastify: FastifyInstance) => {
+  if (error instanceof z.ZodError) {
+    return handleZodError(error, { reply })
+  }
+
+  fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Unexpected error')
+  return sendErrorReply({ reply })
 }

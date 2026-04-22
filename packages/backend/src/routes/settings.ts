@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { atlasConfig } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
-import { handleZodError, sendErrorReply } from '@/utils/reply-helpers.js'
+import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
 
 // Settings keys
 const SETTINGS_KEYS = {
@@ -93,10 +93,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ message: 'ATLAS settings updated successfully' })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      throw error
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -170,9 +167,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Connection failed: ${response.status} ${response.statusText}`,
       })
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      fastify.log.error(error instanceof Error ? error : { message }, 'ATLAS connection test failed')
-      return sendErrorReply({ reply, type: 'unexpected', message: `Connection test failed ${message}` })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -243,11 +238,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ message: 'General settings updated successfully' })
     } catch (error) {
-      fastify.log.error(error)
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      throw error
+      return handleRouteError(error, reply, fastify)
     }
   })
 }

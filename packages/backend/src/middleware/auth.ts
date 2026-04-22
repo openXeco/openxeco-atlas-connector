@@ -6,7 +6,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   try {
     const authHeader = request.headers.authorization
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return sendErrorReply({
         reply,
         type: 'unauthorized',

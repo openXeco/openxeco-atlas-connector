@@ -14,7 +14,7 @@ import {
 import { authenticate } from '../middleware/auth.js'
 
 import { entitySyncService } from '@/services/sync/entity-sync.js'
-import { sendErrorReply, handleZodError } from '@/utils/reply-helpers.js'
+import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
 
 // Base validation schema for ATLAS-compliant entity registration
 const baseEntitySchema = z.object({
@@ -177,8 +177,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch entities')
-      return sendErrorReply({ reply, message: 'Failed to fetch entities' })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -205,11 +204,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ data: entity })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return sendErrorReply({ reply, type: 'badRequest', message: 'Invalid entity ID format' })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch entity')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -346,11 +341,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Entity created successfully',
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to create entity')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -566,11 +557,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Entity updated successfully',
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to update entity')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -590,11 +577,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Entity deleted successfully',
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to delete entity')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -617,11 +600,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.error,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to sync entity')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -642,11 +621,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return handleZodError(error, { reply })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch entity versions')
-      return sendErrorReply({ reply })
+      return handleRouteError(error, reply, fastify)
     }
   })
 }
