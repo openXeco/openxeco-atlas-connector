@@ -25,6 +25,12 @@ export interface HealthResponse {
   }
 }
 
+export type BasicErrorResponse = {
+  status: number
+  error?: string
+  message?: string
+}
+
 declare module 'fastify' {
   interface FastifyRequest {
     currentUser?: JwtPayload

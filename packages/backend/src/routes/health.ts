@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { sql } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import type { HealthResponse } from '@/types.js'
+import { sendErrorReply } from '@/utils/reply-helpers.js'
 
 export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/health', async (_request, reply) => {
@@ -35,7 +36,7 @@ export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
       await db.execute(sql`SELECT 1`)
       return reply.send({ status: 'ok' })
     } catch {
-      return reply.status(503).send({ status: 'error', message: 'Database not ready' })
+      return sendErrorReply({ reply, type: 'unexpected', message: 'Database not ready' })
     }
   })
 }

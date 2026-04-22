@@ -5,6 +5,7 @@ import { db } from '../config/database.js'
 import { users } from '../db/schema.js'
 import { hashPassword } from '../services/password.js'
 import { requireAdmin } from '../middleware/auth.js'
+import { sendErrorReply, handleZodError } from '@/utils/reply-helpers.js'
 
 const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -44,10 +45,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
       const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, body.email)).limit(1)
 
       if (existing) {
-        return reply.status(409).send({
-          error: 'Conflict',
-          message: 'A user with this email already exists',
-        })
+        return sendErrorReply({ reply, type: 'conflict', message: 'A user with this email already exists' })
       }
 
       const passwordHash = await hashPassword(body.password)
@@ -69,11 +67,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.status(201).send({ data: newUser })
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors[0]?.message || 'Invalid input',
-          details: error.errors,
-        })
+        return handleZodError(error, { reply })
       }
       throw error
     }
@@ -89,20 +83,14 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
       const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.id, id)).limit(1)
 
       if (!existing) {
-        return reply.status(404).send({
-          error: 'Not Found',
-          message: 'User not found',
-        })
+        return sendErrorReply({ reply, type: 'notFound' })
       }
 
       // Check if new email is already taken by another user
       const [emailTaken] = await db.select({ id: users.id }).from(users).where(eq(users.email, body.email)).limit(1)
 
       if (emailTaken && emailTaken.id !== id) {
-        return reply.status(409).send({
-          error: 'Conflict',
-          message: 'This email is already in use',
-        })
+        return sendErrorReply({ reply, type: 'conflict', message: 'Email already in use' })
       }
 
       const [updated] = await db
@@ -122,11 +110,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({ data: updated })
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors[0]?.message || 'Invalid input',
-          details: error.errors,
-        })
+        return handleZodError(error, { reply })
       }
       throw error
     }
@@ -142,10 +126,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
       const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.id, id)).limit(1)
 
       if (!existing) {
-        return reply.status(404).send({
-          error: 'Not Found',
-          message: 'User not found',
-        })
+        return sendErrorReply({ reply, type: 'notFound' })
       }
 
       const passwordHash = await hashPassword(body.password)
@@ -161,11 +142,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({ message: 'Password updated successfully' })
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors[0]?.message || 'Invalid input',
-          details: error.errors,
-        })
+        return handleZodError(error, { reply })
       }
       throw error
     }
@@ -179,28 +156,19 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
     const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.id, id)).limit(1)
 
     if (!existing) {
-      return reply.status(404).send({
-        error: 'Not Found',
-        message: 'User not found',
-      })
+      return sendErrorReply({ reply, type: 'notFound' })
     }
 
     // Prevent deleting yourself
     if (request.currentUser?.userId === id) {
-      return reply.status(400).send({
-        error: 'Bad Request',
-        message: 'You cannot delete your own account',
-      })
+      return sendErrorReply({ reply, type: 'badRequest', message: 'You cannot delete your own account' })
     }
 
     // Prevent deleting if only one user exists
     const [{ total }] = await db.select({ total: count() }).from(users)
 
     if (total <= 1) {
-      return reply.status(400).send({
-        error: 'Bad Request',
-        message: 'Cannot delete the last user',
-      })
+      return sendErrorReply({ reply, type: 'badRequest', message: 'Cannot delete the last user' })
     }
 
     try {
@@ -208,7 +176,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({ message: 'User deleted successfully' })
     } catch (err) {
       fastify.log.error(err)
-      return reply.status(500).send({ message: 'Failed to delete the user' })
+      return sendErrorReply({ reply })
     }
   })
 }

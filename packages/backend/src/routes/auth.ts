@@ -6,6 +6,7 @@ import { users } from '../db/schema.js'
 import { verifyPassword } from '../services/password.js'
 import { generateTokens, verifyRefreshToken } from '../services/jwt.js'
 import { authenticate } from '../middleware/auth.js'
+import { sendErrorReply, handleZodError } from '@/utils/reply-helpers.js'
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -20,19 +21,13 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       const [user] = await db.select().from(users).where(eq(users.email, body.email)).limit(1)
 
       if (!user) {
-        return reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'Invalid email or password',
-        })
+        return sendErrorReply({ reply, type: 'unauthorized', message: 'Invalid email or password' })
       }
 
       const isValidPassword = await verifyPassword(user.passwordHash, body.password)
 
       if (!isValidPassword) {
-        return reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'Invalid email or password',
-        })
+        return sendErrorReply({ reply, type: 'unauthorized', message: 'Invalid email or password' })
       }
 
       const tokens = generateTokens(fastify, {
@@ -53,10 +48,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       })
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
-        })
+        return handleZodError(error, { reply })
       }
       throw error
     }
@@ -67,28 +59,19 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       const { refreshToken } = z.object({ refreshToken: z.string() }).parse(request.body)
 
       if (!refreshToken) {
-        return reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'Refresh token not found',
-        })
+        return sendErrorReply({ reply, type: 'unauthorized', message: 'Refresh token not found' })
       }
 
       const payload = await verifyRefreshToken(fastify, refreshToken)
 
       if (!payload) {
-        return reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'Invalid or expired refresh token',
-        })
+        return sendErrorReply({ reply, type: 'unauthorized', message: 'Invalid or expired refresh token' })
       }
 
       const [user] = await db.select().from(users).where(eq(users.id, payload.userId)).limit(1)
 
       if (!user) {
-        return reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'User not found',
-        })
+        return sendErrorReply({ reply, type: 'unauthorized', message: 'User not found' })
       }
 
       const tokens = generateTokens(fastify, {
@@ -104,19 +87,13 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       })
     } catch (error) {
       fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Token refresh failed')
-      return reply.status(401).send({
-        error: 'Unauthorized',
-        message: 'Token refresh failed',
-      })
+      return sendErrorReply({ reply, type: 'unauthorized', message: 'Token refresh failed' })
     }
   })
 
   fastify.get('/me', { preHandler: authenticate }, async (request, reply) => {
     if (!request.currentUser) {
-      return reply.status(401).send({
-        error: 'Unauthorized',
-        message: 'User not authenticated',
-      })
+      return sendErrorReply({ reply, type: 'unauthorized', message: 'User not authenticated' })
     }
 
     const [user] = await db
@@ -131,10 +108,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       .limit(1)
 
     if (!user) {
-      return reply.status(404).send({
-        error: 'Not Found',
-        message: 'User not found',
-      })
+      return sendErrorReply({ reply, type: 'unauthorized', message: 'User not found' })
     }
 
     return reply.send({ user })
