@@ -15,9 +15,10 @@ type EditEntityProps = {
   id: string
   entity: Entity
   taxonomies: EntityTaxonomies
+  onConfirmAction?: () => void
 }
 
-export const EditEntity = ({ id, entity, taxonomies }: EditEntityProps) => {
+export const EditEntity = ({ id, entity, taxonomies, onConfirmAction }: EditEntityProps) => {
   const router = useRouter()
 
   const useFormParams = useForm<EntityFormData>({
@@ -38,9 +39,10 @@ export const EditEntity = ({ id, entity, taxonomies }: EditEntityProps) => {
 
   useEffect(() => {
     if (state?.success) {
+      onConfirmAction?.()
       router.push('/entities')
     }
-  }, [state, router])
+  }, [state, router, onConfirmAction])
 
   return (
     <>

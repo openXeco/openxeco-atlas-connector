@@ -4,26 +4,7 @@ import { authenticate } from '../middleware/auth.js'
 import { taxonomySyncService } from '../services/atlas/taxonomy-sync.js'
 import type { TaxonomyType } from '../services/atlas/types.js'
 import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
-
-const taxonomyTypeSchema = z.enum([
-  'activities_of_interest',
-  'applications_and_technologies',
-  'cluster_thematic_area',
-  'cluster_type',
-  'country',
-  'cybersecurity_research_projects',
-  'european_cybersecurity_competenc',
-  'fields_of_activity',
-  'funding_sources',
-  'initiatives',
-  'languages',
-  'legal_status',
-  'nationality',
-  'position_category',
-  'sectors',
-  'technologies',
-  'use_cases',
-])
+import { taxonomyTypeSchema } from '@/services/atlas/taxonomy-types.js'
 
 export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/count/:type?', { preHandler: authenticate }, async (request, reply) => {
