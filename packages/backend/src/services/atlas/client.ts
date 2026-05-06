@@ -328,15 +328,12 @@ class AtlasClient {
                   // postal_code: data.postalCode,
                 }
               : undefined,
-          // field_latitude: data.latitude,
-          // field_longitude: data.longitude,
 
           // Organisation details
           field_general_contact_e_mail: data.email, // *
           field_phone_number: data.phone,
           field_url: data.website ? { uri: data.website } : undefined, // *
           field_registration_number: data.registrationNumber,
-          field_logo: data.logoUrl,
 
           // Headquarters
           field_question_headquarter: data.isHeadquarter, // *
@@ -400,7 +397,7 @@ class AtlasClient {
     // }
 
     // Address (structured)
-    if (data.countryCode || data.city || data.streetAddress || data.postalCode) {
+    if (data.countryCode || data.city || data.streetAddress) {
       attributes.field_address = {
         ...(data.countryCode && { country_code: data.countryCode }),
         ...(data.city && { locality: data.city }),
@@ -408,12 +405,6 @@ class AtlasClient {
         // ...(data.postalCode && { postal_code: data.postalCode }),
       }
     }
-    // if (data.latitude !== undefined) {
-    //   attributes.field_latitude = data.latitude
-    // }
-    // if (data.longitude !== undefined) {
-    //   attributes.field_longitude = data.longitude
-    // }
 
     // Organisation details
     if (data.email !== undefined) {
@@ -427,9 +418,6 @@ class AtlasClient {
     }
     if (data.registrationNumber !== undefined) {
       attributes.field_registration_number = data.registrationNumber
-    }
-    if (data.logoUrl !== undefined) {
-      attributes.field_logo = data.logoUrl
     }
 
     // Headquarters

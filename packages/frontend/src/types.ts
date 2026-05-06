@@ -1,7 +1,7 @@
 // Auth
 export interface ApiClientOptions extends RequestInit {
   params?: Record<string, string>
-  forceAccessToken?: string
+  accessToken?: string
 }
 
 export interface ApiClientError extends Error {
@@ -73,21 +73,18 @@ export interface Entity {
   name: string
   nameNational: string | null
   entityDepartment: string | null
-  description: string | null
   status: EntityStatus
   moderationState: EntityStatus | null
   syncStatus: SyncStatus
   countryCode: string | null
   city: string | null
   streetAddress: string | null
-  postalCode: string | null
   email: string | null
   phone: string | null
   registrationNumber: string | null
   countryId: string | null
   clusterTypeId: string | null
   organizationTypeId: string | null
-  logoUrl: string | null
   website: string | null
   latitude: string | null
   longitude: string | null
@@ -212,3 +209,8 @@ export type ActionState = { success: true; message: string } | { success: false;
 export type ActionStateWithErrors =
   | { success: true; message: string }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> }
+
+// App
+export type GeneralSettings = {
+  country?: string
+}

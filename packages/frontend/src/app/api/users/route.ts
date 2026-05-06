@@ -4,7 +4,7 @@ import type { User } from '@/types'
 
 export async function GET() {
   try {
-    const apiClient = await getApiClient()
+    const apiClient = getApiClient()
     const response = await apiClient.get<{ data: User[] }>('/users', { credentials: 'include' })
 
     return NextResponse.json({ data: response.data })

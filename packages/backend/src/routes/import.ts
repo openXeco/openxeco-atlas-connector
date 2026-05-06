@@ -1,3 +1,7 @@
+/**
+ * @TODO
+ */
+
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { authenticate } from '../middleware/auth.js'

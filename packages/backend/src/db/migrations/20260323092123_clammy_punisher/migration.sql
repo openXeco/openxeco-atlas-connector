@@ -1,0 +1,1 @@
+ALTER TABLE "taxonomies" ALTER COLUMN "atlas_id" SET NOT NULL;

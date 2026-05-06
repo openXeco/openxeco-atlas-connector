@@ -14,6 +14,7 @@ import {
 import { authenticate } from '../middleware/auth.js'
 
 import { entitySyncService } from '@/services/sync/entity-sync.js'
+import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
 
 // Base validation schema for ATLAS-compliant entity registration
 const baseEntitySchema = z.object({
@@ -176,11 +177,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch entities')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to fetch entities',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -202,25 +199,12 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       })
 
       if (!entity) {
-        return reply.status(404).send({
-          error: 'Not Found',
-          message: 'Entity not found',
-        })
+        return sendErrorReply({ reply, type: 'notFound' })
       }
 
       return reply.send({ data: entity })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid entity ID format',
-        })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch entity')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to fetch entity',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -236,22 +220,17 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
             name: body.name,
             nameNational: body.nameNational,
             entityDepartment: body.entityDepartment,
-            description: body.description,
 
             // Address
             countryCode: body.countryCode,
             city: body.city,
             streetAddress: body.streetAddress,
-            postalCode: body.postalCode,
-            latitude: body.latitude?.toString(),
-            longitude: body.longitude?.toString(),
 
             // Organisation details
             email: body.email,
             phone: body.phone,
             website: body.website,
             registrationNumber: body.registrationNumber,
-            logoUrl: body.logoUrl,
 
             // Headquarters
             isHeadquarter: body.isHeadquarter,
@@ -362,17 +341,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Entity created successfully',
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
-        })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to create entity')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to create entity',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -380,14 +349,12 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
       const body = updateEntitySchema.parse(request.body)
+      console.log(body)
 
       const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
       if (!existing) {
-        return reply.status(404).send({
-          error: 'Not Found',
-          message: 'Entity not found',
-        })
+        return sendErrorReply({ reply, type: 'notFound' })
       }
 
       const updated = await db.transaction(async (tx) => {
@@ -478,52 +445,44 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           .where(eq(entities.id, id))
           .returning()
 
-        if (body.thematicAreaIds) {
-          await tx.delete(entityThematicAreas).where(eq(entityThematicAreas.entityId, id))
-          if (body.thematicAreaIds.length > 0) {
-            await tx.insert(entityThematicAreas).values(
-              body.thematicAreaIds.map((taxonomyId) => ({
-                entityId: id,
-                taxonomyId,
-              })),
-            )
-          }
+        await tx.delete(entityThematicAreas).where(eq(entityThematicAreas.entityId, id))
+        if (body?.thematicAreaIds?.length) {
+          await tx.insert(entityThematicAreas).values(
+            body.thematicAreaIds.map((taxonomyId) => ({
+              entityId: id,
+              taxonomyId,
+            })),
+          )
         }
 
-        if (body.sectorIds) {
-          await tx.delete(entitySectors).where(eq(entitySectors.entityId, id))
-          if (body.sectorIds.length > 0) {
-            await tx.insert(entitySectors).values(
-              body.sectorIds.map((taxonomyId) => ({
-                entityId: id,
-                taxonomyId,
-              })),
-            )
-          }
+        await tx.delete(entitySectors).where(eq(entitySectors.entityId, id))
+        if (body?.sectorIds?.length) {
+          await tx.insert(entitySectors).values(
+            body.sectorIds.map((taxonomyId) => ({
+              entityId: id,
+              taxonomyId,
+            })),
+          )
         }
 
-        if (body.technologyIds) {
-          await tx.delete(entityTechnologies).where(eq(entityTechnologies.entityId, id))
-          if (body.technologyIds.length > 0) {
-            await tx.insert(entityTechnologies).values(
-              body.technologyIds.map((taxonomyId) => ({
-                entityId: id,
-                taxonomyId,
-              })),
-            )
-          }
+        await tx.delete(entityTechnologies).where(eq(entityTechnologies.entityId, id))
+        if (body?.technologyIds?.length) {
+          await tx.insert(entityTechnologies).values(
+            body.technologyIds.map((taxonomyId) => ({
+              entityId: id,
+              taxonomyId,
+            })),
+          )
         }
 
-        if (body.useCaseIds) {
-          await tx.delete(entityUseCases).where(eq(entityUseCases.entityId, id))
-          if (body.useCaseIds.length > 0) {
-            await tx.insert(entityUseCases).values(
-              body.useCaseIds.map((taxonomyId) => ({
-                entityId: id,
-                taxonomyId,
-              })),
-            )
-          }
+        await tx.delete(entityUseCases).where(eq(entityUseCases.entityId, id))
+        if (body?.useCaseIds?.length) {
+          await tx.insert(entityUseCases).values(
+            body.useCaseIds.map((taxonomyId) => ({
+              entityId: id,
+              taxonomyId,
+            })),
+          )
         }
 
         if (body.fieldsOfActivityIds) {
@@ -591,17 +550,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Entity updated successfully',
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
-        })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to update entity')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to update entity',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -612,10 +561,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
       const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
       if (!existing) {
-        return reply.status(404).send({
-          error: 'Not Found',
-          message: 'Entity not found',
-        })
+        return sendErrorReply({ reply, type: 'notFound' })
       }
 
       await db.delete(entities).where(eq(entities.id, id))
@@ -624,17 +570,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Entity deleted successfully',
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid entity ID format',
-        })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to delete entity')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to delete entity',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -650,22 +586,14 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           message: 'Entity synced to ATLAS successfully',
         })
       }
-      return reply.status(result.error === 'CONFLICT' ? 409 : 500).send({
-        error: result.error || 'Sync Failed',
-        message: result.message,
+
+      return sendErrorReply({
+        reply,
+        type: result.error === 'CONFLICT' ? 'conflict' : 'unexepected',
+        message: result.error,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
-        })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to sync entity')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to sync entity to ATLAS',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -686,17 +614,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid entity ID format',
-        })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch entity versions')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to fetch entity versions',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 }

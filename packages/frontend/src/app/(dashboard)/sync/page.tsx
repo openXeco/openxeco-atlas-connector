@@ -1,12 +1,21 @@
-export const dynamic = 'force-dynamic'
+'use client'
 
-import { getSyncStatus } from '@/data/sync'
+import useSWR from 'swr'
 import { ArrowUpCircle, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
 import { Message } from '@/components/ui/message'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import type { SyncRecap } from '@/types'
+import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 
-export default async function SyncPage() {
-  const status = await getSyncStatus()
+export default function SyncPage() {
+  const { data, error, isLoading } = useSWR<{
+    data: SyncRecap
+  }>('/api/sync/status', apiFetcher, swrDefaultOptions)
+  const status = data?.data
+
+  if (!status || isLoading) {
+    return <>Loading...</>
+  }
 
   return (
     <>
@@ -16,7 +25,7 @@ export default async function SyncPage() {
           <p className='text-muted-foreground'>Monitor and manage synchronization with ATLAS</p>
         </div>
       </div>
-      {!status ? (
+      {!status || error ? (
         <Message
           message={'Failed to load the sync status. Please check the backend logs'}
           success={false}

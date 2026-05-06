@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.8/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -9,12 +9,13 @@
     "includes": [
       "**",
       "!node_modules",
-      "!.next",
+      "!packages/frontend/.next",
       "!dist",
       "!build",
       "!public",
       "!_postgres_data",
-      "!src/payload-types.ts"
+      "!src/payload-types.ts",
+      "!packages/frontend/next-env.d.ts"
     ]
   },
   "formatter": {

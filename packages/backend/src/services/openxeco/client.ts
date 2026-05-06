@@ -4,26 +4,17 @@
  * Handles authentication and data fetching from the cybersecurity.lu platform
  */
 
-type QuestionParams = {
-  formId?: number
-  session: OpenXecoSession
-}
-
-import type { OpenXecoFormQuestion, OpenXecoFormAnswer } from './types.js'
+import type {
+  OpenXecoFormQuestion,
+  OpenXecoFormAnswer,
+  QuestionParams,
+  OpenXecoSession,
+  OpenXecoCredentials,
+} from './types.js'
 import { type Logger, getLogger } from '@/utils/logger.js'
 
 const OPENXECO_API_BASE = 'https://api.cybersecurity.lu'
 const ECCC_FORM_ID = 11
-
-export interface OpenXecoCredentials {
-  email: string
-  password: string
-}
-
-export interface OpenXecoSession {
-  accessToken: string
-  refreshToken?: string
-}
 
 export class OpenXecoClient {
   private readonly baseUrl: string

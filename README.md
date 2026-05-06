@@ -1,6 +1,6 @@
 # OpenXeco ATLAS Connector
 
-Current version: `0.1.0`
+Current version: `0.2.0`
 
 Manages cybersecurity cluster registrations and syncs them with
 the [European Cybersecurity ATLAS API](https://eccc-atlas.eu). Built for ECCC membership workflows.

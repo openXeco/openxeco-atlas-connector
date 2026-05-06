@@ -1,6 +1,6 @@
 {
   "name": "@openxeco/atlas-connector",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "OpenXeco ATLAS Connector - A connector for managing clusters with the ATLAS API",
   "keywords": [
@@ -9,8 +9,8 @@
     "connector",
     "clusters"
   ],
-  "license": "MIT",
-  "packageManager": "pnpm@10.32.1",
+  "license": "BSD-2-Clause",
+  "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -20,15 +20,15 @@
     "dev:backend": "env-cmd -- pnpm -filter=@openxeco/atlas-connector-backend dev",
     "build": "pnpm -r build",
     "lint": "biome check .",
-    "lint:fix": "biome check .",
+    "lint:fix": "biome check  --write",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "clean": "pnpm -r clean && rimraf node_modules"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.12",
     "@types/node": "^22.19.15",
     "env-cmd": "^11.0.0",
-    "@biomejs/biome": "^2.4.8",
     "rimraf": "^6.1.3",
     "typescript": "^5.9.3"
   }

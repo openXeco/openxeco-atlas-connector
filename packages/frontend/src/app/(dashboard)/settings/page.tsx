@@ -1,13 +1,12 @@
+import { GeneralTab } from '@/components/settings/general-tab'
+
 export const dynamic = 'force-dynamic'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { UsersTab } from '@/components/settings/users-tab'
-import { getUserInfo } from '@/data/auth'
-import type { User } from '@/types'
 import { Badge } from '@/components/ui/badge'
 
 export default async function SettingsPage() {
-  const user = await getUserInfo()
   return (
     <>
       <div className='mb-8'>
@@ -21,23 +20,23 @@ export default async function SettingsPage() {
       <Tabs defaultValue='users' className='space-y-6'>
         <TabsList>
           <TabsTrigger value='users'>Users</TabsTrigger>
+          <TabsTrigger value='general' disabled={false}>
+            General
+          </TabsTrigger>
           <TabsTrigger value='atlas' disabled={true}>
             ATLAS API
-          </TabsTrigger>
-          <TabsTrigger value='general' disabled={true}>
-            General
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value='users'>
-          <UsersTab currentUser={user as User} />
-        </TabsContent>
-
-        <TabsContent value='atlas'>
-          <>Coming soon...</>
+          <UsersTab />
         </TabsContent>
 
         <TabsContent value='general'>
+          <GeneralTab />
+        </TabsContent>
+
+        <TabsContent value='atlas'>
           <>Coming soon...</>
         </TabsContent>
       </Tabs>

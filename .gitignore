@@ -46,8 +46,8 @@ coverage/
 *.local
 .turbo/
 
+# AI
 CLAUDE.md
-
 .githuman
 .opencode
 opencode.*

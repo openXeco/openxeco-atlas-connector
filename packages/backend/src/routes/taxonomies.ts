@@ -3,26 +3,8 @@ import { z } from 'zod'
 import { authenticate } from '../middleware/auth.js'
 import { taxonomySyncService } from '../services/atlas/taxonomy-sync.js'
 import type { TaxonomyType } from '../services/atlas/types.js'
-
-const taxonomyTypeSchema = z.enum([
-  'activities_of_interest',
-  'applications_and_technologies',
-  'cluster_thematic_area',
-  'cluster_type',
-  'country',
-  'cybersecurity_research_projects',
-  'european_cybersecurity_competenc',
-  'fields_of_activity',
-  'funding_sources',
-  'initiatives',
-  'languages',
-  'legal_status',
-  'nationality',
-  'position_category',
-  'sectors',
-  'technologies',
-  'use_cases',
-])
+import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
+import { taxonomyTypeSchema } from '@/services/atlas/taxonomy-types.js'
 
 export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/count/:type?', { preHandler: authenticate }, async (request, reply) => {
@@ -40,11 +22,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         data: { total: result.total },
       })
     } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to count taxonomies')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to count taxonomies',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -56,11 +34,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         result,
       })
     } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to sync taxonomies')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to sync taxonomies',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -77,16 +51,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         count,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid taxonomy type',
-        })
-      }
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to sync taxonomy',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -106,16 +71,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid taxonomy type',
-        })
-      }
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to fetch taxonomies',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -126,25 +82,12 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
       const taxonomy = await taxonomySyncService.getTaxonomyById(id)
 
       if (!taxonomy) {
-        return reply.status(404).send({
-          error: 'Not Found',
-          message: 'Taxonomy not found',
-        })
+        return sendErrorReply({ reply, type: 'Not found' })
       }
 
       return reply.send({ data: taxonomy })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid taxonomy ID format',
-        })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch taxonomy')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to fetch taxonomy',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -165,16 +108,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid taxonomy type',
-        })
-      }
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to search taxonomies',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 }

@@ -1,20 +1,15 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { verifyAccessToken } from '../services/jwt.js'
-import type { JwtPayload } from '../services/jwt.js'
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    currentUser?: JwtPayload
-  }
-}
+import { sendErrorReply } from '@/utils/reply-helpers.js'
 
 export async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     const authHeader = request.headers.authorization
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return reply.status(401).send({
-        error: 'Unauthorized',
+    if (!authHeader?.startsWith('Bearer ')) {
+      return sendErrorReply({
+        reply,
+        type: 'unauthorized',
         message: 'Missing or invalid authorization header',
       })
     }
@@ -23,18 +18,12 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     const payload = await verifyAccessToken(request.server, token)
 
     if (!payload) {
-      return reply.status(401).send({
-        error: 'Unauthorized',
-        message: 'Invalid or expired token',
-      })
+      return sendErrorReply({ reply, type: 'unauthorized', message: 'Invalid or expired token' })
     }
 
     request.currentUser = payload
   } catch (_error) {
-    return reply.status(401).send({
-      error: 'Unauthorized',
-      message: 'Authentication failed',
-    })
+    return sendErrorReply({ reply, type: 'unauthorized', message: 'Authentication failed' })
   }
 }
 
@@ -45,9 +34,6 @@ export async function requireAdmin(request: FastifyRequest, reply: FastifyReply)
   if (reply.sent) return
 
   if (request.currentUser?.role !== 'admin') {
-    return reply.status(403).send({
-      error: 'Forbidden',
-      message: 'Admin access required',
-    })
+    return sendErrorReply({ reply, type: 'forbidden', message: 'Admin access required' })
   }
 }

@@ -86,6 +86,8 @@ export function ActionButton({
   const uiProps = getDefaultUI({ variant, label, syncingLabel })
 
   const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+    e.preventDefault()
+
     if (variant === 'delete' && !confirm(uiProps.confirmMessage || '')) {
       return
     }
