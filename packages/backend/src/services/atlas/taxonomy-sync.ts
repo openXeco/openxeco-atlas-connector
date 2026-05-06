@@ -6,26 +6,7 @@ import { jsonApiTransformer } from './transformer.js'
 import { KNOWLEDGE_DOMAIN_HIERARCHY } from './knowledge-domain-hierarchy.js'
 import type { TaxonomyType } from './types.js'
 import { getLogger, type Logger } from '@/utils/logger.js'
-
-const TAXONOMY_TYPES: TaxonomyType[] = [
-  'activities_of_interest',
-  'applications_and_technologies',
-  'cluster_thematic_area',
-  'cluster_type',
-  'country',
-  'cybersecurity_research_projects',
-  'european_cybersecurity_competenc',
-  'fields_of_activity',
-  'funding_sources',
-  'initiatives',
-  'languages',
-  'legal_status',
-  'nationality',
-  'position_category',
-  'sectors',
-  'technologies',
-  'use_cases',
-]
+import { TAXONOMY_TYPES } from '@/services/atlas/taxonomy-types.js'
 
 // cluster_thematic_area terms are flat on ATLAS (no parent relationships returned by the API).
 // The parent/child hierarchy is hardcoded in knowledge-domain-hierarchy.ts and applied during sync.

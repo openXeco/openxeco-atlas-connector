@@ -12,7 +12,7 @@ import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 export default function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
 
-  const { data, isLoading } = useSWR<{ data: { entity: Entity; versions: EntityVersion[] } }>(
+  const { data, isLoading, mutate } = useSWR<{ data: { entity: Entity; versions: EntityVersion[] } }>(
     `/api/entities/${id}`,
     apiFetcher,
     swrDefaultOptions,
@@ -47,6 +47,10 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
   const entity = data.data.entity
   const taxonomies = taxonomiesData.data
 
+  const handleConfirm = () => {
+    mutate()
+  }
+
   return (
     <>
       {!entity ? (
@@ -63,7 +67,7 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          <EditEntity entity={entity} taxonomies={taxonomies} id={id} />
+          <EditEntity entity={entity} taxonomies={taxonomies} id={id} onConfirmAction={handleConfirm} />
         </>
       )}
     </>

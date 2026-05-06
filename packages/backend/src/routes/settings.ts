@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { atlasConfig } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
+import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
 
 // Settings keys
 const SETTINGS_KEYS = {
@@ -92,14 +93,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ message: 'ATLAS settings updated successfully' })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors[0]?.message || 'Invalid input',
-          details: error.errors,
-        })
-      }
-      throw error
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -114,20 +108,14 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
       const password = body.password || (await getSetting(SETTINGS_KEYS.ATLAS_PASSWORD)) || process.env.ATLAS_PASSWORD
 
       if (!baseUrl) {
-        return reply.status(400).send({
-          error: 'Bad Request',
-          message: 'ATLAS base URL is required',
-        })
+        return sendErrorReply({ reply, type: 'badRequest', message: 'ATLAS base URL is required' })
       }
 
       // SSRF protection: only allow HTTPS URLs with non-private hostnames
       try {
         const parsed = new URL(baseUrl)
         if (parsed.protocol !== 'https:') {
-          return reply.status(400).send({
-            error: 'Bad Request',
-            message: 'ATLAS base URL must use HTTPS',
-          })
+          return sendErrorReply({ reply, type: 'badRequest', message: 'ATLAS base URL must use HTTPS' })
         }
         const hostname = parsed.hostname.toLowerCase()
         const blocked =
@@ -139,16 +127,14 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
           hostname.startsWith('169.254.') ||
           /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
         if (blocked) {
-          return reply.status(400).send({
-            error: 'Bad Request',
+          return sendErrorReply({
+            reply,
+            type: 'badRequest',
             message: 'ATLAS base URL must not point to a private or loopback address',
           })
         }
       } catch {
-        return reply.status(400).send({
-          error: 'Bad Request',
-          message: 'ATLAS base URL is not a valid URL',
-        })
+        return sendErrorReply({ reply, type: 'badRequest', message: 'ATLAS base URL is not a valid URL' })
       }
 
       // Test the connection by making a simple request
@@ -181,12 +167,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Connection failed: ${response.status} ${response.statusText}`,
       })
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      fastify.log.error(error instanceof Error ? error : { message }, 'ATLAS connection test failed')
-      return reply.status(500).send({
-        success: false,
-        message: `Connection test failed: ${message}`,
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -235,16 +216,19 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
 
         if (!country) {
           fastify.log.error(`Not found (${country})`)
-          return reply.status(400).send({
-            error: 'Validation Error',
+          return sendErrorReply({
+            reply,
+            type: 'badRequest',
             message: 'Invalid Input',
-            details: [
-              {
-                code: 'invalid_type',
-                message: 'Country not found in database',
-                path: ['body', 'country'],
-              },
-            ] as ZodIssue[],
+            additionalPayload: {
+              details: [
+                {
+                  code: 'invalid_type',
+                  message: 'Country not found in database',
+                  path: ['body', 'country'],
+                },
+              ] as ZodIssue[],
+            },
           })
         }
         updates.push(setSetting(SETTINGS_KEYS.COUNTRY, body.country))
@@ -254,15 +238,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({ message: 'General settings updated successfully' })
     } catch (error) {
-      fastify.log.error(error)
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors[0]?.message || 'Invalid input',
-          details: error.errors,
-        })
-      }
-      throw error
+      return handleRouteError(error, reply, fastify)
     }
   })
 }

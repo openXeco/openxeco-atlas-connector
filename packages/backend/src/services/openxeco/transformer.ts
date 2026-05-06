@@ -6,30 +6,128 @@
 
 import { db } from '@/config/database.js'
 import { taxonomies } from '@/db/schema.js'
-import {
-  QUESTION_TO_ENTITY_MAPPING,
-  MAPPING_BY_QUESTION_REF,
-  type OpenXecoFormQuestion,
-  type OpenXecoFormAnswer,
-  type FieldMapping,
+import type {
+  OpenXecoFormQuestion,
+  OpenXecoFormAnswer,
+  FieldMapping,
+  AnswerLookup,
+  TaxonomyCache,
+  TransformResult,
 } from './types.js'
 import type { Logger } from 'pino'
 import { getLogger } from '@/utils/logger.js'
 
-export interface TransformResult {
-  entity: Record<string, unknown>
-  warnings: string[]
-  errors: string[]
-  unmappedAnswers: string[]
-}
+/**
+ * Complete mapping from ECCC form question references to entity fields
+ */
+export const QUESTION_TO_ENTITY_MAPPING: FieldMapping[] = [
+  // Step 1: Organisation
+  { questionRef: 'FORM-ECCC-001-Q101', entityField: 'nameNational', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q101b', entityField: 'name', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q101c', entityField: 'entityDepartment', fieldType: 'string' },
+  {
+    questionRef: 'FORM-ECCC-001-Q102',
+    entityField: 'countryId',
+    fieldType: 'taxonomy_single',
+    taxonomyType: 'country',
+  },
+  { questionRef: 'FORM-ECCC-001-Q103', entityField: 'streetAddress', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q104', entityField: 'city', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q105', entityField: 'registrationNumber', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q106', entityField: 'isHeadquarter', fieldType: 'boolean' },
+  {
+    questionRef: 'FORM-ECCC-001-Q106b',
+    entityField: 'headquarterInfo',
+    fieldType: 'conditional_string',
+    conditionalOn: 'FORM-ECCC-001-Q106',
+    conditionalValue: false,
+  },
+  { questionRef: 'FORM-ECCC-001-Q107', entityField: 'website', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q108', entityField: 'phone', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q109', entityField: 'email', fieldType: 'string' },
+  {
+    questionRef: 'FORM-ECCC-001-Q110',
+    entityField: 'organizationTypeId',
+    fieldType: 'taxonomy_single',
+    taxonomyType: 'organization_type',
+  },
+  { questionRef: 'FORM-ECCC-001-Q111', entityField: 'hasSubsidiaries', fieldType: 'boolean' },
+  {
+    questionRef: 'FORM-ECCC-001-Q111b',
+    entityField: 'subsidiariesDetails',
+    fieldType: 'conditional_string',
+    conditionalOn: 'FORM-ECCC-001-Q111',
+    conditionalValue: true,
+  },
+  { questionRef: 'FORM-ECCC-001-Q112', entityField: 'hasMajorityShares', fieldType: 'boolean' },
+  {
+    questionRef: 'FORM-ECCC-001-Q112b',
+    entityField: 'majoritySharesDetails',
+    fieldType: 'conditional_string',
+    conditionalOn: 'FORM-ECCC-001-Q112',
+    conditionalValue: true,
+  },
+  { questionRef: 'FORM-ECCC-001-Q113', entityField: 'article138Compliance', fieldType: 'boolean' },
 
-interface TaxonomyCache {
-  byNameAndType: Map<string, string> // "name|type" -> uuid
-}
+  // Step 2: Contact Person
+  { questionRef: 'FORM-ECCC-001-Q201', entityField: 'contactFirstName', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q202', entityField: 'contactLastName', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q203', entityField: 'contactPosition', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q205', entityField: 'contactEmail', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q206', entityField: 'contactPhone', fieldType: 'string' },
 
-interface AnswerLookup {
-  byQuestionRef: Map<string, string>
-}
+  // Step 3: Expertise
+  {
+    questionRef: 'FORM-ECCC-001-Q301',
+    entityField: 'fieldsOfActivityIds',
+    fieldType: 'taxonomy_multi',
+    taxonomyType: 'fields_of_activity',
+  },
+  { questionRef: 'FORM-ECCC-001-Q302', entityField: 'expertiseDescription', fieldType: 'string' },
+  {
+    questionRef: 'FORM-ECCC-001-Q303-1',
+    entityField: 'thematicAreaIds',
+    fieldType: 'taxonomy_multi',
+    taxonomyType: 'cluster_thematic_area',
+  },
+  {
+    questionRef: 'FORM-ECCC-001-Q303-3',
+    entityField: 'sectorIds',
+    fieldType: 'taxonomy_multi',
+    taxonomyType: 'sectors',
+  },
+  {
+    questionRef: 'FORM-ECCC-001-Q303-5',
+    entityField: 'technologyIds',
+    fieldType: 'taxonomy_multi',
+    taxonomyType: 'technologies',
+  },
+  {
+    questionRef: 'FORM-ECCC-001-Q303-7',
+    entityField: 'useCaseIds',
+    fieldType: 'taxonomy_multi',
+    taxonomyType: 'use_cases',
+  },
+  { questionRef: 'FORM-ECCC-001-Q303-2', entityField: 'goalsToAchieve', fieldType: 'string' },
+  { questionRef: 'FORM-ECCC-001-Q305', entityField: 'goalsToContribute', fieldType: 'string' },
+
+  // Step 4: Confirmation
+  { questionRef: 'FORM-ECCC-001-Q114', entityField: 'dataProtectionConsent', fieldType: 'boolean' },
+  {
+    questionRef: 'FORM-ECCC-001-Q501',
+    entityField: 'formCompletionConfirmed',
+    fieldType: 'boolean',
+  },
+]
+
+// Lookup maps for fast access
+export const MAPPING_BY_QUESTION_REF = new Map<string, FieldMapping>(
+  QUESTION_TO_ENTITY_MAPPING.map((m) => [m.questionRef, m]),
+)
+
+export const MAPPING_BY_ENTITY_FIELD = new Map<string, FieldMapping>(
+  QUESTION_TO_ENTITY_MAPPING.map((m) => [m.entityField, m]),
+)
 
 export class OpenXecoFormTransformer {
   private taxonomyCache: TaxonomyCache | null = null

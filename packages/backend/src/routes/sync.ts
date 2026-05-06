@@ -5,6 +5,7 @@ import { db } from '../config/database.js'
 import { syncLogs, entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { entitySyncService } from '../services/sync/entity-sync.js'
+import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
 
 const idParamSchema = z.object({ id: z.string().uuid() })
 
@@ -36,8 +37,9 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const result = await entitySyncService.pushEntity(id, userId)
 
       if (!result.success) {
-        return reply.status(result.error === 'CONFLICT' ? 409 : 500).send({
-          error: result.error || 'Sync Failed',
+        return sendErrorReply({
+          reply,
+          type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
           message: result.message,
         })
       }
@@ -47,14 +49,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to push entity')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to push entity',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -64,18 +59,16 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
 
       const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
-      if (!entity || !entity.atlasId) {
-        return reply.status(404).send({
-          error: 'Not Found',
-          message: 'Entity not found or not synced to ATLAS',
-        })
+      if (!entity?.atlasId) {
+        return sendErrorReply({ reply, type: 'notFound', message: 'Entity not found or not synced to ATLAS' })
       }
 
       const result = await entitySyncService.pullEntity(entity.atlasId)
 
       if (!result.success) {
-        return reply.status(result.error === 'CONFLICT' ? 409 : 500).send({
-          error: result.error || 'Sync Failed',
+        return sendErrorReply({
+          reply,
+          type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
           message: result.message,
         })
       }
@@ -85,14 +78,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to pull entity')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to pull entity',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -110,14 +96,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to get diff')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to get diff',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -131,14 +110,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         data: conflict,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Validation Error', message: 'Invalid entity ID format' })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to detect conflicts')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to detect conflicts',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -151,10 +123,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const result = await entitySyncService.resolveConflict(id, body.resolution, userId)
 
       if (!result.success) {
-        return reply.status(500).send({
-          error: 'Resolution Failed',
-          message: result.message,
-        })
+        return sendErrorReply({ reply, type: 'unexpected', message: result.message })
       }
 
       return reply.send({
@@ -162,16 +131,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
-        })
-      }
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to resolve conflict',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -181,8 +141,9 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const userId = request.currentUser?.userId
 
       if (!body.entityIds || body.entityIds.length === 0) {
-        return reply.status(400).send({
-          error: 'Validation Error',
+        return sendErrorReply({
+          reply,
+          type: 'badRequest',
           message: 'entityIds array is required and must not be empty',
         })
       }
@@ -194,16 +155,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Batch push completed: ${result.success} succeeded, ${result.failed} failed`,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
-        })
-      }
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to push batch',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -212,8 +164,9 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const body = batchSyncSchema.parse(request.body)
 
       if (!body.atlasIds || body.atlasIds.length === 0) {
-        return reply.status(400).send({
-          error: 'Validation Error',
+        return sendErrorReply({
+          reply,
+          type: 'badRequest',
           message: 'atlasIds array is required and must not be empty',
         })
       }
@@ -225,16 +178,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Batch pull completed: ${result.success} succeeded, ${result.failed} failed`,
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
-        })
-      }
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to pull batch',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -269,11 +213,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to get sync status')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to get sync status',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -318,17 +258,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
-        })
-      }
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to fetch sync logs')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to fetch sync logs',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 
@@ -344,11 +274,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         deleted,
       })
     } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Failed to cleanup sync logs')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to cleanup sync logs',
-      })
+      return handleRouteError(error, reply, fastify)
     }
   })
 }
