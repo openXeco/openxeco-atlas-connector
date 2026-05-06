@@ -1,6 +1,6 @@
 {
   "name": "@openxeco/atlas-connector",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "OpenXeco ATLAS Connector - A connector for managing clusters with the ATLAS API",
   "keywords": [
@@ -9,7 +9,7 @@
     "connector",
     "clusters"
   ],
-  "license": "MIT",
+  "license": "BSD-2-Clause",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=20.0.0"
