@@ -10,7 +10,7 @@
     "clusters"
   ],
   "license": "BSD-2-Clause",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.0.8",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -26,7 +26,7 @@
     "clean": "pnpm -r clean && rimraf node_modules"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.12",
+    "@biomejs/biome": "^2.4.14",
     "@types/node": "^22.19.15",
     "env-cmd": "^11.0.0",
     "rimraf": "^6.1.3",
