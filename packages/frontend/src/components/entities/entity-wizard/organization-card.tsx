@@ -53,7 +53,9 @@ export const OrganizationCard = ({
       </div>
 
       <div className='space-y-2'>
-        <Label htmlFor='FORM-ECCC-001-Q103'>Street Address (street and number, no special characters) *</Label>
+        <Label htmlFor='FORM-ECCC-001-Q103'>
+          Street Address (street followed by number, no special characters, no postal code) *
+        </Label>
         <Input id='FORM-ECCC-001-Q103' {...register('streetAddress')} placeholder='Street address' />
         {errors.streetAddress && <p className='text-sm text-destructive'>{errors.streetAddress.message}</p>}
       </div>

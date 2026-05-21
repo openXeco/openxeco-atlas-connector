@@ -13,6 +13,7 @@ services:
       - FRONTEND_SECRET_KEY=${FRONTEND_SECRET_KEY}
       - FRONTEND_SESSION_COOKIE_NAME=${FRONTEND_SESSION_COOKIE_NAME}
       - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_DISABLE_CONSOLE=${NEXT_PUBLIC_DISABLE_CONSOLE}
     depends_on:
       backend:
         condition: service_started
