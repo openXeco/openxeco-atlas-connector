@@ -80,23 +80,26 @@ export async function updateEntity(
   }
 }
 
-export async function deleteEntity(id: string) {
+export async function deleteEntity(id: string): Promise<void> {
   const apiClient = getApiClient()
-  try {
-    await apiClient.delete(`/entities/${id}`, { credentials: 'include' })
-  } catch (e) {
-    logger.error(e)
-  }
+  await apiClient.delete(`/entities/${id}`, { credentials: 'include' })
 }
 
 export async function deleteEntityFormAction(_prevState: unknown, formData: FormData): Promise<ActionState> {
   const id = formData.get('id')
 
-  await deleteEntity(id as string)
-
-  return {
-    success: true,
-    message: 'Deleted',
+  try {
+    await deleteEntity(id as string)
+    return {
+      success: true,
+      message: 'Deleted',
+    }
+  } catch (e) {
+    logger.error(e)
+    return {
+      success: false,
+      error: `Failed to delete entity. ${(e as Error).message}`,
+    }
   }
 }
 
