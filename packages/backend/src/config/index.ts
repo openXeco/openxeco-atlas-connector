@@ -34,7 +34,7 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
   ATLAS_BASE_URL: z.string().url(),
-  ATLAS_API_KEY: z.string(),
+  ATLAS_API_KEY: z.string().min(1),
   ATLAS_USERNAME: z.string().optional(),
   ATLAS_PASSWORD: z.string().optional(),
 
