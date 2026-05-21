@@ -20,28 +20,33 @@ for (const envPath of envCandidates) {
   }
 }
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().default(3001),
-  HOST: z.string().default('0.0.0.0'),
+const envSchema = z
+  .object({
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+    PORT: z.coerce.number().default(3001),
+    HOST: z.string().default('0.0.0.0'),
 
-  DATABASE_URL: z.string().url(),
+    DATABASE_URL: z.string().url(),
 
-  REDIS_URL: z.string().url().optional(),
+    REDIS_URL: z.string().url().optional(),
 
-  JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('5m'),
-  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+    JWT_SECRET: z.string().min(32),
+    JWT_EXPIRES_IN: z.string().default('5m'),
+    JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
-  ATLAS_BASE_URL: z.string().url(),
-  ATLAS_API_KEY: z.string(),
-  ATLAS_USERNAME: z.string().optional(),
-  ATLAS_PASSWORD: z.string().optional(),
+    ATLAS_BASE_URL: z.string().url(),
+    ATLAS_API_KEY: z.string(),
+    ATLAS_USERNAME: z.string().optional(),
+    ATLAS_PASSWORD: z.string().optional(),
 
-  FRONTEND_URL: z.string().url().optional(),
+    FRONTEND_URL: z.string().url().optional(),
 
-  HTTPS_PROXY: z.string().url().optional(),
-})
+    HTTPS_PROXY: z.string().url().optional(),
+  })
+  .refine((data) => data.NODE_ENV !== 'production' || !!data.FRONTEND_URL, {
+    message: 'FRONTEND_URL is required in production',
+    path: ['FRONTEND_URL'],
+  })
 
 export type Env = z.infer<typeof envSchema>
 
