@@ -274,14 +274,7 @@ export class EntitySyncService {
     const [entity] = await db.select().from(entities).where(eq(entities.id, entityId)).limit(1)
 
     if (!entity?.atlasId) {
-      return {
-        hasConflict: false,
-        localVersion: entity,
-        remoteVersion: null,
-        localUpdatedAt: entity?.updatedAt ? new Date(entity.updatedAt) : new Date(),
-        remoteUpdatedAt: new Date(),
-        conflictFields: [],
-      }
+      return { hasConflict: false, conflictFields: [] }
     }
 
     try {
@@ -297,14 +290,7 @@ export class EntitySyncService {
       const remoteModifiedAfterSync = remoteUpdatedAt > lastSynced
 
       if (!localModifiedAfterSync || !remoteModifiedAfterSync) {
-        return {
-          hasConflict: false,
-          localVersion: entity,
-          remoteVersion: remoteEntity,
-          localUpdatedAt,
-          remoteUpdatedAt,
-          conflictFields: [],
-        }
+        return { hasConflict: false, conflictFields: [] }
       }
 
       const conflictFields: string[] = []
@@ -351,14 +337,18 @@ export class EntitySyncService {
         }
       }
 
-      return {
-        hasConflict: conflictFields.length > 0,
-        localVersion: entity,
-        remoteVersion: remoteEntity,
-        localUpdatedAt,
-        remoteUpdatedAt,
-        conflictFields,
+      if (conflictFields.length > 0) {
+        return {
+          hasConflict: true,
+          localVersion: entity,
+          remoteVersion: remoteEntity,
+          localUpdatedAt,
+          remoteUpdatedAt,
+          conflictFields,
+        }
       }
+
+      return { hasConflict: false, conflictFields: [] }
     } catch (error) {
       this.logger.error(error as Error, `Failed to detect conflicts for entity ${entityId}:`)
       throw error

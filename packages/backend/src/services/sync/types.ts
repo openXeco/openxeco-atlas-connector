@@ -8,14 +8,16 @@ export interface SyncResult {
   error?: string
 }
 
-export interface ConflictReport {
-  hasConflict: boolean
-  localVersion: Entity
-  remoteVersion: Partial<Entity> | null
-  localUpdatedAt: Date
-  remoteUpdatedAt: Date
-  conflictFields: string[]
-}
+export type ConflictReport =
+  | { hasConflict: false; conflictFields: string[] }
+  | {
+      hasConflict: true
+      localVersion: Entity
+      remoteVersion: Partial<Entity>
+      localUpdatedAt: Date
+      remoteUpdatedAt: Date
+      conflictFields: string[]
+    }
 
 export interface EntityDiff {
   field: string
