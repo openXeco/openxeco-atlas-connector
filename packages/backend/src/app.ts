@@ -42,7 +42,7 @@ export async function buildApp() {
   })
 
   await fastify.register(cookie, {
-    secret: config.JWT_SECRET,
+    secret: config.COOKIE_SECRET,
     parseOptions: {},
   })
 
