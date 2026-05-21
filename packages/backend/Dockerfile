@@ -40,14 +40,18 @@ FROM node:22-alpine AS production
 WORKDIR /app/packages/backend
 ENV NODE_ENV=production
 
-COPY --from=prod-deps /app/node_modules /app/node_modules
-COPY --from=prod-deps /app/packages/backend/node_modules ./node_modules
-COPY --from=builder /app/packages/backend/dist ./dist
-COPY --from=builder /app/packages/backend/package.json ./package.json
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nodeapp
+
+COPY --from=prod-deps --chown=nodeapp:nodejs /app/node_modules /app/node_modules
+COPY --from=prod-deps --chown=nodeapp:nodejs /app/packages/backend/node_modules ./node_modules
+COPY --from=builder --chown=nodeapp:nodejs /app/packages/backend/dist ./dist
+COPY --from=builder --chown=nodeapp:nodejs /app/packages/backend/package.json ./package.json
 
 # Include migration files for drizzle-kit migrate
-COPY --from=builder /app/packages/backend/drizzle.config.ts ./drizzle.config.ts
-COPY --from=builder /app/packages/backend/src/db/migrations ./src/db/migrations
+COPY --from=builder --chown=nodeapp:nodejs /app/packages/backend/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder --chown=nodeapp:nodejs /app/packages/backend/src/db/migrations ./src/db/migrations
+
+USER nodeapp
 
 EXPOSE 3001
 
