@@ -1,5 +1,5 @@
 # ---- Base ----
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
 WORKDIR /app
 
@@ -30,7 +30,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 
 # ---- Production ----
-FROM node:22-alpine AS production
+FROM node:24-alpine AS production
 WORKDIR /app
 
 ENV NODE_ENV=production
