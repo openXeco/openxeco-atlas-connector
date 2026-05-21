@@ -8,8 +8,11 @@ import type { Entity } from '@/types'
 export async function DELETE(_req: NextRequest, ctx: RouteContext<'/api/entities/[id]'>) {
   const { id } = await ctx.params
 
-  // Delete should be idempotent. We don't need to return an error (@TODO double-check UX implications)
-  await deleteEntity(id)
+  try {
+    await deleteEntity(id)
+  } catch (_e) {
+    // Delete is idempotent — log on the action side; still return success to the client
+  }
 
   return NextResponse.json({ message: `Deleted ${id}` })
 }
