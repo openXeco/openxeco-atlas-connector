@@ -7,7 +7,12 @@ import { getLogger } from '@/utils/logger.js'
 const logger = getLogger()
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@atlas-connector.local'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123456'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+
+if (!ADMIN_PASSWORD) {
+  logger.error('ADMIN_PASSWORD environment variable is required. Set it before running the seed script.')
+  process.exit(1)
+}
 
 async function seedAdmin() {
   try {
@@ -28,9 +33,8 @@ async function seedAdmin() {
       role: 'admin',
     })
 
-    logger.info(`✓ Admin user created successfully: ${ADMIN_EMAIL}`)
-    logger.info(`  Password: ${ADMIN_PASSWORD}`)
-    logger.warn('  ⚠️  Please change the password after first login!')
+    logger.info(`Admin user created: ${ADMIN_EMAIL}`)
+    logger.warn('Change the admin password after first login.')
   } catch (error) {
     logger.error(error as Error, 'Failed to seed admin user:')
     throw error
