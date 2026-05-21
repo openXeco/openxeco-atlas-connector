@@ -48,7 +48,7 @@ services:
 
   db:
     container_name: ${APP_PREFIX}-db
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -64,7 +64,7 @@ services:
 
   redis:
     container_name: ${APP_PREFIX}-redis
-    image: redis:7-alpine
+    image: redis:8-alpine
     volumes:
       - redis_data:/data
     healthcheck:
