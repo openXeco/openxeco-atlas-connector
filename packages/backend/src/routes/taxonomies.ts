@@ -82,7 +82,7 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
       const taxonomy = await taxonomySyncService.getTaxonomyById(id)
 
       if (!taxonomy) {
-        return sendErrorReply({ reply, type: 'Not found' })
+        return sendErrorReply({ reply, type: 'notFound' })
       }
 
       return reply.send({ data: taxonomy })
