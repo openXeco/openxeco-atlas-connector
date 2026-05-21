@@ -577,4 +577,12 @@ class AtlasClient {
 
 export default AtlasClient
 
+/**
+ * Module-level ATLAS client singleton.
+ *
+ * Configuration is read from environment variables at process startup.
+ * Changes made through the Settings UI (PATCH /settings/atlas) are stored
+ * in the database but are NOT picked up by this instance — a process
+ * restart is required for updated credentials or base URL to take effect.
+ */
 export const atlasClient = new AtlasClient()
