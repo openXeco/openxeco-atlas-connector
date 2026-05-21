@@ -596,7 +596,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
       return sendErrorReply({
         reply,
-        type: result.error === 'CONFLICT' ? 'conflict' : 'unexepected',
+        type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
         message: result.error,
       })
     } catch (error) {
