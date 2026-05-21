@@ -10,6 +10,8 @@ import type {
   JsonApiWebsite,
   TaxonomyType,
 } from './types.js'
+import { TAXONOMY_TYPES } from '@/services/atlas/taxonomy-types.js'
+import { getLogger } from '@/utils/logger.js'
 
 /**
  * Maps a JSON:API resource to a Cluster object, extracting ALL attributes and relationships.
@@ -296,6 +298,9 @@ export class JsonApiTransformer {
   }
 
   fromJsonApiTaxonomy(resource: JsonApiResource, type: string): TaxonomyTerm {
+    if (!(TAXONOMY_TYPES as readonly string[]).includes(type)) {
+      getLogger().warn(`Unknown taxonomy type received from ATLAS: '${type}' — treating as-is`)
+    }
     return {
       id: resource.id,
       atlasId: resource.id,

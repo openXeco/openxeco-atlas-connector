@@ -134,7 +134,7 @@ const parseEntity = (formData: FormData): EntityFormData => {
     booleans: [
       'isHeadquarter',
       'hasSubsidiaries',
-      'hasSubsidiaries',
+      'dataShareConsent',
       'hasMajorityShares',
       'article138Compliance',
       'dataShareConsent',
