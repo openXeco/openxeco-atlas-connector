@@ -98,7 +98,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   // Test ATLAS API connection
-  fastify.get('/atlas/test', { preHandler: requireAdmin }, async (request, reply) => {
+  fastify.post('/atlas/test', { preHandler: authenticate }, async (request, reply) => {
     try {
       const body = atlasSettingsSchema.parse(request.body)
 
