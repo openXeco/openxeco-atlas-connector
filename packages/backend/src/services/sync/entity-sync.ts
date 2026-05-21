@@ -263,7 +263,6 @@ export class EntitySyncService {
 
       return {
         success: false,
-        entityId: '',
         atlasId,
         message: 'Failed to pull entity from ATLAS',
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -279,7 +278,7 @@ export class EntitySyncService {
         hasConflict: false,
         localVersion: entity,
         remoteVersion: null,
-        localUpdatedAt: entity.updatedAt ? new Date(entity.updatedAt) : new Date(),
+        localUpdatedAt: entity?.updatedAt ? new Date(entity.updatedAt) : new Date(),
         remoteUpdatedAt: new Date(),
         conflictFields: [],
       }

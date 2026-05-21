@@ -2,7 +2,7 @@ import type { Entity } from '@/db/schema.js'
 
 export interface SyncResult {
   success: boolean
-  entityId: string
+  entityId?: string
   atlasId?: string
   message: string
   error?: string
