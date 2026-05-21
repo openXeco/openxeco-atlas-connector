@@ -66,8 +66,6 @@ class AtlasClient {
     const relativePath = path.startsWith('/') ? path.slice(1) : path
     const url = new URL(relativePath, baseUrl)
 
-    url.searchParams.set('api-key', this.config.apiKey)
-
     if (options?.params) {
       if (options.params.pageOffset !== undefined) {
         url.searchParams.set('page[offset]', String(options.params.pageOffset))
@@ -97,6 +95,7 @@ class AtlasClient {
     const headers: Record<string, string> = {
       'Content-Type': 'application/vnd.api+json',
       Accept: 'application/vnd.api+json',
+      'X-Api-Key': this.config.apiKey,
     }
 
     if (this.authToken) {
@@ -108,9 +107,7 @@ class AtlasClient {
     const retryableStatuses = [408, 429, 502, 503, 504]
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      const logUrl = new URL(url.toString())
-      logUrl.searchParams.delete('api-key')
-      this.logger.info(`ATLAS API request: ${method} ${logUrl.toString()} (attempt ${attempt})`)
+      this.logger.info(`ATLAS API request: ${method} ${url.toString()} (attempt ${attempt})`)
 
       try {
         const fetchOptions: RequestInit = {
@@ -146,7 +143,7 @@ class AtlasClient {
               status: response.status,
               statusText: response.statusText,
               errors: apiErrors,
-              url: logUrl.toString(),
+              url: url.toString(),
             },
             'ATLAS API error:',
           )
@@ -178,7 +175,7 @@ class AtlasClient {
             {
               message: error.message,
               cause,
-              url: logUrl.toString(),
+              url: url.toString(),
             },
             'ATLAS API network error (final):',
           )
