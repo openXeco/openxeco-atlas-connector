@@ -57,6 +57,7 @@ export interface Taxonomy {
 }
 
 export type EntityStatus = 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected'
+export type ModerationState = 'draft' | 'ready_for_publication' | 'to_be_rejected'
 export type SyncStatus = 'local' | 'synced' | 'pending_push' | 'failed' | 'conflict'
 export type SyncRecap = {
   total: number
@@ -74,7 +75,7 @@ export interface Entity {
   nameNational: string | null
   entityDepartment: string | null
   status: EntityStatus
-  moderationState: EntityStatus | null
+  moderationState: ModerationState | null
   syncStatus: SyncStatus
   countryCode: string | null
   city: string | null
@@ -172,7 +173,7 @@ export type EntityFormData = {
   technologyIds?: string[]
   useCaseIds?: string[]
   fieldsOfActivityIds?: string[]
-  moderationState?: EntityStatus
+  moderationState?: ModerationState
 }
 
 export interface EntityListParams {
