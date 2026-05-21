@@ -223,8 +223,6 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
 
       const offset = (page - 1) * limit
 
-      let query = db.select().from(syncLogs)
-
       const conditions = []
       if (entityId) {
         conditions.push(eq(syncLogs.entityId, entityId))
@@ -242,12 +240,12 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         conditions.push(lte(syncLogs.createdAt, new Date(endDate)))
       }
 
-      if (conditions.length > 0) {
-        // biome-ignore lint/suspicious/noExplicitAny: Drizzle-orm magic
-        query = query.where(and(...conditions)) as any
-      }
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined
 
-      const logs = await query.limit(limit).offset(offset).orderBy(desc(syncLogs.createdAt))
+      const [logs, [{ total }]] = await Promise.all([
+        db.select().from(syncLogs).where(whereClause).limit(limit).offset(offset).orderBy(desc(syncLogs.createdAt)),
+        db.select({ total: count() }).from(syncLogs).where(whereClause),
+      ])
 
       return reply.send({
         data: logs,
@@ -255,6 +253,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
           page,
           limit,
           count: logs.length,
+          total,
         },
       })
     } catch (error) {
