@@ -445,47 +445,55 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
           .where(eq(entities.id, id))
           .returning()
 
-        await tx.delete(entityThematicAreas).where(eq(entityThematicAreas.entityId, id))
-        if (body?.thematicAreaIds?.length) {
-          await tx.insert(entityThematicAreas).values(
-            body.thematicAreaIds.map((taxonomyId) => ({
-              entityId: id,
-              taxonomyId,
-            })),
-          )
+        if (body.thematicAreaIds !== undefined) {
+          await tx.delete(entityThematicAreas).where(eq(entityThematicAreas.entityId, id))
+          if (body.thematicAreaIds.length > 0) {
+            await tx.insert(entityThematicAreas).values(
+              body.thematicAreaIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              })),
+            )
+          }
         }
 
-        await tx.delete(entitySectors).where(eq(entitySectors.entityId, id))
-        if (body?.sectorIds?.length) {
-          await tx.insert(entitySectors).values(
-            body.sectorIds.map((taxonomyId) => ({
-              entityId: id,
-              taxonomyId,
-            })),
-          )
+        if (body.sectorIds !== undefined) {
+          await tx.delete(entitySectors).where(eq(entitySectors.entityId, id))
+          if (body.sectorIds.length > 0) {
+            await tx.insert(entitySectors).values(
+              body.sectorIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              })),
+            )
+          }
         }
 
-        await tx.delete(entityTechnologies).where(eq(entityTechnologies.entityId, id))
-        if (body?.technologyIds?.length) {
-          await tx.insert(entityTechnologies).values(
-            body.technologyIds.map((taxonomyId) => ({
-              entityId: id,
-              taxonomyId,
-            })),
-          )
+        if (body.technologyIds !== undefined) {
+          await tx.delete(entityTechnologies).where(eq(entityTechnologies.entityId, id))
+          if (body.technologyIds.length > 0) {
+            await tx.insert(entityTechnologies).values(
+              body.technologyIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              })),
+            )
+          }
         }
 
-        await tx.delete(entityUseCases).where(eq(entityUseCases.entityId, id))
-        if (body?.useCaseIds?.length) {
-          await tx.insert(entityUseCases).values(
-            body.useCaseIds.map((taxonomyId) => ({
-              entityId: id,
-              taxonomyId,
-            })),
-          )
+        if (body.useCaseIds !== undefined) {
+          await tx.delete(entityUseCases).where(eq(entityUseCases.entityId, id))
+          if (body.useCaseIds.length > 0) {
+            await tx.insert(entityUseCases).values(
+              body.useCaseIds.map((taxonomyId) => ({
+                entityId: id,
+                taxonomyId,
+              })),
+            )
+          }
         }
 
-        if (body.fieldsOfActivityIds) {
+        if (body.fieldsOfActivityIds !== undefined) {
           await tx.delete(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, id))
           if (body.fieldsOfActivityIds.length > 0) {
             await tx.insert(entityFieldsOfActivity).values(
