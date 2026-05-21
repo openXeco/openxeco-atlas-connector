@@ -57,9 +57,14 @@ const sessionManager = (secretKey: string) => {
 }
 
 export const getSessionManager = cache(() => {
-  if (!process.env.FRONTEND_SECRET_KEY) {
+  const key = process.env.FRONTEND_SECRET_KEY
+  if (!key) {
     throw new Error('Environment variable `FRONTEND_SECRET_KEY` missing.')
   }
-
-  return sessionManager(process.env.FRONTEND_SECRET_KEY)
+  if (Buffer.byteLength(key, 'utf8') !== 32) {
+    throw new Error(
+      `\`FRONTEND_SECRET_KEY\` must be exactly 32 bytes (UTF-8) for AES-256-GCM, got ${Buffer.byteLength(key, 'utf8')}.`,
+    )
+  }
+  return sessionManager(key)
 })
