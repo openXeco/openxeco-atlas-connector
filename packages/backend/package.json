@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@types/ms": "^2.1.0",
     "@types/node": "^22.19.17",
+    "@vitest/coverage-v8": "^4.1.5",
     "drizzle-kit": "1.0.0-beta.9-e89174b",
     "rimraf": "^6.1.3",
     "tsc-alias": "^1.8.16",
