@@ -287,13 +287,14 @@ export class EntitySyncService {
 
       const lastSynced = entity.lastSyncedAt ? new Date(entity.lastSyncedAt) : new Date(0)
 
-      const localModifiedAfterSync = localUpdatedAt > lastSynced
       const remoteModifiedAfterSync = remoteUpdatedAt > lastSynced
 
-      if (!localModifiedAfterSync || !remoteModifiedAfterSync) {
+      // Remote unchanged since last sync — push is safe regardless of local state
+      if (!remoteModifiedAfterSync) {
         return { hasConflict: false, conflictFields: [] }
       }
 
+      // Remote has changed since last sync — compare fields and surface any divergence
       const conflictFields: string[] = []
       const fieldsToCheck = [
         'name',
