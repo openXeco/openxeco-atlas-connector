@@ -1,10 +1,16 @@
 import 'server-only'
 
 import * as crypto from 'node:crypto'
+import { z } from 'zod'
 import { createSessionCookie, destroySessionCookie, getSessionCookie } from '@/lib/cookies'
 import { cache } from 'react'
 
 const algorithm = 'aes-256-gcm'
+
+const sessionSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
+})
 
 const sessionManager = (secretKey: string) => {
   const encryptSession = (data: object, secret: string) => {
@@ -19,20 +25,24 @@ const sessionManager = (secretKey: string) => {
     return Buffer.concat([iv, tag, encrypted]).toString('base64')
   }
 
-  const decryptSession = (cookie: string) => {
-    const buffer = Buffer.from(cookie, 'base64')
+  const decryptSession = (cookie: string): { accessToken: string; refreshToken: string } => {
+    try {
+      const buffer = Buffer.from(cookie, 'base64')
 
-    const iv = buffer.subarray(0, 12)
-    const tag = buffer.subarray(12, 28)
-    const encrypted = buffer.subarray(28)
+      const iv = buffer.subarray(0, 12)
+      const tag = buffer.subarray(12, 28)
+      const encrypted = buffer.subarray(28)
 
-    const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey), iv)
+      const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey), iv)
 
-    decipher.setAuthTag(tag)
+      decipher.setAuthTag(tag)
 
-    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()])
+      const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()])
 
-    return JSON.parse(decrypted.toString('utf8'))
+      return sessionSchema.parse(JSON.parse(decrypted.toString('utf8')))
+    } catch {
+      throw new Error('Invalid or corrupted session. Please log in again.')
+    }
   }
 
   return {
