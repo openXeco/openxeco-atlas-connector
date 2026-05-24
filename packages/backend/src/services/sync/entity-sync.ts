@@ -152,102 +152,106 @@ export class EntitySyncService {
       const cluster = await atlasClient.getCluster(atlasId)
       const entityData = jsonApiTransformer.toEntityFromCluster(cluster)
 
-      const [existing] = await db.select().from(entities).where(eq(entities.atlasId, atlasId)).limit(1)
+      const result = await db.transaction(async (tx) => {
+        const [existing] = await tx.select().from(entities).where(eq(entities.atlasId, atlasId)).limit(1)
 
-      let entity: Entity
-      if (existing) {
-        const localUpdated = existing.updatedAt ? new Date(existing.updatedAt) : new Date()
-        const remoteUpdated = cluster.updatedAt ? new Date(cluster.updatedAt) : new Date()
+        let entity: Entity
 
-        if (localUpdated > remoteUpdated) {
-          await db.update(entities).set({ syncStatus: 'conflict' }).where(eq(entities.id, existing.id))
+        if (existing) {
+          const localUpdated = existing.updatedAt ? new Date(existing.updatedAt) : new Date()
+          const remoteUpdated = cluster.updatedAt ? new Date(cluster.updatedAt) : new Date()
 
-          await db.insert(syncLogs).values({
-            entityType: 'entity',
-            entityId: existing.id,
-            operation: 'pull',
-            status: 'failed',
-            details: {
-              error: 'Conflict detected',
-              localUpdated: localUpdated.toISOString(),
-              remoteUpdated: remoteUpdated.toISOString(),
-            },
-          })
+          if (localUpdated > remoteUpdated) {
+            await tx.update(entities).set({ syncStatus: 'conflict' }).where(eq(entities.id, existing.id))
 
-          return {
-            success: false,
-            entityId: existing.id,
-            atlasId,
-            message: 'Conflict detected. Local version is newer.',
-            error: 'CONFLICT',
+            await tx.insert(syncLogs).values({
+              entityType: 'entity',
+              entityId: existing.id,
+              operation: 'pull',
+              status: 'failed',
+              details: {
+                error: 'Conflict detected',
+                localUpdated: localUpdated.toISOString(),
+                remoteUpdated: remoteUpdated.toISOString(),
+              },
+            })
+
+            return {
+              success: false,
+              entityId: existing.id,
+              atlasId,
+              message: 'Conflict detected. Local version is newer.',
+              error: 'CONFLICT',
+            } satisfies SyncResult
           }
+
+          ;[entity] = await tx
+            .update(entities)
+            .set({
+              ...entityData,
+              syncStatus: 'synced',
+              lastSyncedAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(entities.id, existing.id))
+            .returning()
+
+          const versions = await tx
+            .select()
+            .from(entityVersions)
+            .where(eq(entityVersions.entityId, existing.id))
+            .orderBy(desc(entityVersions.createdAt))
+            .limit(1)
+
+          const lastVersion = versions[0]
+          const lastMajor = lastVersion ? Number.parseInt(lastVersion.version, 10) || 0 : 0
+          const newVersion = `${lastMajor + 1}.0`
+
+          await tx.insert(entityVersions).values({
+            entityId: existing.id,
+            version: newVersion,
+            data: entity as Entity,
+          })
+        } else {
+          ;[entity] = await tx
+            .insert(entities)
+            .values({
+              ...entityData,
+              name: entityData.name || '',
+              status: entityData.status || 'draft',
+              syncStatus: 'synced',
+              lastSyncedAt: new Date(),
+            })
+            .returning()
+
+          await tx.insert(entityVersions).values({
+            entityId: entity.id,
+            version: '1.0',
+            data: entity as Entity,
+          })
         }
 
-        ;[entity] = await db
-          .update(entities)
-          .set({
-            ...entityData,
-            syncStatus: 'synced',
-            lastSyncedAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .where(eq(entities.id, existing.id))
-          .returning()
-
-        const versions = await db
-          .select()
-          .from(entityVersions)
-          .where(eq(entityVersions.entityId, existing.id))
-          .orderBy(desc(entityVersions.createdAt))
-          .limit(1)
-
-        const lastVersion = versions[0]
-        const lastMajor = lastVersion ? Number.parseInt(lastVersion.version, 10) || 0 : 0
-        const newVersion = `${lastMajor + 1}.0`
-
-        await db.insert(entityVersions).values({
-          entityId: existing.id,
-          version: newVersion,
-          data: entity as Entity,
-        })
-      } else {
-        ;[entity] = await db
-          .insert(entities)
-          .values({
-            ...entityData,
-            name: entityData.name || '',
-            status: entityData.status || 'draft',
-            syncStatus: 'synced',
-            lastSyncedAt: new Date(),
-          })
-          .returning()
-
-        await db.insert(entityVersions).values({
+        await tx.insert(syncLogs).values({
+          entityType: 'entity',
           entityId: entity.id,
-          version: '1.0',
-          data: entity as Entity,
+          operation: 'pull',
+          status: 'success',
+          details: {
+            atlasId,
+            action: existing ? 'update' : 'create',
+          },
         })
-      }
 
-      await db.insert(syncLogs).values({
-        entityType: 'entity',
-        entityId: entity.id,
-        operation: 'pull',
-        status: 'success',
-        details: {
+        return {
+          success: true,
+          entityId: entity.id,
           atlasId,
-          action: existing ? 'update' : 'create',
-        },
+          message: existing ? 'Entity updated from ATLAS' : 'Entity created from ATLAS',
+        } satisfies SyncResult
       })
 
       this.logger.info(`Successfully pulled entity ${atlasId} from ATLAS`)
-
-      return {
-        success: true,
-        entityId: entity.id,
-        atlasId,
-        message: existing ? 'Entity updated from ATLAS' : 'Entity created from ATLAS',
-      }
+      return result
     } catch (error) {
       this.logger.error(error as Error, `Failed to pull entity ${atlasId}:`)
 
@@ -294,10 +298,10 @@ export class EntitySyncService {
 
       const lastSynced = entity.lastSyncedAt ? new Date(entity.lastSyncedAt) : new Date(0)
 
-      const localModifiedAfterSync = localUpdatedAt > lastSynced
       const remoteModifiedAfterSync = remoteUpdatedAt > lastSynced
 
-      if (!localModifiedAfterSync || !remoteModifiedAfterSync) {
+      // Remote unchanged since last sync — push is safe regardless of local state
+      if (!remoteModifiedAfterSync) {
         return {
           hasConflict: false,
           localVersion: entity,
@@ -308,6 +312,7 @@ export class EntitySyncService {
         }
       }
 
+      // Remote has changed since last sync — compare fields and surface any divergence
       const conflictFields: string[] = []
       const fieldsToCheck = [
         'name',
