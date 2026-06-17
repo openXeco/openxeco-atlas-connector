@@ -1,6 +1,6 @@
 # ---- Base ----
 FROM node:24-alpine AS base
-RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
+RUN npm install -g pnpm
 WORKDIR /app
 
 # ---- Development ----
