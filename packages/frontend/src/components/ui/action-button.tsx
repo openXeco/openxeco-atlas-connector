@@ -2,11 +2,11 @@
 
 import type React from 'react'
 import { Button, type ButtonProps } from '@/components/ui/button'
-import { RefreshCw, Trash2, AlertCircle, type LucideIcon } from 'lucide-react'
+import { RefreshCw, Trash2, AlertCircle, type LucideIcon, DatabaseArrowUp } from 'lucide-react'
 import { Message } from '@/components/ui/message'
 import type { ActionState } from '@/types'
 
-type ActionButtonVariant = 'sync' | 'delete' | 'refresh' | 'alert'
+type ActionButtonVariant = 'sync' | 'delete' | 'refresh' | 'alert' | 'push' | 'pull' | 'check'
 
 type ActionButtonProps = {
   variant?: ActionButtonVariant
@@ -32,6 +32,8 @@ const getDefaultUI = ({
   buttonVariant?: ButtonProps['variant']
   className: string
   buttonClassName?: string
+  animation: string
+  hideStatusMessage?: boolean
 } => {
   switch (variant) {
     case 'sync':
@@ -40,6 +42,18 @@ const getDefaultUI = ({
         syncingLabel: syncingLabel || 'Syncing...',
         Icon: RefreshCw,
         className: 'gap-2 max-w-max',
+        animation: 'animate-spin',
+      }
+
+    case 'check':
+      return {
+        label: label || 'Check',
+        syncingLabel: syncingLabel || 'Checking...',
+        Icon: RefreshCw,
+        className: 'gap-2 max-w-max',
+        buttonVariant: 'ghost',
+        animation: 'animate-spin',
+        hideStatusMessage: true,
       }
 
     case 'delete':
@@ -51,6 +65,7 @@ const getDefaultUI = ({
         className: 'gap-2 max-w-max text-destructive hover:bg-destructive/10',
         buttonClassName: 'text-destructive hover:bg-destructive/10',
         confirmMessage: 'Are you sure?',
+        animation: 'animate-spin',
       }
 
     case 'refresh':
@@ -60,6 +75,16 @@ const getDefaultUI = ({
         Icon: RefreshCw,
         buttonVariant: 'outline',
         className: 'gap-2 max-w-max',
+        animation: 'animate-spin',
+      }
+
+    case 'push':
+      return {
+        label: label || 'Push}',
+        syncingLabel: syncingLabel || 'Pushing...',
+        Icon: DatabaseArrowUp,
+        className: 'gap-2 max-w-max',
+        animation: 'animate-pulse',
       }
 
     default:
@@ -69,6 +94,7 @@ const getDefaultUI = ({
         Icon: AlertCircle,
         buttonVariant: 'outline',
         className: 'gap-2 max-w-max',
+        animation: 'animate-spin',
       }
   }
 }
@@ -108,11 +134,11 @@ export function ActionButton({
         className={`gap-2 max-w-max ${uiProps.buttonClassName}`}
         variant={uiProps.buttonVariant}
       >
-        <uiProps.Icon className={`${uiProps.className} ${pending ? 'animate-spin' : ''}`} />
+        <uiProps.Icon className={`${uiProps.className} ${pending ? uiProps.animation : ''}`} />
         {!hideLabel ? (pending ? uiProps.syncingLabel : uiProps.label) : undefined}
       </Button>
 
-      {state?.success !== undefined && !pending && (
+      {state?.success !== undefined && !pending && !uiProps.hideStatusMessage && (
         <Message message={(state.success ? state.message : state.error) || ''} success={state.success} duration={5} />
       )}
     </form>

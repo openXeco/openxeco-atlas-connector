@@ -175,7 +175,7 @@ export class JsonApiTransformer {
 
       // Basic information
       name: cluster.name,
-      nameNational: cluster.nameNational,
+      nameNational: Array.isArray(cluster.nameNational) ? cluster.nameNational[0] : '',
       entityDepartment: cluster.entityDepartment,
 
       // Address (structured)

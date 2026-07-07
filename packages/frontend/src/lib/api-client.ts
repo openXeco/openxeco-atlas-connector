@@ -30,6 +30,19 @@ const apiClient = (
       )
     },
 
+    async put<T>(endpoint: string, data?: unknown, options: ApiClientOptions = {}) {
+      return request<T>(
+        baseUrl,
+        endpoint,
+        {
+          ...options,
+          method: 'PUT',
+          body: data ? JSON.stringify(data) : undefined,
+        },
+        auth,
+      )
+    },
+
     async patch<T>(endpoint: string, data?: unknown, options: ApiClientOptions = {}) {
       return request<T>(
         baseUrl,

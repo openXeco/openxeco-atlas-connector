@@ -64,7 +64,7 @@ export async function updateEntity(
 
   try {
     const apiClient = getApiClient()
-    await apiClient.patch(`/entities/${id}`, parsed.data, { credentials: 'include' })
+    await apiClient.put(`/entities/${id}`, parsed.data, { credentials: 'include' })
 
     return {
       success: true,
@@ -100,12 +100,12 @@ export async function deleteEntityFormAction(_prevState: unknown, formData: Form
   }
 }
 
-export async function syncEntity(_prevState: unknown, formData: FormData): Promise<ActionState> {
+export async function pushEntity(_prevState: unknown, formData: FormData): Promise<ActionState> {
   const id = formData.get('id')
   const apiClient = getApiClient()
 
   try {
-    await apiClient.post(`/entities/${id}/sync`, {}, { credentials: 'include' })
+    await apiClient.post(`/entities/${id}/push`, {}, { credentials: 'include' })
     return {
       success: true,
       message: 'Successfully synced.',
@@ -115,6 +115,16 @@ export async function syncEntity(_prevState: unknown, formData: FormData): Promi
       success: false,
       error: 'Error syncing Entity. Please check the logs',
     }
+  }
+}
+
+export async function checkConflicts(_prevState: unknown, formData: FormData): Promise<ActionState> {
+  const id = formData.get('id')
+  const apiClient = getApiClient()
+
+  return {
+    success: true,
+    message: 'Conflicts checked',
   }
 }
 

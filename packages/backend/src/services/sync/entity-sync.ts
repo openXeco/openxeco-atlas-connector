@@ -61,6 +61,7 @@ export class EntitySyncService {
       if (entity.atlasId) {
         if (!options?.force) {
           const conflict = await this.detectConflicts(entityId)
+          console.log('Conflict Report', conflict)
           if (conflict.hasConflict) {
             await db.update(entities).set({ syncStatus: 'conflict' }).where(eq(entities.id, entityId))
 
@@ -288,6 +289,7 @@ export class EntitySyncService {
     try {
       const cluster = await atlasClient.getCluster(entity.atlasId)
       const remoteEntity = jsonApiTransformer.toEntityFromCluster(cluster)
+      console.log('Remote Entity: ', JSON.stringify(remoteEntity))
 
       const localUpdatedAt = entity.updatedAt ? new Date(entity.updatedAt) : new Date()
       const remoteUpdatedAt = cluster.updatedAt ? new Date(cluster.updatedAt) : new Date()
@@ -297,7 +299,15 @@ export class EntitySyncService {
       const localModifiedAfterSync = localUpdatedAt > lastSynced
       const remoteModifiedAfterSync = remoteUpdatedAt > lastSynced
 
-      if (!localModifiedAfterSync || !remoteModifiedAfterSync) {
+      console.log('Sync dates', {
+        localUpdatedAt,
+        remoteUpdatedAt,
+        lastSynced,
+        localModifiedAfterSync,
+        remoteModifiedAfterSync,
+      })
+
+      if (!localModifiedAfterSync && !remoteModifiedAfterSync) {
         return {
           hasConflict: false,
           localVersion: entity,
@@ -309,22 +319,19 @@ export class EntitySyncService {
       }
 
       const conflictFields: string[] = []
-      const fieldsToCheck = [
+      const fieldsToCheck: Array<keyof Entity> = [
         'name',
         'nameNational',
         'entityDepartment',
-        'description',
-        'streetAddress',
-        'city',
+        'status',
+        'moderationState',
         'countryCode',
-        'postalCode',
-        'latitude',
-        'longitude',
+        'city',
+        'streetAddress',
         'email',
         'phone',
         'website',
         'registrationNumber',
-        'logoUrl',
         'isHeadquarter',
         'headquarterInfo',
         'hasSubsidiaries',
@@ -343,11 +350,11 @@ export class EntitySyncService {
         'goalsToContribute',
         'countryId',
         'clusterTypeId',
-        'moderationState',
       ]
 
       for (const field of fieldsToCheck) {
-        if (entity[field as keyof Entity] !== remoteEntity[field as keyof Entity]) {
+        console.log(`Comparing ${field}`, entity[field], remoteEntity[field])
+        if (entity[field] !== remoteEntity[field]) {
           conflictFields.push(field)
         }
       }

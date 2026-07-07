@@ -4,7 +4,7 @@ import type { Entity, EntityVersion } from '@/types'
 import { ArrowLeft, Clock, FileText, Globe, ExternalLink, MapPin, Building2, Pencil } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
-import { SyncEntityButton } from '@/components/entities/sync-entity-button'
+import { PushEntityButton } from '@/components/entities/push-entity-button'
 import { DeleteEntityButton } from '@/components/entities/delete-entity-button'
 import { Link } from '@/components/ui/link'
 import { StatusBadge } from '@/components/entities/status-badge'
@@ -13,19 +13,23 @@ import { formatDate } from '@/lib/utils'
 import useSWR from 'swr'
 import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 import React from 'react'
+import { CheckEntityConflictsButton } from '@/components/entities/check-entity-conflicts-button'
 
 export default function ViewEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
 
-  const { data, isLoading } = useSWR<{ data: { entity: Entity; versions: EntityVersion[] } }>(
-    `/api/entities/${id}`,
+  const { data, isLoading } = useSWR<{ data: { entity: Entity } }>(`/api/entities/${id}`, apiFetcher, swrDefaultOptions)
+
+  const { data: versionsData, isLoading: isVersionsLoading } = useSWR<{ data: { versions: EntityVersion[] } }>(
+    `/api/entities/${id}/versions`,
     apiFetcher,
     swrDefaultOptions,
   )
 
-  const { entity, versions } = data?.data || {}
+  const { entity } = data?.data || {}
+  const { versions } = versionsData?.data || {}
 
-  if (isLoading) {
+  if (isLoading || isVersionsLoading) {
     return <>Loading...</>
   }
 
@@ -58,7 +62,7 @@ export default function ViewEntityPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
         <div className='flex items-center gap-2'>
-          <SyncEntityButton id={id} />
+          <PushEntityButton id={id} />
           <Link href={`/entities/${id}/edit`} variant={'outline'}>
             <Pencil className='h-4 w-4' />
             Edit
@@ -70,6 +74,7 @@ export default function ViewEntityPage({ params }: { params: Promise<{ id: strin
       <Tabs defaultValue='details' className='space-y-6'>
         <TabsList>
           <TabsTrigger value='details'>Details</TabsTrigger>
+          <TabsTrigger value={'sync'}>Sync status</TabsTrigger>
           <TabsTrigger value='history'>Version History</TabsTrigger>
         </TabsList>
 
@@ -242,6 +247,20 @@ export default function ViewEntityPage({ params }: { params: Promise<{ id: strin
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+        <TabsContent value={'sync'}>
+          <Card>
+            <CardHeader>
+              <CardTitle className={'flex items-center gap-2'}>
+                Sync status <StatusBadge type={'sync'} status={entity.syncStatus} />
+                <CheckEntityConflictsButton id={entity.id} />
+              </CardTitle>
+              <CardDescription>
+                This view displays any potential conflicts between the selected entity and the ATLAS version.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>Found 4 conflicts!</CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value='history'>

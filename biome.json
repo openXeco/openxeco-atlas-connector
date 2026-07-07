@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -15,7 +15,8 @@
       "!public",
       "!_postgres_data",
       "!src/payload-types.ts",
-      "!packages/frontend/next-env.d.ts"
+      "!packages/frontend/next-env.d.ts",
+      "!packages/backend/src/db/migrations"
     ]
   },
   "formatter": {
@@ -50,7 +51,7 @@
         "noUnusedImports": "warn",
         "noUnusedVariables": "warn"
       },
-      "recommended": true,
+      "preset": "recommended",
       "security": {
         "noDangerouslySetInnerHtml": "error"
       },
