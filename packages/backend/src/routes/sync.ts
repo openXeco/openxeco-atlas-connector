@@ -14,8 +14,8 @@ const resolveConflictSchema = z.object({
 })
 
 const batchSyncSchema = z.object({
-  entityIds: z.array(z.string().uuid()).optional(),
-  atlasIds: z.array(z.string()).optional(),
+  entityIds: z.array(z.string().uuid()).max(100).optional(),
+  atlasIds: z.array(z.string()).max(100).optional(),
 })
 
 const syncLogsQuerySchema = z.object({
@@ -26,6 +26,10 @@ const syncLogsQuerySchema = z.object({
   status: z.enum(['success', 'failed']).optional(),
   startDate: z.string().datetime({ offset: true }).optional(),
   endDate: z.string().datetime({ offset: true }).optional(),
+})
+
+const cleanupQuerySchema = z.object({
+  retentionDays: z.coerce.number().int().min(1).max(365).default(90),
 })
 
 export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
@@ -264,13 +268,12 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.delete('/logs/cleanup', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const { retentionDays = 90 } = request.query as { retentionDays?: number }
-      const days = Math.max(1, Math.min(Number(retentionDays), 365))
+      const { retentionDays } = cleanupQuerySchema.parse(request.query)
 
-      const deleted = await entitySyncService.cleanupSyncLogs(days)
+      const deleted = await entitySyncService.cleanupSyncLogs(retentionDays)
 
       return reply.send({
-        message: `Deleted ${deleted} sync log entries older than ${days} days`,
+        message: `Deleted ${deleted} sync log entries older than ${retentionDays} days`,
         deleted,
       })
     } catch (error) {
