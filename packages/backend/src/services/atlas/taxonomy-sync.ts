@@ -7,6 +7,7 @@ import { KNOWLEDGE_DOMAIN_HIERARCHY } from './knowledge-domain-hierarchy.js'
 import type { TaxonomyType } from './types.js'
 import { getLogger, type Logger } from '@/utils/logger.js'
 import { TAXONOMY_TYPES } from '@/services/atlas/taxonomy-types.js'
+import { openXecoFormTransformer } from '@/services/openxeco/index.js'
 
 // cluster_thematic_area terms are flat on ATLAS (no parent relationships returned by the API).
 // The parent/child hierarchy is hardcoded in knowledge-domain-hierarchy.ts and applied during sync.
@@ -55,6 +56,10 @@ export class TaxonomySyncService {
         await new Promise((resolve) => setTimeout(resolve, TaxonomySyncService.TYPE_DELAY_MS))
       }
     }
+
+    // Invalidate the OpenXeco form transformer cache so the next import
+    // picks up the freshly synced taxonomy IDs instead of stale mappings.
+    openXecoFormTransformer.clearCache()
 
     this.logger.info(`Taxonomy sync complete: ${success} success, ${failed} failed`)
 
