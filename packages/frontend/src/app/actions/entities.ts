@@ -1,7 +1,7 @@
 'use server'
 
 import type { ManageEntityState } from '@/components/entities/entity-wizard'
-import type { EntityFormData, ActionState, Entity, EntityVersion } from '@/types'
+import type { EntityFormData, ActionState, Entity } from '@/types'
 import { parseFormData } from '@/lib/utils'
 import { getApiClient } from '@/lib/api-client'
 
@@ -128,15 +128,12 @@ export async function checkConflicts(_prevState: unknown, formData: FormData): P
   }
 }
 
-export async function getEntity(id: string): Promise<{ entity: Entity; versions: EntityVersion[] }> {
+export async function getEntity(id: string): Promise<{ entity: Entity }> {
   const apiClient = getApiClient()
 
-  const [entityRes, versionsRes] = await Promise.all([
-    apiClient.get<{ data: Entity }>(`/entities/${id}`, { credentials: 'include' }),
-    apiClient.get<{ data: EntityVersion[] }>(`/entities/${id}/versions`, { credentials: 'include' }),
-  ])
+  const entityRes = await apiClient.get<{ data: Entity }>(`/entities/${id}`, { credentials: 'include' })
 
-  return { entity: entityRes.data, versions: versionsRes.data }
+  return { entity: entityRes.data }
 }
 
 const parseEntity = (formData: FormData): EntityFormData => {

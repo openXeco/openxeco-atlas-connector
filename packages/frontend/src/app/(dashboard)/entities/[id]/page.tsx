@@ -1,6 +1,6 @@
 'use client'
 
-import type { Entity, EntityVersion } from '@/types'
+import type { Entity } from '@/types'
 import { ArrowLeft, Clock, FileText, Globe, ExternalLink, MapPin, Building2, Pencil } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
@@ -20,20 +20,12 @@ export default function ViewEntityPage({ params }: { params: Promise<{ id: strin
 
   const { data, isLoading } = useSWR<{ data: { entity: Entity } }>(`/api/entities/${id}`, apiFetcher, swrDefaultOptions)
 
-  const { data: versionsData, isLoading: isVersionsLoading } = useSWR<{ data: { versions: EntityVersion[] } }>(
-    `/api/entities/${id}/versions`,
-    apiFetcher,
-    swrDefaultOptions,
-  )
-
   const { entity } = data?.data || {}
-  const { versions } = versionsData?.data || {}
-
-  if (isLoading || isVersionsLoading) {
+  if (isLoading) {
     return <>Loading...</>
   }
 
-  if (!entity || !versions) {
+  if (!entity) {
     return (
       <div className='flex min-h-[50vh] items-center justify-center'>
         <div className='text-center'>
@@ -75,7 +67,6 @@ export default function ViewEntityPage({ params }: { params: Promise<{ id: strin
         <TabsList>
           <TabsTrigger value='details'>Details</TabsTrigger>
           <TabsTrigger value={'sync'}>Sync status</TabsTrigger>
-          <TabsTrigger value='history'>Version History</TabsTrigger>
         </TabsList>
 
         <TabsContent value='details' className='space-y-6'>
@@ -260,39 +251,6 @@ export default function ViewEntityPage({ params }: { params: Promise<{ id: strin
               </CardDescription>
             </CardHeader>
             <CardContent>Found 4 conflicts!</CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value='history'>
-          <Card>
-            <CardHeader>
-              <CardTitle>Version History</CardTitle>
-              <CardDescription>{versions.length} versions recorded</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {versions.length === 0 ? (
-                <div className='py-8 text-center text-muted-foreground'>No version history available</div>
-              ) : (
-                <div className='space-y-4'>
-                  {versions.map((version) => (
-                    <div key={version.id} className='flex items-start gap-4 rounded-lg border p-4'>
-                      <div className='flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary'>
-                        v{version.version}
-                      </div>
-                      <div className='flex-1'>
-                        <div className='flex items-center justify-between'>
-                          <div className='font-medium'>Version {version.version}</div>
-                          <div className='text-sm text-muted-foreground'>
-                            {new Date(version.createdAt).toLocaleString('en-UK')}
-                          </div>
-                        </div>
-                        <div className='mt-1 text-sm text-muted-foreground'>Changes recorded</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

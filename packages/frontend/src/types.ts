@@ -116,14 +116,6 @@ export interface Entity {
   fieldsOfActivity?: Array<Taxonomy>
 }
 
-export interface EntityVersion {
-  id: string
-  entityId: string
-  version: string
-  data: unknown
-  createdAt: Date
-}
-
 export type EntityFormData = {
   name: string
   nameNational?: string
@@ -132,14 +124,10 @@ export type EntityFormData = {
   countryCode?: string
   city?: string
   streetAddress?: string
-  postalCode?: string
   email?: string
   phone?: string
   registrationNumber?: string
-  logoUrl?: string
   website?: string
-  latitude?: number
-  longitude?: number
   isHeadquarter?: boolean
   headquarterInfo?: string
   hasSubsidiaries?: boolean
@@ -177,6 +165,10 @@ export interface EntityListParams {
   search?: string
   countryId?: string
   clusterTypeId?: string
+}
+
+export type EntitySync = Pick<Entity, 'id' | 'atlasId' | 'name' | 'lastSyncedAt' | 'updatedAt' | 'syncStatus'> & {
+  atlasUpdatedAt?: Date | null
 }
 
 export type EntityTaxonomies = {

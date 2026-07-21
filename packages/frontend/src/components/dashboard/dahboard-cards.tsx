@@ -4,7 +4,7 @@ import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 import useSWR from 'swr'
 import type { SyncRecap } from '@/types'
 import { Building2, RefreshCw, AlertCircle, Tags } from 'lucide-react'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { FullCard, type FullCardProps } from '@/components/ui/full-card'
 
 export const DashboardCards = () => {
   const {
@@ -38,25 +38,47 @@ export const DashboardCards = () => {
   const conflicts = syncData?.data.conflict ?? 0
   const taxonomyTotal = taxData?.data.total ?? 0
 
-  const stats = [
-    { name: 'Total Entities', value: entityTotal, icon: Building2, color: 'text-blue-600' },
-    { name: 'Taxonomies', value: taxonomyTotal, icon: Tags, color: 'text-green-600' },
-    { name: 'Pending Sync', value: pendingSync, icon: RefreshCw, color: 'text-orange-600' },
-    { name: 'Conflicts', value: conflicts, icon: AlertCircle, color: 'text-red-600' },
+  const stats: (FullCardProps & { value: number })[] = [
+    {
+      title: 'Total Entities',
+      value: entityTotal,
+      Icon: Building2,
+      variant: 'info',
+    },
+    {
+      title: 'Taxonomies',
+      value: taxonomyTotal,
+      Icon: Tags,
+      variant: 'success',
+    },
+    {
+      title: 'Pending Sync',
+      value: pendingSync,
+      Icon: RefreshCw,
+      variant: 'warning',
+    },
+    {
+      title: 'Conflicts',
+      value: conflicts,
+      Icon: AlertCircle,
+      variant: 'danger',
+    },
   ]
 
   return (
     <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
       {stats.map((stat) => (
-        <Card key={stat.name}>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>{stat.name}</CardTitle>
-            <stat.icon className={`h-5 w-5 ${stat.color}`} />
-          </CardHeader>
-          <CardContent>
-            <div className='text-3xl font-bold'>{stat.value.toLocaleString()}</div>
-          </CardContent>
-        </Card>
+        <FullCard
+          key={stat.title}
+          title={stat.title}
+          Icon={stat.Icon}
+          variant={stat.variant}
+          titleColor={stat.titleColor}
+          contentColor={stat.contentColor}
+          iconColor={stat.iconColor}
+        >
+          <div className='text-3xl font-bold'>{stat.value.toLocaleString()}</div>
+        </FullCard>
       ))}
     </div>
   )

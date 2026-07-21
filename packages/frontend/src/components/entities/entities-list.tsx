@@ -92,6 +92,7 @@ export const EntitiesList = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className='w-64 pl-9'
+                  aria-label='Search entities...'
                 />
               </div>
             </div>

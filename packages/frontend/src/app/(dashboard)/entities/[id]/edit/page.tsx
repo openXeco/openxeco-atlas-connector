@@ -3,7 +3,7 @@
 import { EditEntity } from '@/components/entities/edit-entity'
 import { Link } from '@/components/ui/link'
 import { ArrowLeft } from 'lucide-react'
-import type { Entity, EntityTaxonomies, EntityVersion } from '@/types'
+import type { Entity, EntityTaxonomies } from '@/types'
 
 import React from 'react'
 import useSWR from 'swr'
@@ -12,7 +12,7 @@ import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 export default function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
 
-  const { data, isLoading, mutate } = useSWR<{ data: { entity: Entity; versions: EntityVersion[] } }>(
+  const { data, isLoading, mutate } = useSWR<{ data: { entity: Entity } }>(
     `/api/entities/${id}`,
     apiFetcher,
     swrDefaultOptions,
