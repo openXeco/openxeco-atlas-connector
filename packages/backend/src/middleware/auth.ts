@@ -31,7 +31,9 @@ export async function requireAdmin(request: FastifyRequest, reply: FastifyReply)
   await authenticate(request, reply)
 
   // If authenticate already sent a response, stop here
-  if (reply.sent) return
+  if (reply.sent) {
+    return
+  }
 
   if (request.currentUser?.role !== 'admin') {
     return sendErrorReply({ reply, type: 'forbidden', message: 'Admin access required' })

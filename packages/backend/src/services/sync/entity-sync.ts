@@ -1,7 +1,7 @@
-import { eq, desc, lt } from 'drizzle-orm'
+import { eq, lt } from 'drizzle-orm'
 import { db } from '@/config/database.js'
 import type { Entity } from '@/db/schema.js'
-import { entities, entityVersions, syncLogs } from '@/db/schema.js'
+import { entities, syncLogs } from '@/db/schema.js'
 import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
 import type { Logger } from 'pino'
@@ -61,6 +61,7 @@ export class EntitySyncService {
       if (entity.atlasId) {
         if (!options?.force) {
           const conflict = await this.detectConflicts(entityId)
+          console.log('Conflict Report', conflict)
           if (conflict.hasConflict) {
             await db.update(entities).set({ syncStatus: 'conflict' }).where(eq(entities.id, entityId))
 
@@ -193,23 +194,6 @@ export class EntitySyncService {
           })
           .where(eq(entities.id, existing.id))
           .returning()
-
-        const versions = await db
-          .select()
-          .from(entityVersions)
-          .where(eq(entityVersions.entityId, existing.id))
-          .orderBy(desc(entityVersions.createdAt))
-          .limit(1)
-
-        const lastVersion = versions[0]
-        const lastMajor = lastVersion ? Number.parseInt(lastVersion.version, 10) || 0 : 0
-        const newVersion = `${lastMajor + 1}.0`
-
-        await db.insert(entityVersions).values({
-          entityId: existing.id,
-          version: newVersion,
-          data: entity as Entity,
-        })
       } else {
         ;[entity] = await db
           .insert(entities)
@@ -221,12 +205,6 @@ export class EntitySyncService {
             lastSyncedAt: new Date(),
           })
           .returning()
-
-        await db.insert(entityVersions).values({
-          entityId: entity.id,
-          version: '1.0',
-          data: entity as Entity,
-        })
       }
 
       await db.insert(syncLogs).values({
@@ -288,6 +266,7 @@ export class EntitySyncService {
     try {
       const cluster = await atlasClient.getCluster(entity.atlasId)
       const remoteEntity = jsonApiTransformer.toEntityFromCluster(cluster)
+      console.log('Remote Entity: ', JSON.stringify(remoteEntity))
 
       const localUpdatedAt = entity.updatedAt ? new Date(entity.updatedAt) : new Date()
       const remoteUpdatedAt = cluster.updatedAt ? new Date(cluster.updatedAt) : new Date()
@@ -297,7 +276,15 @@ export class EntitySyncService {
       const localModifiedAfterSync = localUpdatedAt > lastSynced
       const remoteModifiedAfterSync = remoteUpdatedAt > lastSynced
 
-      if (!localModifiedAfterSync || !remoteModifiedAfterSync) {
+      console.log('Sync dates', {
+        localUpdatedAt,
+        remoteUpdatedAt,
+        lastSynced,
+        localModifiedAfterSync,
+        remoteModifiedAfterSync,
+      })
+
+      if (!localModifiedAfterSync && !remoteModifiedAfterSync) {
         return {
           hasConflict: false,
           localVersion: entity,
@@ -309,22 +296,19 @@ export class EntitySyncService {
       }
 
       const conflictFields: string[] = []
-      const fieldsToCheck = [
+      const fieldsToCheck: Array<keyof Entity> = [
         'name',
         'nameNational',
         'entityDepartment',
-        'description',
-        'streetAddress',
-        'city',
+        'status',
+        'moderationState',
         'countryCode',
-        'postalCode',
-        'latitude',
-        'longitude',
+        'city',
+        'streetAddress',
         'email',
         'phone',
         'website',
         'registrationNumber',
-        'logoUrl',
         'isHeadquarter',
         'headquarterInfo',
         'hasSubsidiaries',
@@ -343,11 +327,11 @@ export class EntitySyncService {
         'goalsToContribute',
         'countryId',
         'clusterTypeId',
-        'moderationState',
       ]
 
       for (const field of fieldsToCheck) {
-        if (entity[field as keyof Entity] !== remoteEntity[field as keyof Entity]) {
+        console.log(`Comparing ${field}`, entity[field], remoteEntity[field])
+        if (entity[field] !== remoteEntity[field]) {
           conflictFields.push(field)
         }
       }

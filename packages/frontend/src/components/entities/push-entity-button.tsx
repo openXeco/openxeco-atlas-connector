@@ -2,10 +2,10 @@
 
 import { useActionState } from 'react'
 import { ActionButton } from '@/components/ui/action-button'
-import { syncEntity } from '@/app/actions/entities'
+import { pushEntity } from '@/app/actions/entities'
 
-export const SyncEntityButton = ({ id }: { id: string }) => {
-  const [state, formAction, pending] = useActionState(syncEntity, undefined)
+export const PushEntityButton = ({ id }: { id: string }) => {
+  const [state, formAction, pending] = useActionState(pushEntity, undefined)
 
   return (
     <ActionButton
@@ -14,7 +14,7 @@ export const SyncEntityButton = ({ id }: { id: string }) => {
       state={state}
       label={'Push to ATLAS'}
       hiddenFields={<input type={'hidden'} name={'id'} value={id} />}
-      variant={'sync'}
+      variant={'push'}
     />
   )
 }

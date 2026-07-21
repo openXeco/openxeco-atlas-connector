@@ -20,6 +20,8 @@ const changePasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 })
 
+const idParamSchema = z.object({ id: z.string().uuid() })
+
 export async function userRoutes(fastify: FastifyInstance): Promise<void> {
   // List all users
   fastify.get('/', { preHandler: requireAdmin }, async (_request, reply) => {
@@ -73,7 +75,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
   // Update user email
   fastify.patch('/:id', { preHandler: requireAdmin }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = idParamSchema.parse(request.params)
       const body = updateUserSchema.parse(request.body)
 
       // Check if user exists
@@ -113,7 +115,7 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
   // Change user password
   fastify.patch('/:id/password', { preHandler: requireAdmin }, async (request, reply) => {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = idParamSchema.parse(request.params)
       const body = changePasswordSchema.parse(request.body)
 
       // Check if user exists
@@ -141,28 +143,28 @@ export async function userRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Delete user
   fastify.delete('/:id', { preHandler: requireAdmin }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-
-    // Check if user exists
-    const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.id, id)).limit(1)
-
-    if (!existing) {
-      return sendErrorReply({ reply, type: 'notFound' })
-    }
-
-    // Prevent deleting yourself
-    if (request.currentUser?.userId === id) {
-      return sendErrorReply({ reply, type: 'badRequest', message: 'You cannot delete your own account' })
-    }
-
-    // Prevent deleting if only one user exists
-    const [{ total }] = await db.select({ total: count() }).from(users)
-
-    if (total <= 1) {
-      return sendErrorReply({ reply, type: 'badRequest', message: 'Cannot delete the last user' })
-    }
-
     try {
+      const { id } = idParamSchema.parse(request.params)
+
+      // Check if user exists
+      const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.id, id)).limit(1)
+
+      if (!existing) {
+        return sendErrorReply({ reply, type: 'notFound' })
+      }
+
+      // Prevent deleting yourself
+      if (request.currentUser?.userId === id) {
+        return sendErrorReply({ reply, type: 'badRequest', message: 'You cannot delete your own account' })
+      }
+
+      // Prevent deleting if only one user exists
+      const [{ total }] = await db.select({ total: count() }).from(users)
+
+      if (total <= 1) {
+        return sendErrorReply({ reply, type: 'badRequest', message: 'Cannot delete the last user' })
+      }
+
       await db.delete(users).where(eq(users.id, id))
       return reply.send({ message: 'User deleted successfully' })
     } catch (error) {

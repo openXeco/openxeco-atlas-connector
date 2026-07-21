@@ -3,7 +3,7 @@ import { z, type ZodIssue } from 'zod'
 import { eq } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { atlasConfig } from '../db/schema.js'
-import { authenticate } from '../middleware/auth.js'
+import { requireAdmin } from '../middleware/auth.js'
 import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
 
 // Settings keys
@@ -49,7 +49,7 @@ async function setSetting(key: string, value: string | null): Promise<void> {
 
 export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
   // Get ATLAS API settings
-  fastify.get('/atlas', { preHandler: authenticate }, async (_request, reply) => {
+  fastify.get('/atlas', { preHandler: requireAdmin }, async (_request, reply) => {
     const [baseUrl, apiKey, username, password] = await Promise.all([
       getSetting(SETTINGS_KEYS.ATLAS_BASE_URL),
       getSetting(SETTINGS_KEYS.ATLAS_API_KEY),
@@ -70,7 +70,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   // Update ATLAS API settings
-  fastify.patch('/atlas', { preHandler: authenticate }, async (request, reply) => {
+  fastify.patch('/atlas', { preHandler: requireAdmin }, async (request, reply) => {
     try {
       const body = atlasSettingsSchema.parse(request.body)
 
@@ -98,7 +98,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   // Test ATLAS API connection
-  fastify.get('/atlas/test', { preHandler: authenticate }, async (request, reply) => {
+  fastify.post('/atlas/test', { preHandler: requireAdmin }, async (request, reply) => {
     try {
       const body = atlasSettingsSchema.parse(request.body)
 
@@ -172,7 +172,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   // Get general settings
-  fastify.get('/general', { preHandler: authenticate }, async (_request, reply) => {
+  fastify.get('/general', { preHandler: requireAdmin }, async (_request, reply) => {
     const [appName, autoSyncOnPublish, syncConflictResolution, country] = await Promise.all([
       getSetting(SETTINGS_KEYS.APP_NAME),
       getSetting(SETTINGS_KEYS.AUTO_SYNC_ON_PUBLISH),
@@ -191,7 +191,7 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
   })
 
   // Update general settings
-  fastify.patch('/general', { preHandler: authenticate }, async (request, reply) => {
+  fastify.patch('/general', { preHandler: requireAdmin }, async (request, reply) => {
     try {
       const body = generalSettingsSchema.parse(request.body)
 

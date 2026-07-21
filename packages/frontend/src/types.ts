@@ -19,20 +19,13 @@ export interface User {
 
 // ATLAS
 export type TaxonomyType =
-  | 'activities_of_interest'
   | 'applications_and_technologies'
   | 'cluster_thematic_area'
   | 'cluster_type'
   | 'country'
-  | 'cybersecurity_research_projects'
-  | 'european_cybersecurity_competenc'
   | 'fields_of_activity'
-  | 'funding_sources'
-  | 'initiatives'
   | 'languages'
-  | 'legal_status'
   | 'nationality'
-  | 'position_category'
   | 'sectors'
   | 'technologies'
   | 'use_cases'
@@ -57,6 +50,7 @@ export interface Taxonomy {
 }
 
 export type EntityStatus = 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected'
+export type ModerationState = 'draft' | 'ready_for_publication' | 'to_be_rejected'
 export type SyncStatus = 'local' | 'synced' | 'pending_push' | 'failed' | 'conflict'
 export type SyncRecap = {
   total: number
@@ -74,7 +68,7 @@ export interface Entity {
   nameNational: string | null
   entityDepartment: string | null
   status: EntityStatus
-  moderationState: EntityStatus | null
+  moderationState: ModerationState | null
   syncStatus: SyncStatus
   countryCode: string | null
   city: string | null
@@ -122,14 +116,6 @@ export interface Entity {
   fieldsOfActivity?: Array<Taxonomy>
 }
 
-export interface EntityVersion {
-  id: string
-  entityId: string
-  version: string
-  data: unknown
-  createdAt: Date
-}
-
 export type EntityFormData = {
   name: string
   nameNational?: string
@@ -138,14 +124,10 @@ export type EntityFormData = {
   countryCode?: string
   city?: string
   streetAddress?: string
-  postalCode?: string
   email?: string
   phone?: string
   registrationNumber?: string
-  logoUrl?: string
   website?: string
-  latitude?: number
-  longitude?: number
   isHeadquarter?: boolean
   headquarterInfo?: string
   hasSubsidiaries?: boolean
@@ -172,7 +154,7 @@ export type EntityFormData = {
   technologyIds?: string[]
   useCaseIds?: string[]
   fieldsOfActivityIds?: string[]
-  moderationState?: EntityStatus
+  moderationState?: ModerationState
 }
 
 export interface EntityListParams {
@@ -183,6 +165,10 @@ export interface EntityListParams {
   search?: string
   countryId?: string
   clusterTypeId?: string
+}
+
+export type EntitySync = Pick<Entity, 'id' | 'atlasId' | 'name' | 'lastSyncedAt' | 'updatedAt' | 'syncStatus'> & {
+  atlasUpdatedAt?: Date | null
 }
 
 export type EntityTaxonomies = {

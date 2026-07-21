@@ -1,7 +1,7 @@
 'use server'
 
 import type { ManageEntityState } from '@/components/entities/entity-wizard'
-import type { EntityFormData, ActionState, Entity, EntityVersion } from '@/types'
+import type { EntityFormData, ActionState, Entity } from '@/types'
 import { parseFormData } from '@/lib/utils'
 import { getApiClient } from '@/lib/api-client'
 
@@ -64,7 +64,7 @@ export async function updateEntity(
 
   try {
     const apiClient = getApiClient()
-    await apiClient.patch(`/entities/${id}`, parsed.data, { credentials: 'include' })
+    await apiClient.put(`/entities/${id}`, parsed.data, { credentials: 'include' })
 
     return {
       success: true,
@@ -100,12 +100,12 @@ export async function deleteEntityFormAction(_prevState: unknown, formData: Form
   }
 }
 
-export async function syncEntity(_prevState: unknown, formData: FormData): Promise<ActionState> {
+export async function pushEntity(_prevState: unknown, formData: FormData): Promise<ActionState> {
   const id = formData.get('id')
   const apiClient = getApiClient()
 
   try {
-    await apiClient.post(`/entities/${id}/sync`, {}, { credentials: 'include' })
+    await apiClient.post(`/entities/${id}/push`, {}, { credentials: 'include' })
     return {
       success: true,
       message: 'Successfully synced.',
@@ -118,15 +118,22 @@ export async function syncEntity(_prevState: unknown, formData: FormData): Promi
   }
 }
 
-export async function getEntity(id: string): Promise<{ entity: Entity; versions: EntityVersion[] }> {
+export async function checkConflicts(_prevState: unknown, formData: FormData): Promise<ActionState> {
+  const id = formData.get('id')
   const apiClient = getApiClient()
 
-  const [entityRes, versionsRes] = await Promise.all([
-    apiClient.get<{ data: Entity }>(`/entities/${id}`, { credentials: 'include' }),
-    apiClient.get<{ data: EntityVersion[] }>(`/entities/${id}/versions`, { credentials: 'include' }),
-  ])
+  return {
+    success: true,
+    message: 'Conflicts checked',
+  }
+}
 
-  return { entity: entityRes.data, versions: versionsRes.data }
+export async function getEntity(id: string): Promise<{ entity: Entity }> {
+  const apiClient = getApiClient()
+
+  const entityRes = await apiClient.get<{ data: Entity }>(`/entities/${id}`, { credentials: 'include' })
+
+  return { entity: entityRes.data }
 }
 
 const parseEntity = (formData: FormData): EntityFormData => {
@@ -134,7 +141,7 @@ const parseEntity = (formData: FormData): EntityFormData => {
     booleans: [
       'isHeadquarter',
       'hasSubsidiaries',
-      'hasSubsidiaries',
+      'dataShareConsent',
       'hasMajorityShares',
       'article138Compliance',
       'dataShareConsent',

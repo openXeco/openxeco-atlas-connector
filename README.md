@@ -13,29 +13,43 @@ by [NC3 - The National Cybersecurity Competence Center Luxembourg](https://nc3.l
 - **Frontend**: Next.js, TailwindCSS, shadcn/ui, SWR
 - **Backend**: Node.js, Fastify, Drizzle ORM
 - **Database**: PostgreSQL
-- **Auth**: JWT access tokens (in-memory) + httpOnly refresh token cookies, Argon2
+- **Auth**: JWT access and refresh tokens in an encrypted HTTP-only session cookie, Argon2
 - **Deployment**: Docker Compose
 
 ## Quick Start (development)
 
+### Prerequisites
+
+- Node.js 24 (see `.nvmrc`)
+- pnpm 11.9.0
+- Docker with Docker Compose
+
 ```bash
 pnpm install
-cp .env.example .env         # edit with your config — change JWT_SECRET!
+cp .env.example .env
+```
 
-docker-compose up -d db      # start PostgreSQL
+Edit `.env` before starting the application. At minimum, replace `JWT_SECRET`, `FRONTEND_SECRET_KEY`, and the ATLAS
+connection placeholders. `FRONTEND_SECRET_KEY` must contain exactly 32 UTF-8 bytes.
 
-pnpm --filter @openxeco/atlas-connector-backend db:push
+```bash
+docker compose up -d db      # start PostgreSQL
+pnpm dev                     # frontend: localhost:3000, backend: localhost:3001
+```
+
+The backend applies committed database migrations automatically when it starts. After its first successful startup, run
+the following command in another terminal to create the initial administrator:
+
+```bash
 pnpm --filter @openxeco/atlas-connector-backend seed:admin
 ```
 
-> This command will create an initial admin user
-> The default login is: `admin@atlas-connector.local` / `admin123456`
+The default login is `admin@atlas-connector.local` / `admin123456`. Override it with `ADMIN_EMAIL` and
+`ADMIN_PASSWORD`, or change the password immediately after the first login.
+
+To run the applications in separate terminals instead:
 
 ```bash
-# one terminal (all the logs are combined):
-pnpm dev
-
-# two terminals:
 pnpm dev:backend     # localhost:3001
 pnpm dev:frontend    # localhost:3000
 ```
@@ -46,40 +60,45 @@ pnpm dev:frontend    # localhost:3000
 packages/
 ├── backend/
 │   └── src/
-│       ├── app.ts                 # Fastify app bootstrap
-│       ├── index.ts               # API entrypoint
-│       ├── config/                # config + env adaptation
-│       ├── db/                    # Drizzle schema + migrations
+│       ├── actions/                 # domain actions called by routes
+│       ├── app.ts                   # Fastify application bootstrap
+│       ├── config/                  # configuration and environment validation
+│       ├── db/                      # Drizzle schema and migrations
 │       │   └── migrations/
-│       ├── middleware/              # error handling, auth guards
-│       ├── routes/                  # auth, entities, taxonomies, sync, settings, users
-│       ├── services/                # atlas/openxeco clients and transformers
-│       ├── scripts/                 # seed/migration scripts
-│       └── (others as needed)      # other backend utilities
-├── frontend/
-│   └── src/
-│       ├── app/                    # Next.js App Router and pages
-│       │   ├── (dashboard)/          # dashboard layout and pages
-│       │   └── login/                # public login page
-│       ├── assets/                  # images, fonts, etc.
-│       ├── components/              # UI components (Tailwind/shadcn)
-│       ├── data/                    # data helpers
-│       ├── lib/                     # API client, SWR fetchers, utilities
-│       ├── schema/                  # type/schema helpers
-│       ├── types.ts                 # frontend shared types
-│       └── proxy.ts                 # API proxy/config
+│       ├── index.ts                 # API entrypoint and migration startup
+│       ├── middleware/              # error handling and auth guards
+│       ├── routes/                  # auth, entities, import, settings, sync, taxonomies, users
+│       ├── scripts/                 # seed and migration scripts
+│       ├── services/                # ATLAS, openXeco, auth, and sync services
+│       └── utils/                   # shared backend utilities
+└── frontend/
+    ├── public/                      # Next.js public assets
+    └── src/
+        ├── app/                     # App Router pages, server actions, and route handlers
+        ├── assets/                  # imported images and fonts
+        ├── components/              # Tailwind/shadcn UI components
+        ├── data/                    # data helpers
+        ├── lib/                     # API, session, SWR, and utility modules
+        ├── schema/                  # validation schemas
+        ├── proxy.ts                 # route protection
+        └── types.ts                 # shared frontend types
 ```
 
 ## Architecture
 
 ### Authentication Flow
 
-1. **Login**: Backend validates credentials, returns access token and refresh token in body. The frontend server sets
-   refresh token as httpOnly cookie (`sameSite: strict`, `secure` in production, scoped to `/`).
-2. **Access token**: Stored in-memory (not localStorage) to prevent XSS exposure. Sent as `Authorization: Bearer` header
-   on API requests.
-3. **Refresh**: The refresh token mechanism is managed by the Next.js server part, trying to get a new access token
-   after receiving a status code of 401 from backend
+1. **Login**: The backend validates the credentials and returns an access token, a refresh token, and the refresh-token
+   expiry in the response body.
+2. **Session**: The Next.js server encrypts both tokens with AES-256-GCM and stores the encrypted session in an
+   HTTP-only cookie (`SameSite=Strict`, `Secure` in production, scoped to `/`). Tokens are not exposed to browser-side
+   JavaScript.
+3. **Authenticated requests**: Next.js server actions and route handlers decrypt the session and send the access token
+   to the backend as an `Authorization: Bearer` header.
+4. **Refresh**: After a backend `401`, the Next.js server submits the refresh token in the `/auth/refresh` request body,
+   rotates both tokens, updates the encrypted cookie, and retries the request.
+5. **Logout**: The frontend deletes its session cookie. The backend logout endpoint is stateless and only acknowledges
+   an authenticated request.
 
 ### Data Fetching
 
@@ -87,9 +106,9 @@ Frontend pages use [SWR](https://swr.vercel.app/) with a shared `apiFetcher`.
 
 ### Taxonomy Hierarchy
 
-ATLAS taxonomies (18 types) are cached locally. Knowledge domains (thematic areas) have a parent-child hierarchy — child
-records store the parent's **ATLAS UUID** in their `parentId` field (not the local DB UUID). The `MultiSelect` component
-supports hierarchical display with root items rendered bold and children indented.
+Ten ATLAS taxonomy types are cached locally. ATLAS returns thematic areas as a flat list, so the application applies a
+maintained parent-child mapping during synchronization. Child records store the parent's **ATLAS UUID** in `parentId`
+(not the local database UUID). The `MultiSelect` component renders root items in bold and indents their children.
 
 ## Commands
 
@@ -98,7 +117,7 @@ supports hierarchical display with root items rendered bold and children indente
 pnpm lint
 pnpm lint:fix
 pnpm typecheck
-pnpm format
+pnpm build
 
 # backend maintenance
 pnpm --filter @openxeco/atlas-connector-backend db:push       # apply schema
@@ -108,45 +127,51 @@ pnpm --filter @openxeco/atlas-connector-backend db:studio     # Drizzle Studio U
 pnpm --filter @openxeco/atlas-connector-backend seed:admin    # to be called only for first-user generation
 ```
 
-> **Note**: the DB migrations are executed every time the backend application starts, so, in production it's
-> not needed to run the command `db:migrate`
+The backend runs committed migrations whenever it starts, so `db:migrate` does not need to be run separately in
+production.
 
 ## API
 
+All endpoints require an access-token Bearer header unless marked public. User and settings endpoints require an
+administrator token.
+
 ### Auth
 
-| Method | Endpoint        | Auth   | Description                          |
-|--------|-----------------|--------|--------------------------------------|
-| POST   | `/auth/login`   | No     | Login (sets refresh token cookie)    |
-| POST   | `/auth/logout`  | Yes    | Logout (clears refresh token cookie) |
-| POST   | `/auth/refresh` | Cookie | Refresh access token                 |
-| GET    | `/auth/me`      | Yes    | Current user                         |
+| Method | Endpoint        | Auth   | Description                                     |
+|--------|-----------------|--------|-------------------------------------------------|
+| POST   | `/auth/login`   | Public | Return an access/refresh token pair             |
+| POST   | `/auth/refresh` | Public | Rotate tokens using a refresh token in the body |
+| GET    | `/auth/me`      | Bearer | Return the current user                         |
+| GET    | `/auth/check`   | Bearer | Check whether an access token is valid          |
+| POST   | `/auth/logout`  | Bearer | Acknowledge logout; backend logout is stateless |
 
 ### Entities
 
-| Method | Endpoint                 | Description      |
-|--------|--------------------------|------------------|
-| GET    | `/entities`              | List (paginated) |
-| GET    | `/entities/:id`          | Get by ID        |
-| POST   | `/entities`              | Create           |
-| PATCH  | `/entities/:id`          | Update           |
-| DELETE | `/entities/:id`          | Delete           |
-| GET    | `/entities/:id/versions` | Version history  |
+| Method | Endpoint                 | Description                  |
+|--------|--------------------------|------------------------------|
+| GET    | `/entities`              | List (paginated)             |
+| GET    | `/entities/:id`          | Get by ID                    |
+| POST   | `/entities`              | Create                       |
+| PUT    | `/entities/:id`          | Replace/update               |
+| DELETE | `/entities/:id`          | Delete                       |
+| POST   | `/entities/:id/push`     | Push to ATLAS (legacy alias) |
+| GET    | `/entities/:id/versions` | Version history              |
 
 ### Sync
 
-| Method | Endpoint                       | Description            |
-|--------|--------------------------------|------------------------|
-| POST   | `/sync/entities/:id/push`      | Push entity to ATLAS   |
-| POST   | `/sync/entities/:id/pull`      | Pull entity from ATLAS |
-| GET    | `/sync/entities/:id/diff`      | Field-level diff       |
-| GET    | `/sync/entities/:id/conflicts` | Detect conflicts       |
-| POST   | `/sync/entities/:id/resolve`   | Resolve conflict       |
-| POST   | `/sync/batch/push`             | Batch push             |
-| POST   | `/sync/batch/pull`             | Batch pull             |
-| GET    | `/sync/status`                 | Sync status overview   |
-| GET    | `/sync/logs`                   | Sync log history       |
-| DELETE | `/sync/logs/cleanup`           | Clean old logs         |
+| Method | Endpoint                       | Description                         |
+|--------|--------------------------------|-------------------------------------|
+| POST   | `/sync/entities/:id/push`      | Push entity to ATLAS                |
+| POST   | `/sync/entities/:id/pull`      | Pull entity from ATLAS              |
+| GET    | `/sync/entities/:id/diff`      | Field-level diff                    |
+| GET    | `/sync/entities/:id/conflicts` | Detect conflicts                    |
+| POST   | `/sync/entities/:id/resolve`   | Resolve conflict                    |
+| POST   | `/sync/batch/push`             | Batch push                          |
+| POST   | `/sync/batch/pull`             | Batch pull                          |
+| GET    | `/sync/status`                 | Sync status overview                |
+| GET    | `/sync/entities`               | List local and remote sync entities |
+| GET    | `/sync/logs`                   | Sync log history                    |
+| DELETE | `/sync/logs/cleanup`           | Clean old logs                      |
 
 ### Taxonomies
 
@@ -156,8 +181,35 @@ pnpm --filter @openxeco/atlas-connector-backend seed:admin    # to be called onl
 | POST   | `/taxonomies/sync/:type`   | Sync one type                 |
 | GET    | `/taxonomies/:type`        | List by type                  |
 | GET    | `/taxonomies/id/:id`       | Get by ID                     |
-| GET    | `/taxonomies/count/:?type` | Count by type (:type optional |
+| GET    | `/taxonomies/count/:type?` | Count all or by optional type |
 | GET    | `/taxonomies/search`       | Search by name                |
+
+### Import
+
+| Method | Endpoint                | Description                                    |
+|--------|-------------------------|------------------------------------------------|
+| POST   | `/import/openxeco`      | Import ECCC form data from cybersecurity.lu    |
+| GET    | `/import/openxeco/info` | Return information about the configured import |
+
+### Settings (administrator)
+
+| Method | Endpoint               | Description                         |
+|--------|------------------------|-------------------------------------|
+| GET    | `/settings/atlas`      | Read non-secret ATLAS configuration |
+| PATCH  | `/settings/atlas`      | Update ATLAS configuration          |
+| POST   | `/settings/atlas/test` | Test an ATLAS connection            |
+| GET    | `/settings/general`    | Read general settings               |
+| PATCH  | `/settings/general`    | Update general settings             |
+
+### Users (administrator)
+
+| Method | Endpoint              | Description         |
+|--------|-----------------------|---------------------|
+| GET    | `/users`              | List users          |
+| POST   | `/users`              | Create a user       |
+| PATCH  | `/users/:id`          | Update a user email |
+| PATCH  | `/users/:id/password` | Change a password   |
+| DELETE | `/users/:id`          | Delete a user       |
 
 ### Health
 
@@ -169,10 +221,10 @@ pnpm --filter @openxeco/atlas-connector-backend seed:admin    # to be called onl
 
 ## ECCC Registration Fields
 
-The entity model covers the full ECCC membership registration form:
+The persisted entity model currently includes:
 
 - **Basic info**: name (English + national language), department
-- **Address**: country code (ISO 3166-1), city, street, postal code, coordinates
+- **Address**: country code (ISO 3166-1), city, street
 - **Contact**: email, phone, website, registration number
 - **Contact person**: first name, last name, email, position, phone
 - **Compliance**: Article 138 compliance, data sharing consent
@@ -181,41 +233,44 @@ The entity model covers the full ECCC membership registration form:
 - **Taxonomy dimensions**: thematic areas (knowledge domains and sub-domains), sectors, technologies, use cases, fields
   of activity
 
-Conditional validation applies (e.g. `headquarterInfo` required when `isHeadquarter` is false). See the entity creation
-endpoint for the full schema.
+Conditional validation applies; for example, `headquarterInfo` is required when `isHeadquarter` is false. Postal code,
+coordinates, description, logo URL, and organisation-type inputs are not currently persisted and should not be treated
+as supported fields.
 
-> **Note**: ATLAS uses "article 136" as name of the field while this application stores it as "article 138" — the field
-> maps correctly during
-> sync.
+> **Note**: ATLAS names the compliance field "article 136", while this application stores it as "article 138". The
+> transformer maps the field during synchronization.
 
 ## Entity Status Flow
 
-```
-status:     draft → ready_for_publication → published / to_be_rejected
-syncStatus: local → pending_push → synced / conflict / failed
+```text
+moderationState: draft → ready_for_publication → published / to_be_rejected / rejected
+syncStatus:       local → pending_push → synced
+                                        └→ conflict / failed
 ```
 
-> **Coming soon**: pull status from ATLAS and manage conflicts. (See [Roadmap](#roadmap)).
+The API supports pushing and pulling entities, inspecting differences, detecting conflicts, and resolving a conflict by
+choosing the local or remote version.
 
 ## Deployment
 
-We recommend using [docker](https://www.docker.com/).
+We recommend using [Docker](https://www.docker.com/).
 
 Check [docker-compose-dev.yml](./docker-compose.dev.yml) or [docker-compose-prod.yml](docker-compose.prod.yml) for
 examples on how to configure a development or production stack.
 
-Once the stack is ready and running, you can create the first user by entering into the backend container (using docker
-shell) and running:
+Once the production stack is running and the backend has applied its migrations, create the first user with:
 
 ```shell
-node app/dist/scripts/seed-admin.js
+docker compose -f docker-compose.prod.yml exec backend node dist/scripts/seed-admin.js
 ```
 
-> An admin user will be created. In production environment we recommend to change the email and password immediately!
+The command creates the default administrator. Change its credentials immediately after the first login. To override
+the seed credentials, provide `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the backend container environment.
 
 ## Environment
 
-See `.env.example` for all variables that need to be filled before starting the application.
+See `.env.example` for the available variables and notes about local versus full-Compose database URLs. Backend
+configuration is validated at startup, and placeholder URLs must be replaced with valid absolute URLs.
 
 ## License
 
@@ -227,14 +282,12 @@ See [Contributing](./CONTRIBUTING.md)
 
 ## Roadmap
 
-- Remove unused taxonomies
-- Pull entities from ATLAS
 - Change sync status on Entity change
 - Bulk import of multiple entities (JSON upload)
-- Implement conflicts resolution between local and ATLAS entities
-- Implement ATLAS API and General settings
+- Complete the frontend conflict-resolution workflow
+- Enable ATLAS API settings in the frontend
+- Apply automatic-sync and conflict-resolution settings to sync behavior
 - Unit tests on all critical modules
 - Improve the Authentication mechanism with MFA
 - Reduce frontend components duplication
-- Add settings for common ATLAS fields (i.e. `default country`)
 - Integration with openXeco CORE

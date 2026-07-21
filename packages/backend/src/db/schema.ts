@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, jsonb, boolean, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { uuid, varchar, text, timestamp, jsonb, boolean, index, uniqueIndex, pgTable } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -88,7 +88,6 @@ export const entities = pgTable(
     // Taxonomy references (foreign keys)
     countryId: uuid('country_id').references(() => taxonomies.id),
     clusterTypeId: uuid('cluster_type_id').references(() => taxonomies.id), // field_cluster_type *
-    organizationTypeId: uuid('organization_type_id').references(() => taxonomies.id),
 
     // System fields
     metadata: jsonb('metadata'),
@@ -102,23 +101,6 @@ export const entities = pgTable(
     index('entity_moderation_state_idx').on(table.moderationState),
     index('entity_sync_status_idx').on(table.syncStatus),
     index('entity_country_code_idx').on(table.countryCode),
-  ],
-)
-
-export const entityVersions = pgTable(
-  'entity_versions',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    entityId: uuid('entity_id')
-      .notNull()
-      .references(() => entities.id, { onDelete: 'cascade' }),
-    version: varchar('version', { length: 50 }).notNull(),
-    data: jsonb('data').notNull(),
-    createdAt: timestamp('created_at').defaultNow(),
-  },
-  (table) => [
-    index('entity_version_entity_id_idx').on(table.entityId),
-    index('entity_version_created_at_idx').on(table.createdAt),
   ],
 )
 
@@ -245,22 +227,5 @@ export const atlasConfig = pgTable('atlas_config', {
 })
 
 export type User = typeof users.$inferSelect
-export type NewUser = typeof users.$inferInsert
 export type Taxonomy = typeof taxonomies.$inferSelect
-export type NewTaxonomy = typeof taxonomies.$inferInsert
 export type Entity = typeof entities.$inferSelect
-export type NewEntity = typeof entities.$inferInsert
-export type EntityVersion = typeof entityVersions.$inferSelect
-export type NewEntityVersion = typeof entityVersions.$inferInsert
-export type EntityThematicArea = typeof entityThematicAreas.$inferSelect
-export type NewEntityThematicArea = typeof entityThematicAreas.$inferInsert
-export type EntitySector = typeof entitySectors.$inferSelect
-export type NewEntitySector = typeof entitySectors.$inferInsert
-export type EntityTechnology = typeof entityTechnologies.$inferSelect
-export type NewEntityTechnology = typeof entityTechnologies.$inferInsert
-export type EntityUseCase = typeof entityUseCases.$inferSelect
-export type NewEntityUseCase = typeof entityUseCases.$inferInsert
-export type EntityFieldOfActivity = typeof entityFieldsOfActivity.$inferSelect
-export type NewEntityFieldOfActivity = typeof entityFieldsOfActivity.$inferInsert
-export type SyncLog = typeof syncLogs.$inferSelect
-export type NewSyncLog = typeof syncLogs.$inferInsert

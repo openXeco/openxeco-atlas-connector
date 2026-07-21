@@ -222,7 +222,7 @@ export interface QueryParams {
   pageSize?: number
   pageOffset?: number
   pageLimit?: number
-  filter?: Record<string, string>
+  filter?: Record<string, unknown>
   include?: string[]
   sort?: string
 }
