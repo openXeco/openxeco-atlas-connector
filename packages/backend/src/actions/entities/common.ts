@@ -1,127 +1,5 @@
 import z from 'zod'
-import type { ActionProps, CreateOrUpdateEntity } from '@/actions/types.js'
-import {
-  entities,
-  entityThematicAreas,
-  entitySectors,
-  entityTechnologies,
-  entityUseCases,
-  entityFieldsOfActivity,
-  entityVersions,
-  type Entity,
-} from '@/db/schema.js'
 import type { PgTable, PgAsyncTransaction } from 'drizzle-orm/pg-core'
-import { eq, desc } from 'drizzle-orm'
-
-export const createEntity = async ({ data, db }: ActionProps) => {
-  const body = validateEntity(data)
-
-  return await db.transaction(async (tx) => {
-    const [entity] = await tx
-      .insert(entities)
-      .values({
-        ...prepareEntity(body),
-        syncStatus: 'local',
-      })
-      .returning()
-
-    await Promise.all([
-      saveTaxonomy(entity.id, body.thematicAreaIds, tx, entityThematicAreas),
-      saveTaxonomy(entity.id, body.sectorIds, tx, entitySectors),
-      saveTaxonomy(entity.id, body.technologyIds, tx, entityTechnologies),
-      saveTaxonomy(entity.id, body.useCaseIds, tx, entityUseCases),
-      saveTaxonomy(entity.id, body.fieldsOfActivityIds, tx, entityFieldsOfActivity),
-    ])
-
-    await createVersion(
-      entity,
-      {
-        thematicAreaIds: body.thematicAreaIds || [],
-        sectorIds: body.sectorIds || [],
-        technologyIds: body.technologyIds || [],
-        useCaseIds: body.useCaseIds || [],
-        fieldsOfActivityIds: body.fieldsOfActivityIds || [],
-      },
-      tx,
-    )
-
-    return entity
-  })
-}
-
-export const updateEntity = async ({ data, db, id }: ActionProps) => {
-  const body = validateEntity(data)
-
-  if (!id) {
-    throw new Error('id is required')
-  }
-
-  const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
-
-  if (!existing) {
-    throw new Error('Entity not found')
-  }
-
-  return db.transaction(async (tx) => {
-    const [updated] = await tx
-      .update(entities)
-      .set({
-        ...prepareEntity(body),
-        updatedAt: new Date(),
-      })
-      .where(eq(entities.id, id))
-      .returning()
-
-    // We expect the client providing all the taxonomies so we delete them before saving the new ones
-    await Promise.all([
-      tx.delete(entityThematicAreas).where(eq(entityThematicAreas.entityId, id)),
-      tx.delete(entitySectors).where(eq(entitySectors.entityId, id)),
-      tx.delete(entityTechnologies).where(eq(entityTechnologies.entityId, id)),
-      tx.delete(entityUseCases).where(eq(entityUseCases.entityId, id)),
-      tx.delete(entityFieldsOfActivity).where(eq(entityFieldsOfActivity.entityId, id)),
-    ])
-
-    await Promise.all([
-      saveTaxonomy(id, body.thematicAreaIds, tx, entityThematicAreas),
-      saveTaxonomy(id, body.sectorIds, tx, entitySectors),
-      saveTaxonomy(id, body.technologyIds, tx, entityTechnologies),
-      saveTaxonomy(id, body.useCaseIds, tx, entityUseCases),
-      saveTaxonomy(id, body.fieldsOfActivityIds, tx, entityFieldsOfActivity),
-    ])
-
-    // Capture current taxonomy relationships for the version snapshot
-    const [currentThematic, currentSectors, currentTech, currentUseCases, currentFields] = await Promise.all([
-      tx
-        .select({ taxonomyId: entityThematicAreas.taxonomyId })
-        .from(entityThematicAreas)
-        .where(eq(entityThematicAreas.entityId, id)),
-      tx.select({ taxonomyId: entitySectors.taxonomyId }).from(entitySectors).where(eq(entitySectors.entityId, id)),
-      tx
-        .select({ taxonomyId: entityTechnologies.taxonomyId })
-        .from(entityTechnologies)
-        .where(eq(entityTechnologies.entityId, id)),
-      tx.select({ taxonomyId: entityUseCases.taxonomyId }).from(entityUseCases).where(eq(entityUseCases.entityId, id)),
-      tx
-        .select({ taxonomyId: entityFieldsOfActivity.taxonomyId })
-        .from(entityFieldsOfActivity)
-        .where(eq(entityFieldsOfActivity.entityId, id)),
-    ])
-
-    await createVersion(
-      updated,
-      {
-        thematicAreaIds: currentThematic.map((r) => r.taxonomyId),
-        sectorIds: currentSectors.map((r) => r.taxonomyId),
-        technologyIds: currentTech.map((r) => r.taxonomyId),
-        useCaseIds: currentUseCases.map((r) => r.taxonomyId),
-        fieldsOfActivityIds: currentFields.map((r) => r.taxonomyId),
-      },
-      tx,
-    )
-
-    return updated
-  })
-}
 
 export const baseEntitySchema = z.object({
   // Basic information (mandatory)
@@ -134,16 +12,12 @@ export const baseEntitySchema = z.object({
   countryCode: z.string().length(2).optional(), // field_address.country_code *
   city: z.string().max(400).optional(), // field_address.locality *
   streetAddress: z.string().max(400).optional(), // field_address.address_line *
-  postalCode: z.string().max(20).optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
 
   // Organisation details (mandatory)
   email: z.string().email().optional(), // field_general_contact_e_mail *
   phone: z.string().max(50).optional(),
   website: z.string().url().optional(), // field_url.uri *
   registrationNumber: z.string().max(100).optional(),
-  logoUrl: z.string().url().optional(),
 
   // Headquarters information
   isHeadquarter: z.boolean().optional(), // field_question_headquarter *
@@ -298,7 +172,7 @@ export const prepareEntity = (data: CreateOrUpdateEntity) => {
   }
 }
 
-const saveTaxonomy = async (
+export const saveTaxonomy = async (
   id: string,
   data: string[] | undefined | null,
   // biome-ignore lint/suspicious/noExplicitAny: We need it here
@@ -315,24 +189,13 @@ const saveTaxonomy = async (
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Same as before. Needed
-const createVersion = async (entity: Entity, taxonomies: unknown, tx: PgAsyncTransaction<any>) => {
-  const [lastVersion] = await tx
-    .select()
-    .from(entityVersions)
-    .where(eq(entityVersions.entityId, entity.id))
-    .orderBy(desc(entityVersions.createdAt))
-    .limit(1)
+export const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  status: z.enum(['draft', 'ready_for_publication', 'published', 'to_be_rejected', 'rejected']).optional(),
+  syncStatus: z.enum(['local', 'pending_push', 'synced', 'conflict', 'failed']).optional(),
+  fetchRemote: z.boolean().default(false).optional(),
+})
 
-  const lastMajor = lastVersion ? Number.parseInt(lastVersion.version, 10) || 0 : 0
-  const newVersion = `${lastMajor + 1}.0`
-
-  await tx.insert(entityVersions).values({
-    entityId: entity.id,
-    version: newVersion,
-    data: {
-      ...entity,
-      taxonomies,
-    },
-  })
-}
+export type CreateOrUpdateEntity = z.infer<typeof createOrUpdateEntitySchema>
+export type ListQuery = z.infer<typeof listQuerySchema>

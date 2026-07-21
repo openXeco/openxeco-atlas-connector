@@ -3,7 +3,6 @@ import {
   entities,
   taxonomies,
   entityFieldsOfActivity,
-  entityVersions,
   entityThematicAreas,
   entitySectors,
   entityTechnologies,
@@ -15,7 +14,6 @@ export const relations = defineRelations(
     entities,
     taxonomies,
     entityFieldsOfActivity,
-    entityVersions,
     entityThematicAreas,
     entitySectors,
     entityTechnologies,
@@ -56,10 +54,6 @@ export const relations = defineRelations(
       fieldsOfActivity: r.many.taxonomies({
         from: r.entities.id.through(r.entityFieldsOfActivity.entityId),
         to: r.taxonomies.id.through(r.entityFieldsOfActivity.taxonomyId),
-      }),
-      versions: r.many.entityVersions({
-        from: r.entities.id,
-        to: r.entityVersions.entityId,
       }),
     },
   }),

@@ -104,23 +104,6 @@ export const entities = pgTable(
   ],
 )
 
-export const entityVersions = pgTable(
-  'entity_versions',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    entityId: uuid('entity_id')
-      .notNull()
-      .references(() => entities.id, { onDelete: 'cascade' }),
-    version: varchar('version', { length: 50 }).notNull(),
-    data: jsonb('data').notNull(),
-    createdAt: timestamp('created_at').defaultNow(),
-  },
-  (table) => [
-    index('entity_version_entity_id_idx').on(table.entityId),
-    index('entity_version_created_at_idx').on(table.createdAt),
-  ],
-)
-
 // JRC Cybersecurity Taxonomy relationships - specific tables for each dimension
 export const entityThematicAreas = pgTable(
   'entity_thematic_areas',

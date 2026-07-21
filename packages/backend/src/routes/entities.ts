@@ -1,54 +1,26 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { eq, desc, and, count as countFn } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db } from '@/config/database.js'
-import { entities, entityVersions } from '../db/schema.js'
+import { entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 
 import { entitySyncService } from '@/services/sync/entity-sync.js'
 import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
-import { createEntity, updateEntity } from '@/actions/entities.js'
-
-const listQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(10),
-  status: z.enum(['draft', 'ready_for_publication', 'published', 'to_be_rejected', 'rejected']).optional(),
-  syncStatus: z.enum(['local', 'pending_push', 'synced', 'conflict', 'failed']).optional(),
-})
+import { createEntity } from '@/actions/entities/create.js'
+import { updateEntity } from '@/actions/entities/update.js'
+import { listQuerySchema } from '@/actions/entities/common.js'
+import { getEntities } from '@/actions/entities/list.js'
+import { getEntity } from '@/actions/entities/get.js'
 
 export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/', { preHandler: authenticate }, async (request, reply) => {
     try {
       const { page, limit, status, syncStatus } = listQuerySchema.parse(request.query)
 
-      const offset = (page - 1) * limit
+      const response = await getEntities({ page, limit, status, syncStatus })
 
-      const conditions = []
-
-      if (status) {
-        conditions.push(eq(entities.status, status))
-      }
-
-      if (syncStatus) {
-        conditions.push(eq(entities.syncStatus, syncStatus))
-      }
-
-      const whereClause = conditions.length > 0 ? and(...conditions) : undefined
-
-      const [results, [{ total }]] = await Promise.all([
-        db.select().from(entities).where(whereClause).limit(limit).offset(offset).orderBy(desc(entities.createdAt)),
-        db.select({ total: countFn() }).from(entities).where(whereClause),
-      ])
-
-      return reply.send({
-        data: results,
-        meta: {
-          page,
-          limit,
-          count: results.length,
-          total,
-        },
-      })
+      return reply.send(response)
     } catch (error) {
       return handleRouteError(error, reply, fastify)
     }
@@ -58,18 +30,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
-      const entity = await db.query.entities.findFirst({
-        where: { id },
-        with: {
-          country: true,
-          clusterType: true,
-          thematicAreas: true,
-          sectors: true,
-          technologies: true,
-          useCases: true,
-          fieldsOfActivity: true,
-        },
-      })
+      const entity = await getEntity(id)
 
       if (!entity) {
         return sendErrorReply({ reply, type: 'notFound' })
@@ -84,6 +45,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/', { preHandler: authenticate }, async (request, reply) => {
     try {
       const entity = await createEntity({ data: request.body, db })
+
       return reply.status(201).send({
         data: entity,
         message: 'Entity created successfully',
@@ -145,27 +107,6 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
         reply,
         type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
         message: result.error,
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
-
-  fastify.get('/:id/versions', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
-
-      const versions = await db
-        .select()
-        .from(entityVersions)
-        .where(eq(entityVersions.entityId, id))
-        .orderBy(desc(entityVersions.createdAt))
-
-      return reply.send({
-        data: versions,
-        meta: {
-          count: versions.length,
-        },
       })
     } catch (error) {
       return handleRouteError(error, reply, fastify)

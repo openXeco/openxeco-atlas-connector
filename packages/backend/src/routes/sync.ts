@@ -6,6 +6,8 @@ import { syncLogs, entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { entitySyncService } from '../services/sync/entity-sync.js'
 import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
+import { listQuerySchema } from '@/actions/entities/common.js'
+import { getEntities } from '@/actions/entities/list.js'
 
 const idParamSchema = z.object({ id: z.string().uuid() })
 
@@ -212,6 +214,18 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
           pendingPush: local + conflict,
         },
       })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify)
+    }
+  })
+
+  fastify.get('/entities', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { page, limit, status, syncStatus } = listQuerySchema.parse(request.query)
+
+      const response = await getEntities({ page, limit, status, syncStatus, fetchRemote: true })
+
+      return reply.send(response)
     } catch (error) {
       return handleRouteError(error, reply, fastify)
     }

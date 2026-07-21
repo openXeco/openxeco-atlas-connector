@@ -1,7 +1,7 @@
-import { eq, desc, lt } from 'drizzle-orm'
+import { eq, lt } from 'drizzle-orm'
 import { db } from '@/config/database.js'
 import type { Entity } from '@/db/schema.js'
-import { entities, entityVersions, syncLogs } from '@/db/schema.js'
+import { entities, syncLogs } from '@/db/schema.js'
 import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
 import type { Logger } from 'pino'
@@ -194,23 +194,6 @@ export class EntitySyncService {
           })
           .where(eq(entities.id, existing.id))
           .returning()
-
-        const versions = await db
-          .select()
-          .from(entityVersions)
-          .where(eq(entityVersions.entityId, existing.id))
-          .orderBy(desc(entityVersions.createdAt))
-          .limit(1)
-
-        const lastVersion = versions[0]
-        const lastMajor = lastVersion ? Number.parseInt(lastVersion.version, 10) || 0 : 0
-        const newVersion = `${lastMajor + 1}.0`
-
-        await db.insert(entityVersions).values({
-          entityId: existing.id,
-          version: newVersion,
-          data: entity as Entity,
-        })
       } else {
         ;[entity] = await db
           .insert(entities)
@@ -222,12 +205,6 @@ export class EntitySyncService {
             lastSyncedAt: new Date(),
           })
           .returning()
-
-        await db.insert(entityVersions).values({
-          entityId: entity.id,
-          version: '1.0',
-          data: entity as Entity,
-        })
       }
 
       await db.insert(syncLogs).values({
