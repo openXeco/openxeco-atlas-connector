@@ -28,6 +28,8 @@ export const updateEntity = async ({ data, db, id }: ActionProps) => {
       .update(entities)
       .set({
         ...prepareEntity(body),
+        syncStatus: 'pending_push',
+        syncCode: null,
         updatedAt: new Date(),
       })
       .where(eq(entities.id, id))

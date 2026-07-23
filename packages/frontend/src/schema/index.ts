@@ -1,4 +1,5 @@
 import z from 'zod'
+import { ENTITY_STATUSES } from '@/types'
 
 // Auth
 export const loginSchema = z.object({
@@ -17,7 +18,6 @@ export const entitySchema = z.object({
   countryCode: z.string().length(2, 'Use ISO-3166 alpha-2 code').optional(),
   streetAddress: z.string().min(1, 'Street address is required').max(400),
   city: z.string().min(1, 'City is required').max(400),
-  postalCode: z.string().max(20).optional(),
   registrationNumber: z.string().max(100).optional(),
   isHeadquarter: z.boolean().optional(),
   headquarterInfo: z.string().optional(),
@@ -55,7 +55,7 @@ export const entitySchema = z.object({
   // Additional fields (not in form steps but needed)
   description: z.string().optional(),
   dataShareConsent: z.boolean().optional(),
-  moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
+  status: z.enum(ENTITY_STATUSES).optional(),
 })
 
 export const passwordSchema = z

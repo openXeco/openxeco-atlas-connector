@@ -42,7 +42,7 @@ export class EntitySyncService {
         }
       }
 
-      await db.update(entities).set({ syncStatus: 'pending_push' }).where(eq(entities.id, entityId))
+      await db.update(entities).set({ syncStatus: 'pending_push', syncCode: null }).where(eq(entities.id, entityId))
 
       const clusterInput = jsonApiTransformer.toClusterInputFromEntity(
         entity,
@@ -63,7 +63,7 @@ export class EntitySyncService {
           const conflict = await this.detectConflicts(entityId)
           console.log('Conflict Report', conflict)
           if (conflict.hasConflict) {
-            await db.update(entities).set({ syncStatus: 'conflict' }).where(eq(entities.id, entityId))
+            await db.update(entities).set({ syncStatus: 'failed' }).where(eq(entities.id, entityId))
 
             await db.insert(syncLogs).values({
               entityType: 'entity',
@@ -161,7 +161,10 @@ export class EntitySyncService {
         const remoteUpdated = cluster.updatedAt ? new Date(cluster.updatedAt) : new Date()
 
         if (localUpdated > remoteUpdated) {
-          await db.update(entities).set({ syncStatus: 'conflict' }).where(eq(entities.id, existing.id))
+          await db
+            .update(entities)
+            .set({ syncStatus: 'failed', syncCode: 'conflict' })
+            .where(eq(entities.id, existing.id))
 
           await db.insert(syncLogs).values({
             entityType: 'entity',
@@ -189,6 +192,7 @@ export class EntitySyncService {
           .set({
             ...entityData,
             syncStatus: 'synced',
+            syncCode: null,
             lastSyncedAt: new Date(),
             updatedAt: new Date(),
           })
@@ -301,7 +305,6 @@ export class EntitySyncService {
         'nameNational',
         'entityDepartment',
         'status',
-        'moderationState',
         'countryCode',
         'city',
         'streetAddress',

@@ -147,15 +147,14 @@ administrator token.
 
 ### Entities
 
-| Method | Endpoint                 | Description                  |
-|--------|--------------------------|------------------------------|
-| GET    | `/entities`              | List (paginated)             |
-| GET    | `/entities/:id`          | Get by ID                    |
-| POST   | `/entities`              | Create                       |
-| PUT    | `/entities/:id`          | Replace/update               |
-| DELETE | `/entities/:id`          | Delete                       |
-| POST   | `/entities/:id/push`     | Push to ATLAS (legacy alias) |
-| GET    | `/entities/:id/versions` | Version history              |
+| Method | Endpoint             | Description                  |
+|--------|----------------------|------------------------------|
+| GET    | `/entities`          | List (paginated)             |
+| GET    | `/entities/:id`      | Get by ID                    |
+| POST   | `/entities`          | Create                       |
+| PUT    | `/entities/:id`      | Replace/update               |
+| DELETE | `/entities/:id`      | Delete                       |
+| POST   | `/entities/:id/push` | Push to ATLAS (legacy alias) |
 
 ### Sync
 
@@ -232,6 +231,10 @@ The persisted entity model currently includes:
 - **Expertise**: description (800 char limit), goals to achieve/contribute
 - **Taxonomy dimensions**: thematic areas (knowledge domains and sub-domains), sectors, technologies, use cases, fields
   of activity
+- **Workflow**:
+    - `status`: moderation state synchronized with ATLAS
+    - `syncStatus`: synchronization lifecycle state
+    - `syncCode`: optional reason associated with a failed synchronization
 
 Conditional validation applies; for example, `headquarterInfo` is required when `isHeadquarter` is false. Postal code,
 coordinates, description, logo URL, and organisation-type inputs are not currently persisted and should not be treated
@@ -240,16 +243,43 @@ as supported fields.
 > **Note**: ATLAS names the compliance field "article 136", while this application stores it as "article 138". The
 > transformer maps the field during synchronization.
 
-## Entity Status Flow
+## Entity Status and Synchronization
+
+The entity `status` field is the canonical moderation state. It is mapped to and from ATLAS's
+`moderation_state` field.
+
+Supported entity statuses are:
+
+- `draft`
+- `ready_for_publication`
+- `published` (coming from ATLAS)
+- `to_be_rejected`
+- `rejected` (coming from ATLAS)
+
+Entity creation and update requests currently accept `draft`, `ready_for_publication`, and `to_be_rejected`. Statuses
+received from ATLAS are stored in the same `status` field.
+
+Supported synchronization statuses are:
+
+- `pending_push`: the entity was created or changed locally and needs to be pushed to ATLAS
+- `synced`: the entity was successfully synchronized with ATLAS
+- `failed`: the last synchronization attempt failed
+
+A failed synchronization can have an optional `syncCode`:
+
+- `conflict`: the local and remote entity data conflict
+- `not_found`: the entity identified by its `atlasId` could not be found
+- `null`: the failure has no specific application-level classification
 
 ```text
-moderationState: draft → ready_for_publication → published / to_be_rejected / rejected
-syncStatus:       local → pending_push → synced
-                                        └→ conflict / failed
-```
+create/update ───────────────→ pending_push
+synced ── local update ──────→ pending_push
+failed ── update or retry ───→ pending_push
 
-The API supports pushing and pulling entities, inspecting differences, detecting conflicts, and resolving a conflict by
-choosing the local or remote version.
+pending_push ── success ─────→ synced
+pending_push ── failure ─────→ failed
+pull ────────── success ─────→ synced
+pull ────────── conflict ────→ failed (syncCode: conflict)
 
 ## Deployment
 
@@ -264,8 +294,8 @@ Once the production stack is running and the backend has applied its migrations,
 docker compose -f docker-compose.prod.yml exec backend node dist/scripts/seed-admin.js
 ```
 
-The command creates the default administrator. Change its credentials immediately after the first login. To override
-the seed credentials, provide `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the backend container environment.
+The command creates the default administrator. Change its credentials immediately after the first login. To override the
+seed credentials, provide `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the backend container environment.
 
 ## Environment
 
@@ -282,12 +312,10 @@ See [Contributing](./CONTRIBUTING.md)
 
 ## Roadmap
 
-- Change sync status on Entity change
 - Bulk import of multiple entities (JSON upload)
 - Complete the frontend conflict-resolution workflow
 - Enable ATLAS API settings in the frontend
-- Apply automatic-sync and conflict-resolution settings to sync behavior
 - Unit tests on all critical modules
 - Improve the Authentication mechanism with MFA
-- Reduce frontend components duplication
-- Integration with openXeco CORE
+- Integration with openXeco CORE (V1)
+- Integration with openXeco CORE (V2)

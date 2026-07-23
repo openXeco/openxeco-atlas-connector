@@ -143,7 +143,6 @@ export interface Cluster {
   fieldsOfActivityIds?: string[]
 
   // Workflow
-  status?: string
   moderationState?: string
 
   // Timestamps

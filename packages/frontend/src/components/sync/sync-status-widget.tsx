@@ -36,9 +36,9 @@ export function SyncStatusWidget({ onRefresh: _onRefresh }: SyncStatusWidgetProp
     loadEntities()
   }, [])
 
-  const localEntities = entities.filter((e) => e.syncStatus === 'local')
-  const conflictEntities = entities.filter((e) => e.syncStatus === 'conflict')
-  const failedEntities = entities.filter((e) => e.syncStatus === 'failed')
+  const localEntities = entities.filter((e) => e.syncStatus === 'pending_push')
+  const conflictEntities = entities.filter((e) => e.syncStatus === 'failed' && e.syncCode === 'conflict')
+  const failedEntities = entities.filter((e) => e.syncStatus === 'failed' && e.syncCode !== 'conflict')
 
   const handleViewEntity = (id: string) => {
     router.push(`/entities/${id}`)

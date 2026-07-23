@@ -12,6 +12,7 @@ import type {
 } from './types.js'
 import { TAXONOMY_TYPES } from '@/services/atlas/taxonomy-types.js'
 import { getLogger } from '@/utils/logger.js'
+import type { EntityStatus } from '@/types.js'
 
 /**
  * Maps a JSON:API resource to a Cluster object, extracting ALL attributes and relationships.
@@ -75,7 +76,6 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
     goalsToContribute: attrs.field_goals_to_contribute as string | undefined,
 
     // Workflow
-    status: attrs.status as string | undefined,
     moderationState: attrs.moderation_state as string | undefined,
 
     // Timestamps
@@ -220,8 +220,7 @@ export class JsonApiTransformer {
       clusterTypeId: cluster.clusterTypeId,
 
       // Workflow
-      status: cluster.status || 'draft',
-      moderationState: cluster.moderationState || 'draft',
+      status: (cluster.moderationState || 'draft') as EntityStatus,
       syncStatus: 'synced',
 
       metadata: cluster.metadata,
@@ -293,7 +292,7 @@ export class JsonApiTransformer {
       fieldsOfActivityIds: taxonomyIds?.fieldsOfActivityIds,
 
       // Workflow
-      moderationState: entity.moderationState || undefined,
+      moderationState: entity.status || undefined,
     }
   }
 

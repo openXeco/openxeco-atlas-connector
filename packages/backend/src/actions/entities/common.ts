@@ -1,5 +1,6 @@
 import z from 'zod'
 import type { PgTable, PgAsyncTransaction } from 'drizzle-orm/pg-core'
+import { ENTITY_STATUSES, SYNC_STATUSES } from '@/types.js'
 
 export const baseEntitySchema = z.object({
   // Basic information (mandatory)
@@ -62,7 +63,7 @@ export const baseEntitySchema = z.object({
   fieldsOfActivityIds: z.array(z.string().uuid()).optional(), // Article 8(3) expertise *
 
   // Workflow
-  moderationState: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
+  status: z.enum(['draft', 'ready_for_publication', 'to_be_rejected']).optional(),
 })
 
 export const createOrUpdateEntitySchema = baseEntitySchema
@@ -95,20 +96,11 @@ export const createOrUpdateEntitySchema = baseEntitySchema
   )
   .refine(
     (data) => {
-      return !(data.moderationState === 'ready_for_publication' && !data.dataProtectionConsent)
+      return !(data.status === 'ready_for_publication' && !data.dataProtectionConsent)
     },
     {
       message: 'Data protection consent is required for publication',
       path: ['dataProtectionConsent'],
-    },
-  )
-  .refine(
-    (data) => {
-      return !(data.moderationState === 'ready_for_publication' && !data.formCompletionConfirmed)
-    },
-    {
-      message: 'Form completion confirmation is required for publication',
-      path: ['formCompletionConfirmed'],
     },
   )
 
@@ -166,9 +158,7 @@ export const prepareEntity = (data: CreateOrUpdateEntity) => {
     countryId: data.countryId,
     clusterTypeId: data.clusterTypeId,
 
-    // Workflow
-    status: 'draft',
-    moderationState: data.moderationState || 'draft',
+    status: data.status || 'draft',
   }
 }
 
@@ -192,8 +182,8 @@ export const saveTaxonomy = async (
 export const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),
-  status: z.enum(['draft', 'ready_for_publication', 'published', 'to_be_rejected', 'rejected']).optional(),
-  syncStatus: z.enum(['local', 'pending_push', 'synced', 'conflict', 'failed']).optional(),
+  status: z.enum(ENTITY_STATUSES).optional(),
+  syncStatus: z.enum(SYNC_STATUSES).optional(),
   fetchRemote: z.boolean().default(false).optional(),
 })
 

@@ -17,7 +17,8 @@ export const createEntity = async ({ data, db }: ActionProps) => {
       .insert(entities)
       .values({
         ...prepareEntity(body),
-        syncStatus: 'local',
+        syncStatus: 'pending_push',
+        syncCode: null,
       })
       .returning()
 

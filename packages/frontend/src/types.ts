@@ -49,9 +49,14 @@ export interface Taxonomy {
   lastSyncedAt: string
 }
 
-export type EntityStatus = 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected'
-export type ModerationState = 'draft' | 'ready_for_publication' | 'to_be_rejected'
-export type SyncStatus = 'local' | 'synced' | 'pending_push' | 'failed' | 'conflict'
+export const ENTITY_STATUSES = ['draft', 'ready_for_publication', 'published', 'to_be_rejected', 'rejected'] as const
+export const SYNC_STATUSES = ['pending_push', 'synced', 'failed'] as const
+export const SYNC_CODES = ['conflict', 'not_found'] as const
+
+export type EntityStatus = (typeof ENTITY_STATUSES)[number]
+export type SyncStatus = (typeof SYNC_STATUSES)[number]
+export type SyncCode = (typeof SYNC_CODES)[number]
+
 export type SyncRecap = {
   total: number
   local: number
@@ -68,8 +73,8 @@ export interface Entity {
   nameNational: string | null
   entityDepartment: string | null
   status: EntityStatus
-  moderationState: ModerationState | null
   syncStatus: SyncStatus
+  syncCode: SyncCode | null
   countryCode: string | null
   city: string | null
   streetAddress: string | null
@@ -80,8 +85,6 @@ export interface Entity {
   clusterTypeId: string | null
   organizationTypeId: string | null
   website: string | null
-  latitude: string | null
-  longitude: string | null
   isHeadquarter: boolean | null
   headquarterInfo: string | null
   hasSubsidiaries: boolean | null
@@ -154,7 +157,7 @@ export type EntityFormData = {
   technologyIds?: string[]
   useCaseIds?: string[]
   fieldsOfActivityIds?: string[]
-  moderationState?: ModerationState
+  status?: EntityStatus
 }
 
 export interface EntityListParams {
@@ -162,6 +165,7 @@ export interface EntityListParams {
   limit?: number
   status?: EntityStatus
   syncStatus?: SyncStatus
+  syncCode?: SyncCode
   search?: string
   countryId?: string
   clusterTypeId?: string

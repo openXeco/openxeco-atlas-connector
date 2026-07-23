@@ -40,7 +40,7 @@ export const columns = ({
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: 'Moderation State',
     cell: ({ row }) => {
       return <StatusBadge type={'entity'} status={row.getValue('status')} />
     },

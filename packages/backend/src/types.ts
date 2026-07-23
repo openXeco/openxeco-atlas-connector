@@ -36,3 +36,11 @@ declare module 'fastify' {
     currentUser?: JwtPayload
   }
 }
+
+export const ENTITY_STATUSES = ['draft', 'ready_for_publication', 'published', 'to_be_rejected', 'rejected'] as const
+export const SYNC_STATUSES = ['pending_push', 'synced', 'failed'] as const
+export const SYNC_CODES = ['conflict', 'not_found'] as const
+
+export type EntityStatus = (typeof ENTITY_STATUSES)[number]
+export type SyncStatus = (typeof SYNC_STATUSES)[number]
+export type SyncCode = (typeof SYNC_CODES)[number]
