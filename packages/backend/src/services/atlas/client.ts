@@ -1,6 +1,6 @@
 import { ProxyAgent } from 'undici'
 import { config } from '@/config/index.js'
-import { type Logger, getLogger } from '@/utils/logger.js'
+import { getLogger } from '@/utils/logger.js'
 import { mapResourceToCluster } from './transformer.js'
 import type {
   AtlasConfig,
@@ -13,6 +13,7 @@ import type {
   QueryParams,
   PaginatedResponse,
 } from './types.js'
+import type { Logger } from '@/types.js'
 
 class AtlasClient {
   private config: AtlasConfig
@@ -86,7 +87,10 @@ class AtlasClient {
       }
 
       // Stop if we got fewer results than limit (last page) or no next link
-      if (resources.length < limit || !response.links?.next) break
+      if (resources.length < limit || !response.links?.next) {
+        break
+      }
+
       offset += limit
 
       // Delay between pages to avoid ATLAS API rate limiting
@@ -181,7 +185,6 @@ class AtlasClient {
                   country_code: data.countryCode,
                   locality: data.city,
                   address_line1: data.streetAddress,
-                  // postal_code: data.postalCode,
                 }
               : undefined,
 

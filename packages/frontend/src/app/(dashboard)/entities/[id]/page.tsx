@@ -66,7 +66,7 @@ export default function ViewEntityPage({ params }: { params: Promise<{ id: strin
       <Tabs defaultValue='details' className='space-y-6'>
         <TabsList>
           <TabsTrigger value='details'>Details</TabsTrigger>
-          <TabsTrigger value={'sync'} disabled={true}>
+          <TabsTrigger value={'sync'} disabled={false}>
             Sync status (coming soon)
           </TabsTrigger>
         </TabsList>

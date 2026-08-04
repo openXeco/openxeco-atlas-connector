@@ -1,69 +1,60 @@
-import type { BasicErrorResponse } from '@/types.js'
-import type { FastifyReply, FastifyInstance } from 'fastify'
+import type { ActionError as TActionError, GetErrorReplyArgs, ErrorReply } from '@/types.js'
+import type { FastifyReply, FastifyBaseLogger } from 'fastify'
 import { z } from 'zod'
+import { replies } from '@/config/constants.js'
+import { ActionError } from '@/utils/action-helpers.js'
 
-const replies: Record<string, BasicErrorResponse> = {
-  unauthorized: {
-    status: 401,
-    error: 'Unauthorized',
-  },
-  forbidden: {
-    status: 403,
-    error: 'Forbidden',
-  },
-  badRequest: {
-    status: 400,
-    error: 'Validation failed',
-  },
-  conflict: {
-    status: 409,
-    error: 'Conflict',
-  },
-  notFound: {
-    status: 404,
-    error: 'Not found',
-  },
-  unexpected: {
-    status: 500,
-    error: 'Internal server error',
-  },
-  external: {
-    status: 502,
-    error: 'External API error',
-  },
-} as const
+export const getErrorReply = ({ type = 'unexpected', message, additionalPayload }: GetErrorReplyArgs): ErrorReply => {
+  const { status, error } = replies[type] || replies.unexpected
 
-type SendErrorReplyArgs = {
-  type?: keyof typeof replies
-  reply: FastifyReply
-  message?: string
-  additionalPayload?: Record<string, unknown>
+  return {
+    status,
+    payload: {
+      error,
+      ...(message ? { message } : undefined),
+      ...(additionalPayload ? { ...additionalPayload } : undefined),
+    },
+  }
 }
 
-export const handleZodError = (error: z.ZodError, { reply, additionalPayload }: SendErrorReplyArgs) => {
-  return sendErrorReply({
+export const getReplyFromZodError = (error: z.ZodError, { additionalPayload }: GetErrorReplyArgs = {}) => {
+  return getErrorReply({
     type: 'badRequest',
-    reply,
     message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
     additionalPayload,
   })
 }
 
-export const sendErrorReply = ({ type = 'unexpected', reply, message, additionalPayload }: SendErrorReplyArgs) => {
-  const { status, error } = replies[type] || replies.unexpected
-
-  return reply.status(status).send({
-    error,
-    ...(message ? { message } : undefined),
-    ...(additionalPayload ? { ...additionalPayload } : undefined),
+export const getReplyFromActionError = (actionError: TActionError, replyArgs?: GetErrorReplyArgs) => {
+  if (actionError.code === 'validation' && actionError.error instanceof z.ZodError) {
+    return getReplyFromZodError(actionError.error, replyArgs)
+  }
+  return getErrorReply({
+    type: actionError.code,
+    message: actionError.message,
+    additionalPayload: replyArgs?.additionalPayload,
   })
 }
 
-export const handleRouteError = (error: unknown, reply: SendErrorReplyArgs['reply'], fastify: FastifyInstance) => {
+export const sendErrorReply = ({ status, payload }: ErrorReply, reply: FastifyReply) => {
+  return reply.status(status).send(payload)
+}
+
+export const handleRouteError = (error: unknown, reply: FastifyReply, logger: FastifyBaseLogger) => {
+  let replyPayload: ErrorReply | undefined
+
   if (error instanceof z.ZodError) {
-    return handleZodError(error, { reply })
+    replyPayload = getReplyFromZodError(error)
   }
 
-  fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Unexpected error')
-  return sendErrorReply({ reply })
+  if (error instanceof ActionError) {
+    replyPayload = getReplyFromActionError(error)
+  }
+
+  if (!replyPayload) {
+    replyPayload = getErrorReply({ message: 'Unexpected error' })
+    logger.error(error instanceof Error ? error : { message: String(error) }, 'Unexpected error')
+  }
+
+  return sendErrorReply(replyPayload, reply)
 }

@@ -1,12 +1,13 @@
-import { eq, and, ilike, sql, count } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { db } from '@/config/database.js'
 import { taxonomies, syncLogs } from '@/db/schema.js'
 import { atlasClient } from './client.js'
 import { jsonApiTransformer } from './transformer.js'
 import { KNOWLEDGE_DOMAIN_HIERARCHY } from './knowledge-domain-hierarchy.js'
 import type { TaxonomyType } from './types.js'
-import { getLogger, type Logger } from '@/utils/logger.js'
+import { getLogger } from '@/utils/logger.js'
 import { TAXONOMY_TYPES } from '@/services/atlas/taxonomy-types.js'
+import type { Logger } from '@/types.js'
 
 // cluster_thematic_area terms are flat on ATLAS (no parent relationships returned by the API).
 // The parent/child hierarchy is hardcoded in knowledge-domain-hierarchy.ts and applied during sync.
@@ -123,69 +124,6 @@ export class TaxonomySyncService {
     this.logger.info(`Synced ${synced} terms for taxonomy type: ${type}`)
 
     return synced
-  }
-
-  async getTaxonomiesByType(type: TaxonomyType) {
-    return db.select().from(taxonomies).where(eq(taxonomies.taxonomyType, type)).orderBy(taxonomies.name)
-  }
-
-  async countTaxonomies(): Promise<{
-    total: number
-    taxonomies: Record<TaxonomyType, number>
-  }> {
-    const rows = await db
-      .select({
-        taxonomyType: taxonomies.taxonomyType,
-        count: sql<number>`count(*)`,
-      })
-      .from(taxonomies)
-      .groupBy(taxonomies.taxonomyType)
-
-    const taxonomiesRecord = {} as Record<TaxonomyType, number>
-
-    for (const row of rows) {
-      taxonomiesRecord[row.taxonomyType as TaxonomyType] = row.count
-    }
-
-    const total = rows.reduce((sum, r) => sum + Number(r.count), 0)
-
-    return {
-      total,
-      taxonomies: taxonomiesRecord,
-    }
-  }
-
-  async countTaxonomiesByType(type: TaxonomyType) {
-    return db.select({ total: count() }).from(taxonomies).where(eq(taxonomies.taxonomyType, type))
-  }
-
-  async getTaxonomyById(id: string) {
-    const [taxonomy] = await db.select().from(taxonomies).where(eq(taxonomies.id, id)).limit(1)
-
-    return taxonomy
-  }
-
-  async getTaxonomyByAtlasId(atlasId: string) {
-    const [taxonomy] = await db.select().from(taxonomies).where(eq(taxonomies.atlasId, atlasId)).limit(1)
-
-    return taxonomy
-  }
-
-  async searchTaxonomies(query: string, type?: TaxonomyType) {
-    const conditions = []
-    if (query) {
-      conditions.push(ilike(taxonomies.name, `%${query}%`))
-    }
-    if (type) {
-      conditions.push(eq(taxonomies.taxonomyType, type))
-    }
-
-    return db
-      .select()
-      .from(taxonomies)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(taxonomies.name)
-      .limit(50)
   }
 }
 

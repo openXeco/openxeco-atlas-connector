@@ -1,5 +1,5 @@
 import { uuid, varchar, text, timestamp, jsonb, boolean, index, uniqueIndex, pgTable } from 'drizzle-orm/pg-core'
-import { ENTITY_STATUSES, SYNC_STATUSES, SYNC_CODES } from '@/types.js'
+import { SYNC_CODES, SYNC_STATUSES, ENTITY_STATUSES } from '@/config/constants.js'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),

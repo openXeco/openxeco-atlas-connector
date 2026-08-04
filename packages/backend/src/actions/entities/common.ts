@@ -1,6 +1,81 @@
 import z from 'zod'
 import type { PgTable, PgAsyncTransaction } from 'drizzle-orm/pg-core'
-import { ENTITY_STATUSES, SYNC_STATUSES } from '@/types.js'
+import { SYNC_STATUSES, ENTITY_STATUSES } from '@/config/constants.js'
+
+export const validateEntity = (data: unknown) => createOrUpdateEntitySchema.parse(data)
+
+export const prepareEntity = (data: CreateOrUpdateEntity) => {
+  return {
+    // Basic information
+    name: data.name,
+    nameNational: data.nameNational,
+    entityDepartment: data.entityDepartment,
+
+    // Address
+    countryCode: data.countryCode,
+    city: data.city,
+    streetAddress: data.streetAddress,
+
+    // Organisation details
+    email: data.email,
+    phone: data.phone,
+    website: data.website,
+    registrationNumber: data.registrationNumber,
+
+    // Headquarters
+    isHeadquarter: data.isHeadquarter,
+    headquarterInfo: data.headquarterInfo,
+
+    // Subsidiaries
+    hasSubsidiaries: data.hasSubsidiaries,
+    subsidiariesDetails: data.subsidiariesDetails,
+    hasMajorityShares: data.hasMajorityShares,
+    majoritySharesDetails: data.majoritySharesDetails,
+
+    // Compliance
+    article138Compliance: data.article138Compliance,
+    dataShareConsent: data.dataShareConsent,
+
+    // Contact person
+    contactFirstName: data.contactFirstName,
+    contactLastName: data.contactLastName,
+    contactEmail: data.contactEmail,
+    contactPosition: data.contactPosition,
+    contactPhone: data.contactPhone,
+
+    // Expertise
+    expertiseDescription: data.expertiseDescription,
+    goalsToAchieve: data.goalsToAchieve,
+    goalsToContribute: data.goalsToContribute,
+
+    // Consent fields
+    dataProtectionConsent: data.dataProtectionConsent,
+    formCompletionConfirmed: data.formCompletionConfirmed,
+
+    // Taxonomy references
+    countryId: data.countryId,
+    clusterTypeId: data.clusterTypeId,
+
+    status: data.status || 'draft',
+  }
+}
+
+export const saveTaxonomy = async (
+  id: string,
+  data: string[] | undefined | null,
+  // biome-ignore lint/suspicious/noExplicitAny: We need it here
+  tx: PgAsyncTransaction<any>,
+  table: PgTable,
+) => {
+  if (data && data.length > 0) {
+    await tx.insert(table).values(
+      data.map((taxonomyId) => ({
+        entityId: id,
+        taxonomyId,
+      })),
+    )
+  }
+}
 
 export const baseEntitySchema = z.object({
   // Basic information (mandatory)
@@ -104,87 +179,11 @@ export const createOrUpdateEntitySchema = baseEntitySchema
     },
   )
 
-export const validateEntity = (data: unknown) => createOrUpdateEntitySchema.parse(data)
-
-export const prepareEntity = (data: CreateOrUpdateEntity) => {
-  return {
-    // Basic information
-    name: data.name,
-    nameNational: data.nameNational,
-    entityDepartment: data.entityDepartment,
-
-    // Address
-    countryCode: data.countryCode,
-    city: data.city,
-    streetAddress: data.streetAddress,
-
-    // Organisation details
-    email: data.email,
-    phone: data.phone,
-    website: data.website,
-    registrationNumber: data.registrationNumber,
-
-    // Headquarters
-    isHeadquarter: data.isHeadquarter,
-    headquarterInfo: data.headquarterInfo,
-
-    // Subsidiaries
-    hasSubsidiaries: data.hasSubsidiaries,
-    subsidiariesDetails: data.subsidiariesDetails,
-    hasMajorityShares: data.hasMajorityShares,
-    majoritySharesDetails: data.majoritySharesDetails,
-
-    // Compliance
-    article138Compliance: data.article138Compliance,
-    dataShareConsent: data.dataShareConsent,
-
-    // Contact person
-    contactFirstName: data.contactFirstName,
-    contactLastName: data.contactLastName,
-    contactEmail: data.contactEmail,
-    contactPosition: data.contactPosition,
-    contactPhone: data.contactPhone,
-
-    // Expertise
-    expertiseDescription: data.expertiseDescription,
-    goalsToAchieve: data.goalsToAchieve,
-    goalsToContribute: data.goalsToContribute,
-
-    // Consent fields
-    dataProtectionConsent: data.dataProtectionConsent,
-    formCompletionConfirmed: data.formCompletionConfirmed,
-
-    // Taxonomy references
-    countryId: data.countryId,
-    clusterTypeId: data.clusterTypeId,
-
-    status: data.status || 'draft',
-  }
-}
-
-export const saveTaxonomy = async (
-  id: string,
-  data: string[] | undefined | null,
-  // biome-ignore lint/suspicious/noExplicitAny: We need it here
-  tx: PgAsyncTransaction<any>,
-  table: PgTable,
-) => {
-  if (data && data.length > 0) {
-    await tx.insert(table).values(
-      data.map((taxonomyId) => ({
-        entityId: id,
-        taxonomyId,
-      })),
-    )
-  }
-}
-
 export const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),
   status: z.enum(ENTITY_STATUSES).optional(),
   syncStatus: z.enum(SYNC_STATUSES).optional(),
-  fetchRemote: z.boolean().default(false).optional(),
 })
 
 export type CreateOrUpdateEntity = z.infer<typeof createOrUpdateEntitySchema>

@@ -1,28 +1,24 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { eq } from 'drizzle-orm'
 import { db } from '@/config/database.js'
-import { entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 
-import { entitySyncService } from '@/services/sync/entity-sync.js'
-import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
-import { createEntity } from '@/actions/entities/create.js'
-import { updateEntity } from '@/actions/entities/update.js'
+import { handleRouteError } from '@/utils/reply-helpers.js'
 import { listQuerySchema } from '@/actions/entities/common.js'
-import { getEntities } from '@/actions/entities/list.js'
-import { getEntity } from '@/actions/entities/get.js'
+import { entityActions } from '@/actions/entities/index.js'
 
 export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
+  const actions = entityActions(db, fastify.log)
+
   fastify.get('/', { preHandler: authenticate }, async (request, reply) => {
     try {
       const { page, limit, status, syncStatus } = listQuerySchema.parse(request.query)
 
-      const response = await getEntities({ page, limit, status, syncStatus })
+      const response = await actions.list({ page, limit, status, syncStatus })
 
       return reply.send(response)
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -30,28 +26,24 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
-      const entity = await getEntity(id)
+      const result = await actions.get(id)
 
-      if (!entity) {
-        return sendErrorReply({ reply, type: 'notFound' })
-      }
-
-      return reply.send({ data: entity })
+      return reply.send({ data: result.data })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
   fastify.post('/', { preHandler: authenticate }, async (request, reply) => {
     try {
-      const entity = await createEntity({ data: request.body, db })
+      const result = await actions.create(request.body)
 
       return reply.status(201).send({
-        data: entity,
+        data: result.data,
         message: 'Entity created successfully',
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -59,14 +51,14 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
-      const entity = await updateEntity({ id, data: request.body, db })
+      const result = await actions.update(id, request.body)
 
       return reply.send({
-        data: entity,
+        data: result.data,
         message: 'Entity updated successfully',
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -74,42 +66,37 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
 
-      const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
-
-      if (!existing) {
-        return sendErrorReply({ reply, type: 'notFound' })
-      }
-
-      await db.delete(entities).where(eq(entities.id, id))
+      await actions.delete(id)
 
       return reply.send({
         message: 'Entity deleted successfully',
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
-  fastify.post('/:id/push', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
-
-      const result = await entitySyncService.pushEntity(id)
-
-      if (result.success) {
-        return reply.send({
-          data: result.atlasId,
-          message: 'Entity synced to ATLAS successfully',
-        })
-      }
-
-      return sendErrorReply({
-        reply,
-        type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
-        message: result.error,
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
+  //TODO remove it
+  // fastify.post('/:id/push', { preHandler: authenticate }, async (request, reply) => {
+  //   try {
+  //     const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
+  //
+  //     const result = await entitySyncService.pushEntity(id)
+  //
+  //     if (result.success) {
+  //       return reply.send({
+  //         data: result.atlasId,
+  //         message: 'Entity synced to ATLAS successfully',
+  //       })
+  //     }
+  //
+  //     return sendErrorReply({
+  //       reply,
+  //       type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
+  //       message: result.error,
+  //     })
+  //   } catch (error) {
+  //     return handleRouteError(error, reply, fastify.log)
+  //   }
+  // })
 }

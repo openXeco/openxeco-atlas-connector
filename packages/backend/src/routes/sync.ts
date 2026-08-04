@@ -5,9 +5,10 @@ import { db } from '../config/database.js'
 import { syncLogs, entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { entitySyncService } from '../services/sync/entity-sync.js'
-import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
+import { sendErrorReply, handleRouteError, getErrorReply } from '@/utils/reply-helpers.js'
 import { listQuerySchema } from '@/actions/entities/common.js'
-import { getEntities } from '@/actions/entities/list.js'
+import { entityActions } from '@/actions/entities/index.js'
+import { getLogger } from '@/utils/logger.js'
 
 const idParamSchema = z.object({ id: z.string().uuid() })
 
@@ -39,11 +40,13 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const result = await entitySyncService.pushEntity(id, userId)
 
       if (!result.success) {
-        return sendErrorReply({
+        return sendErrorReply(
+          getErrorReply({
+            type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
+            message: result.message,
+          }),
           reply,
-          type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
-          message: result.message,
-        })
+        )
       }
 
       return reply.send({
@@ -51,7 +54,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -62,17 +65,22 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
       if (!entity?.atlasId) {
-        return sendErrorReply({ reply, type: 'notFound', message: 'Entity not found or not synced to ATLAS' })
+        return sendErrorReply(
+          getErrorReply({ type: 'notFound', message: 'Entity not found or not synced to ATLAS' }),
+          reply,
+        )
       }
 
       const result = await entitySyncService.pullEntity(entity.atlasId)
 
       if (!result.success) {
-        return sendErrorReply({
+        return sendErrorReply(
+          getErrorReply({
+            type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
+            message: result.message,
+          }),
           reply,
-          type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
-          message: result.message,
-        })
+        )
       }
 
       return reply.send({
@@ -80,7 +88,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -98,7 +106,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -112,7 +120,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         data: conflict,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -125,7 +133,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const result = await entitySyncService.resolveConflict(id, body.resolution, userId)
 
       if (!result.success) {
-        return sendErrorReply({ reply, type: 'unexpected', message: result.message })
+        return sendErrorReply(getErrorReply({ type: 'unexpected', message: result.message }), reply)
       }
 
       return reply.send({
@@ -133,7 +141,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -143,11 +151,13 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const userId = request.currentUser?.userId
 
       if (!body.entityIds || body.entityIds.length === 0) {
-        return sendErrorReply({
+        return sendErrorReply(
+          getErrorReply({
+            type: 'badRequest',
+            message: 'entityIds array is required and must not be empty',
+          }),
           reply,
-          type: 'badRequest',
-          message: 'entityIds array is required and must not be empty',
-        })
+        )
       }
 
       const result = await entitySyncService.pushBatch(body.entityIds, userId)
@@ -157,7 +167,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Batch push completed: ${result.success} succeeded, ${result.failed} failed`,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -166,11 +176,13 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const body = batchSyncSchema.parse(request.body)
 
       if (!body.atlasIds || body.atlasIds.length === 0) {
-        return sendErrorReply({
+        return sendErrorReply(
+          getErrorReply({
+            type: 'badRequest',
+            message: 'atlasIds array is required and must not be empty',
+          }),
           reply,
-          type: 'badRequest',
-          message: 'atlasIds array is required and must not be empty',
-        })
+        )
       }
 
       const result = await entitySyncService.pullBatch(body.atlasIds)
@@ -180,7 +192,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Batch pull completed: ${result.success} succeeded, ${result.failed} failed`,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -215,19 +227,20 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
+  //TODO Check if we should remove it
   fastify.get('/entities', { preHandler: authenticate }, async (request, reply) => {
     try {
       const { page, limit, status, syncStatus } = listQuerySchema.parse(request.query)
 
-      const response = await getEntities({ page, limit, status, syncStatus, fetchRemote: true })
+      const response = await entityActions(db, getLogger()).list({ page, limit, status, syncStatus })
 
       return reply.send(response)
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -272,7 +285,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -288,7 +301,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         deleted,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 }
