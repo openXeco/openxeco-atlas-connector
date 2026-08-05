@@ -13,6 +13,14 @@ import type {
 import { TAXONOMY_TYPES } from '@/services/atlas/taxonomy-types.js'
 import { getLogger } from '@/utils/logger.js'
 
+function str(val: unknown): string | undefined {
+  return typeof val === 'string' ? val : undefined
+}
+
+function bool(val: unknown): boolean | undefined {
+  return typeof val === 'boolean' ? val : undefined
+}
+
 /**
  * Maps a JSON:API resource to a Cluster object, extracting ALL attributes and relationships.
  * Used as the single source of truth for parsing ATLAS API responses.
@@ -26,16 +34,16 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
   // Extract website URL (may be { uri: string } or a plain string)
   const websiteField = attrs.field_url as JsonApiWebsite
   const website =
-    typeof websiteField === 'object' && websiteField !== null ? websiteField.uri : (websiteField as string | undefined)
+    typeof websiteField === 'object' && websiteField !== null ? websiteField.uri : str(websiteField)
 
   const cluster: Cluster = {
     id: resource.id,
     atlasId: resource.id,
 
     // Basic information
-    name: (attrs.title as string) || (attrs.name as string) || '',
-    nameNational: attrs.field_institution_name_in_nation as string | undefined,
-    entityDepartment: attrs.field_entity_department as string | undefined,
+    name: str(attrs.title) || str(attrs.name) || '',
+    nameNational: str(attrs.field_institution_name_in_nation),
+    entityDepartment: str(attrs.field_entity_department),
 
     // Address
     countryCode: address?.country_code,
@@ -43,43 +51,43 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
     streetAddress: address?.address_line1,
 
     // Organisation details
-    email: attrs.field_general_contact_e_mail as string | undefined,
-    phone: attrs.field_phone_number as string | undefined,
+    email: str(attrs.field_general_contact_e_mail),
+    phone: str(attrs.field_phone_number),
     website,
-    registrationNumber: attrs.field_registration_number as string | undefined,
+    registrationNumber: str(attrs.field_registration_number),
 
     // Headquarters
-    isHeadquarter: attrs.field_question_headquarter as boolean | undefined,
-    headquarterInfo: attrs.field_headquarter as string | undefined,
+    isHeadquarter: bool(attrs.field_question_headquarter),
+    headquarterInfo: str(attrs.field_headquarter),
 
     // Subsidiaries
-    hasSubsidiaries: attrs.field_question_subsidiaries as boolean | undefined,
-    subsidiariesDetails: attrs.field_subsidiaries_eu as string | undefined,
-    hasMajorityShares: attrs.field_question_majority as boolean | undefined,
-    majoritySharesDetails: attrs.field_majority_shares_noneu as string | undefined,
+    hasSubsidiaries: bool(attrs.field_question_subsidiaries),
+    subsidiariesDetails: str(attrs.field_subsidiaries_eu),
+    hasMajorityShares: bool(attrs.field_question_majority),
+    majoritySharesDetails: str(attrs.field_majority_shares_noneu),
 
     // Compliance
-    article138Compliance: attrs.field_article_136_compliance as boolean | undefined,
-    dataShareConsent: attrs.field_data_sharing_consent as boolean | undefined,
+    article138Compliance: bool(attrs.field_article_136_compliance),
+    dataShareConsent: bool(attrs.field_data_sharing_consent),
 
     // Contact person
-    contactFirstName: attrs.field_first_name as string | undefined,
-    contactLastName: attrs.field_family_name as string | undefined,
-    contactEmail: attrs.field_e_mail as string | undefined,
-    contactPosition: attrs.field_position as string | undefined,
-    contactPhone: attrs.field_representative_phone_numbe as string | undefined,
+    contactFirstName: str(attrs.field_first_name),
+    contactLastName: str(attrs.field_family_name),
+    contactEmail: str(attrs.field_e_mail),
+    contactPosition: str(attrs.field_position),
+    contactPhone: str(attrs.field_representative_phone_numbe),
 
     // Expertise
-    expertiseDescription: attrs.field_field_of_activity_descr as string | undefined,
-    goalsToAchieve: attrs.field_goals_to_achieve as string | undefined,
-    goalsToContribute: attrs.field_goals_to_contribute as string | undefined,
+    expertiseDescription: str(attrs.field_field_of_activity_descr),
+    goalsToAchieve: str(attrs.field_goals_to_achieve),
+    goalsToContribute: str(attrs.field_goals_to_contribute),
 
     // Workflow
-    status: attrs.status as string | undefined,
-    moderationState: attrs.moderation_state as string | undefined,
+    status: str(attrs.status),
+    moderationState: str(attrs.moderation_state),
 
     // Timestamps
-    updatedAt: attrs.changed as string | undefined,
+    updatedAt: str(attrs.changed),
 
     metadata: attrs,
   }
