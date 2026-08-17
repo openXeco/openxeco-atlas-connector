@@ -6,13 +6,12 @@ import type {
   JsonApiRelationship,
   Cluster,
   ClusterInput,
-  TaxonomyTerm,
   JsonApiWebsite,
-  TaxonomyType,
 } from './types.js'
-import { TAXONOMY_TYPES } from '@/services/atlas/taxonomy-types.js'
+import { TAXONOMY_TYPES } from '@/config/constants.js'
 import { getLogger } from '@/utils/logger.js'
-import type { EntityStatus } from '@/types.js'
+import type { EntityStatus, TaxonomyType } from '@/types.js'
+import type { AtlasTaxonomyTerm } from '@/actions/atlas/types.js'
 
 /**
  * Maps a JSON:API resource to a Cluster object, extracting ALL attributes and relationships.
@@ -296,7 +295,7 @@ export class JsonApiTransformer {
     }
   }
 
-  fromJsonApiTaxonomy(resource: JsonApiResource, type: string): TaxonomyTerm {
+  fromJsonApiTaxonomy(resource: JsonApiResource, type: string): AtlasTaxonomyTerm {
     if (!(TAXONOMY_TYPES as readonly string[]).includes(type)) {
       getLogger().warn(`Unknown taxonomy type received from ATLAS: '${type}' — treating as-is`)
     }
@@ -313,7 +312,7 @@ export class JsonApiTransformer {
     }
   }
 
-  toTaxonomyFromTerm(term: TaxonomyTerm): Omit<Taxonomy, 'id'> {
+  toTaxonomyFromTerm(term: AtlasTaxonomyTerm): Omit<Taxonomy, 'id'> {
     return {
       atlasId: term.atlasId,
       taxonomyType: term.type,

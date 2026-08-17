@@ -1,7 +1,7 @@
 import type { Entity } from '@/db/schema.js'
-import type { ActionResult, ActionArgs } from '@/types.js'
+import type { ActionResult, ActionArgsWithDb } from '@/types.js'
 
-export const getEntity = async ({ id, db, logger }: ActionArgs): Promise<ActionResult<Entity>> => {
+export const getEntity = async ({ id, db, logger }: ActionArgsWithDb): Promise<ActionResult<Entity>> => {
   try {
     const entity = await db.query.entities.findFirst({
       where: { id },

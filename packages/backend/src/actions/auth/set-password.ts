@@ -1,11 +1,11 @@
-import type { ActionArgs, ActionResult } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult } from '@/types.js'
 import { changePasswordSchema } from '@/actions/auth/common.js'
 import { users } from '@/db/schema.js'
 import { eq } from 'drizzle-orm'
 import { hashPassword } from '@/services/password.js'
 import { z } from 'zod'
 
-export const setPassword = async ({ data, id, logger, db }: ActionArgs<unknown>): Promise<ActionResult> => {
+export const setPassword = async ({ data, id, logger, db }: ActionArgsWithDb<unknown>): Promise<ActionResult> => {
   try {
     if (!id) {
       return {

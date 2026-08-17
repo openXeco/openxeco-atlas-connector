@@ -6,14 +6,13 @@ import type {
   AtlasConfig,
   JsonApiDocument,
   JsonApiResource,
-  TaxonomyType,
-  TaxonomyTerm,
   Cluster,
   ClusterInput,
   QueryParams,
   PaginatedResponse,
 } from './types.js'
-import type { Logger } from '@/types.js'
+import type { Logger, TaxonomyType } from '@/types.js'
+import type { AtlasTaxonomyTerm } from '@/actions/atlas/types.js'
 
 class AtlasClient {
   private config: AtlasConfig
@@ -53,10 +52,10 @@ class AtlasClient {
     }
   }
 
-  async getTaxonomies(type: TaxonomyType): Promise<TaxonomyTerm[]> {
+  async getTaxonomies(type: TaxonomyType): Promise<AtlasTaxonomyTerm[]> {
     this.logger.info(`Fetching taxonomies of type: ${type}`)
 
-    const allTerms: TaxonomyTerm[] = []
+    const allTerms: AtlasTaxonomyTerm[] = []
     let offset = 0
     const limit = 50
     const pageDelayMs = 1500
@@ -100,7 +99,7 @@ class AtlasClient {
     return allTerms
   }
 
-  async getTaxonomy(type: TaxonomyType, id: string): Promise<TaxonomyTerm> {
+  async getTaxonomy(type: TaxonomyType, id: string): Promise<AtlasTaxonomyTerm> {
     this.logger.info(`Fetching taxonomy: ${type}/${id}`)
 
     const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}/${id}`)

@@ -1,4 +1,4 @@
-import type { ActionArgs, ActionResult, JwtPayload } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult, JwtPayload } from '@/types.js'
 import { users } from '@/db/schema.js'
 import { eq, count } from 'drizzle-orm'
 
@@ -6,7 +6,7 @@ export const deleteUser = async ({
   id,
   db,
   data: { currentUser },
-}: ActionArgs<{ currentUser?: JwtPayload }>): Promise<ActionResult> => {
+}: ActionArgsWithDb<{ currentUser?: JwtPayload }>): Promise<ActionResult> => {
   try {
     if (!id) {
       return {

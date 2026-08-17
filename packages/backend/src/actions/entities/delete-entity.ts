@@ -1,8 +1,8 @@
 import { entities } from '@/db/schema.js'
 import { eq } from 'drizzle-orm'
-import type { ActionArgs, ActionResult } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult } from '@/types.js'
 
-export const deleteEntity = async ({ id, db }: ActionArgs): Promise<ActionResult> => {
+export const deleteEntity = async ({ id, db }: ActionArgsWithDb): Promise<ActionResult> => {
   if (!id) {
     return {
       success: false,

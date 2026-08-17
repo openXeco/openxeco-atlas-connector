@@ -17,5 +17,3 @@ export const updateUserSchema = z.object({
 export const changePasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 })
-
-export const idParamSchema = z.object({ id: z.string().uuid() })

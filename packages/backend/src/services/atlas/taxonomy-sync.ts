@@ -3,11 +3,10 @@ import { db } from '@/config/database.js'
 import { taxonomies, syncLogs } from '@/db/schema.js'
 import { atlasClient } from './client.js'
 import { jsonApiTransformer } from './transformer.js'
-import { KNOWLEDGE_DOMAIN_HIERARCHY } from './knowledge-domain-hierarchy.js'
-import type { TaxonomyType } from './types.js'
 import { getLogger } from '@/utils/logger.js'
-import { TAXONOMY_TYPES } from '@/services/atlas/taxonomy-types.js'
-import type { Logger } from '@/types.js'
+import type { Logger, TaxonomyType } from '@/types.js'
+import { TAXONOMY_TYPES } from '@/config/constants.js'
+import { KNOWLEDGE_DOMAIN_HIERARCHY } from '@/actions/atlas/constants.js'
 
 // cluster_thematic_area terms are flat on ATLAS (no parent relationships returned by the API).
 // The parent/child hierarchy is hardcoded in knowledge-domain-hierarchy.ts and applied during sync.

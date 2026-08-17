@@ -1,4 +1,4 @@
-import type { ActionResult, ActionArgs } from '@/types.js'
+import type { ActionResult, ActionArgsWithDb } from '@/types.js'
 import { users } from '@/db/schema.js'
 import { z } from 'zod'
 import { createUserSchema } from '@/actions/auth/common.js'
@@ -10,7 +10,7 @@ export const createUser = async ({
   db,
   logger,
   data,
-}: ActionArgs<unknown>): Promise<ActionResult<PresentationUser>> => {
+}: ActionArgsWithDb<unknown>): Promise<ActionResult<PresentationUser>> => {
   try {
     const body = createUserSchema.parse(data)
 

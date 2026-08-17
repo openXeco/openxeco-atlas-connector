@@ -1,9 +1,9 @@
-import type { ActionArgs, ActionResult } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult } from '@/types.js'
 import { generalSettingsSchema, setSetting } from '@/actions/app/common.js'
 import { SETTINGS_KEYS } from '@/config/constants.js'
 import { type ZodIssue, z } from 'zod'
 
-export const setGeneralSettings = async ({ data, db, logger }: ActionArgs<unknown>): Promise<ActionResult> => {
+export const setGeneralSettings = async ({ data, db, logger }: ActionArgsWithDb<unknown>): Promise<ActionResult> => {
   try {
     const body = generalSettingsSchema.parse(data)
 

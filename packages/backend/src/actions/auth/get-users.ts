@@ -1,8 +1,8 @@
-import type { ActionArgs, ActionResult } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult } from '@/types.js'
 import { users } from '@/db/schema.js'
 import type { PresentationUser } from '@/actions/auth/types.js'
 
-export const getUsers = async ({ db }: ActionArgs): Promise<ActionResult<PresentationUser[]>> => {
+export const getUsers = async ({ db }: ActionArgsWithDb): Promise<ActionResult<PresentationUser[]>> => {
   try {
     const usersList = await db
       .select({

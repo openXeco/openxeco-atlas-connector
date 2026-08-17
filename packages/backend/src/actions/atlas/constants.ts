@@ -5,7 +5,6 @@
  * This file provides the hardcoded mapping from sub-domain ATLAS UUIDs to their parent domain UUIDs,
  * derived from the parent domain descriptions which explicitly list their sub-domains.
  *
- * Structure: 15 parent domains, 150 sub-domains
  * Source: ATLAS API taxonomy_term/cluster_thematic_area descriptions
  */
 
@@ -193,7 +192,7 @@ export const KNOWLEDGE_DOMAIN_HIERARCHY: Record<string, string> = {
   'fb1a5487-59bf-4057-9b60-f6f7fd98c791': '888a384b-cdb6-4964-81dd-11b785ac0aa4', // Trust in securing digital as well as physical assets
   '44b06ae5-118c-4862-a5f3-b61015d0ab8f': '888a384b-cdb6-4964-81dd-11b785ac0aa4', // Trust management architectures, mechanisms and policies
   '81ca6640-56ff-4b17-a62a-ff688b90d567': '888a384b-cdb6-4964-81dd-11b785ac0aa4', // Trusted computing
-}
+} as const
 
 /** Set of parent domain ATLAS UUIDs (the 15 top-level knowledge domains) */
 export const KNOWLEDGE_DOMAIN_PARENT_IDS = new Set([

@@ -2,7 +2,8 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
-import { z } from 'zod'
+import type { Env } from '@/types.js'
+import { envSchema } from '@/config/schema.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -19,29 +20,6 @@ for (const envPath of envCandidates) {
     break
   }
 }
-
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().default(3001),
-  HOST: z.string().default('0.0.0.0'),
-
-  DATABASE_URL: z.string().url(),
-
-  JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('5m'),
-  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
-
-  ATLAS_BASE_URL: z.string().url(),
-  ATLAS_API_KEY: z.string().min(1),
-  ATLAS_USERNAME: z.string().optional(),
-  ATLAS_PASSWORD: z.string().optional(),
-
-  FRONTEND_URL: z.string().url().optional(),
-
-  HTTPS_PROXY: z.string().url().optional(),
-})
-
-export type Env = z.infer<typeof envSchema>
 
 function loadConfig(): Env {
   const result = envSchema.safeParse(process.env)

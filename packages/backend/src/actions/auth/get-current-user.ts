@@ -1,4 +1,4 @@
-import type { ActionArgs, JwtPayload, ActionResult } from '@/types.js'
+import type { ActionArgsWithDb, JwtPayload, ActionResult } from '@/types.js'
 import { users } from '@/db/schema.js'
 import { eq } from 'drizzle-orm'
 import type { PresentationUser } from '@/actions/auth/types.js'
@@ -6,7 +6,7 @@ import type { PresentationUser } from '@/actions/auth/types.js'
 export const getCurrentUser = async ({
   data,
   db,
-}: ActionArgs<{ currentUser?: JwtPayload }>): Promise<ActionResult<PresentationUser>> => {
+}: ActionArgsWithDb<{ currentUser?: JwtPayload }>): Promise<ActionResult<PresentationUser>> => {
   try {
     if (!data.currentUser) {
       return {

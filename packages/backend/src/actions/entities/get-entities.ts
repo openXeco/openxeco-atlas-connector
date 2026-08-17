@@ -4,12 +4,12 @@ import { entities, type Entity } from '@/db/schema.js'
 import { count as countFn } from 'drizzle-orm/sql/functions/aggregate'
 import { atlasClient } from '@/services/atlas/client.js'
 
-import type { ActionArgs, ActionResult, PaginatedResult } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult, PaginatedResult } from '@/types.js'
 
 export const getEntities = async ({
   data: { page, limit, status, syncStatus },
   db,
-}: ActionArgs<ListQuery>): Promise<ActionResult<PaginatedResult<Entity>>> => {
+}: ActionArgsWithDb<ListQuery>): Promise<ActionResult<PaginatedResult<Entity>>> => {
   try {
     const offset = (page - 1) * limit
 

@@ -1,7 +1,6 @@
-import type { ActionResult, ActionArgs } from '@/types.js'
+import type { ActionResult, ActionArgsWithDb, TaxonomyType } from '@/types.js'
 import { type Taxonomy, taxonomies } from '@/db/schema.js'
-import type { TaxonomyType } from '@/services/atlas/types.js'
-import { taxonomyTypeSchema } from '@/services/atlas/taxonomy-types.js'
+import { taxonomyTypeSchema } from '@/config/constants.js'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -9,7 +8,7 @@ export const getTaxonomyByType = async ({
   db,
   logger,
   data: { type },
-}: ActionArgs<{ type?: string }>): Promise<
+}: ActionArgsWithDb<{ type?: string }>): Promise<
   ActionResult<{ taxonomies: Taxonomy[]; meta: { count: number; type: TaxonomyType } }>
 > => {
   try {

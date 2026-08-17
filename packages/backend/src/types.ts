@@ -1,9 +1,10 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { relations } from '@/db/relations.js'
 import type pino from 'pino'
-import type { ZodError } from 'zod'
-import type { SYNC_CODES, SYNC_STATUSES, ENTITY_STATUSES, replies } from '@/config/constants.js'
+import type { ZodError, z } from 'zod'
+import type { SYNC_CODES, SYNC_STATUSES, ENTITY_STATUSES, replies, TAXONOMY_TYPES } from '@/config/constants.js'
 import type { FastifyBaseLogger } from 'fastify'
+import type { envSchema } from '@/config/schema.js'
 
 export interface JwtPayload {
   userId: string
@@ -32,9 +33,11 @@ export interface HealthResponse {
   }
 }
 
+export type Env = z.infer<typeof envSchema>
+
 export type DB = PostgresJsDatabase<typeof relations>
 
-export type Logger = pino.Logger
+export type Logger = pino.Logger | FastifyBaseLogger
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -51,12 +54,13 @@ export type BasicErrorResponse = {
 export type Replies = typeof replies
 export type ReplyType = keyof Replies
 
-export type ActionArgs<T = undefined, D = undefined> = {
-  db: DB
+export type BaseActionArgs<T = undefined, D = undefined> = {
   id?: string
-  logger: pino.Logger | FastifyBaseLogger
+  logger: Logger
 } & ([T] extends [undefined] ? { data?: never } : { data: T }) &
   ([D] extends [undefined] ? { dependencies?: never } : { dependencies: D })
+
+export type ActionArgsWithDb<T = undefined, D = undefined> = BaseActionArgs<T, D> & { db: DB }
 
 export type ActionSuccess<T> = {
   message?: string
@@ -114,6 +118,6 @@ export type PaginatedResult<T> = {
 
 /** Business Domain **/
 export type EntityStatus = (typeof ENTITY_STATUSES)[number]
-
 export type SyncStatus = (typeof SYNC_STATUSES)[number]
 export type SyncCode = (typeof SYNC_CODES)[number]
+export type TaxonomyType = (typeof TAXONOMY_TYPES)[number]

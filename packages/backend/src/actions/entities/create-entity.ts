@@ -8,10 +8,10 @@ import {
   type Entity,
 } from '@/db/schema.js'
 import { validateEntity, prepareEntity, saveTaxonomy } from '@/actions/entities/common.js'
-import type { ActionArgs, ActionResult } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult } from '@/types.js'
 import { z } from 'zod'
 
-export const createEntity = async ({ data, db, logger }: ActionArgs<unknown>): Promise<ActionResult<Entity>> => {
+export const createEntity = async ({ data, db, logger }: ActionArgsWithDb<unknown>): Promise<ActionResult<Entity>> => {
   try {
     const body = validateEntity(data)
 

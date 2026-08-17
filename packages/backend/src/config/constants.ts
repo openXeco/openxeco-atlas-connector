@@ -1,4 +1,5 @@
 import type { BasicErrorResponse } from '@/types.js'
+import { z } from 'zod'
 
 /** Business Domain **/
 export const ENTITY_STATUSES = [
@@ -57,3 +58,18 @@ export const SETTINGS_KEYS = {
   SYNC_CONFLICT_RESOLUTION: 'sync_conflict_resolution',
   COUNTRY: 'country',
 } as const
+
+export const TAXONOMY_TYPES = [
+  'applications_and_technologies',
+  'cluster_thematic_area',
+  'cluster_type',
+  'country',
+  'fields_of_activity',
+  'languages',
+  'nationality',
+  'sectors',
+  'technologies',
+  'use_cases',
+] as const
+
+export const taxonomyTypeSchema = z.enum(TAXONOMY_TYPES)

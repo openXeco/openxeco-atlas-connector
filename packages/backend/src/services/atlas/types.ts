@@ -1,5 +1,3 @@
-import type { TAXONOMY_TYPES } from '@/services/atlas/taxonomy-types.js'
-
 export interface JsonApiResource {
   type: string
   id: string
@@ -58,18 +56,6 @@ export interface PaginatedResponse<T> {
     prev?: string
     next?: string
   }
-}
-
-export type TaxonomyType = (typeof TAXONOMY_TYPES)[number]
-
-export interface TaxonomyTerm {
-  id: string
-  atlasId: string
-  type: TaxonomyType
-  name: string
-  description?: string
-  parentId?: string
-  metadata?: Record<string, unknown>
 }
 
 export interface ClusterAttributes {

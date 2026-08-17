@@ -1,16 +1,15 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { eq, desc, and, gte, lte, count } from 'drizzle-orm'
+import { eq, desc, and, gte, lte } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { syncLogs, entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { entitySyncService } from '../services/sync/entity-sync.js'
 import { sendErrorReply, handleRouteError, getErrorReply } from '@/utils/reply-helpers.js'
-import { listQuerySchema } from '@/actions/entities/common.js'
-import { entityActions } from '@/actions/entities/index.js'
-import { getLogger } from '@/utils/logger.js'
+import { taxonomyTypeSchema } from '@/config/constants.js'
+import { atlasActions } from '@/actions/atlas/index.js'
 
-const idParamSchema = z.object({ id: z.string().uuid() })
+export const idParamSchema = z.object({ id: z.string().uuid() })
 
 const resolveConflictSchema = z.object({
   resolution: z.enum(['local', 'remote']),
@@ -32,6 +31,40 @@ const syncLogsQuerySchema = z.object({
 })
 
 export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
+  const actions = atlasActions(db, fastify.log)
+
+  // New endpoints
+  fastify.post('/sync/taxonomies/:type', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { type } = request.params as { type: string }
+
+      const validatedType = taxonomyTypeSchema.parse(type)
+
+      const result = await actions.syncTaxonomiesByType(validatedType)
+
+      return reply.send({
+        message: `Synced ${result.data} terms for taxonomy type: ${type}`,
+        count: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
+  fastify.post('/sync/taxonomies', { preHandler: authenticate }, async (_request, reply) => {
+    try {
+      const result = await actions.syncTaxonomies()
+
+      return reply.send({
+        message: 'Taxonomy sync completed',
+        data: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
+  // Old endpoints
   fastify.post('/entities/:id/push', { preHandler: authenticate }, async (request, reply) => {
     try {
       const { id } = idParamSchema.parse(request.params)
@@ -191,54 +224,6 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         data: result,
         message: `Batch pull completed: ${result.success} succeeded, ${result.failed} failed`,
       })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify.log)
-    }
-  })
-
-  fastify.get('/status', { preHandler: authenticate }, async (_request, reply) => {
-    try {
-      const rows = await db
-        .select({
-          syncStatus: entities.syncStatus,
-          count: count(),
-        })
-        .from(entities)
-        .groupBy(entities.syncStatus)
-
-      const counts: Record<string, number> = {}
-      let total = 0
-      for (const row of rows) {
-        counts[row.syncStatus || 'local'] = row.count
-        total += row.count
-      }
-
-      const local = counts.local || 0
-      const conflict = counts.conflict || 0
-
-      return reply.send({
-        data: {
-          total,
-          local,
-          synced: counts.synced || 0,
-          conflict,
-          failed: counts.failed || 0,
-          pendingPush: local + conflict,
-        },
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify.log)
-    }
-  })
-
-  //TODO Check if we should remove it
-  fastify.get('/entities', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const { page, limit, status, syncStatus } = listQuerySchema.parse(request.query)
-
-      const response = await entityActions(db, getLogger()).list({ page, limit, status, syncStatus })
-
-      return reply.send(response)
     } catch (error) {
       return handleRouteError(error, reply, fastify.log)
     }

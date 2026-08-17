@@ -9,10 +9,15 @@ import {
 } from '@/db/schema.js'
 import { eq } from 'drizzle-orm'
 import { validateEntity, prepareEntity, saveTaxonomy } from '@/actions/entities/common.js'
-import type { ActionArgs, ActionResult } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult } from '@/types.js'
 import { z } from 'zod'
 
-export const updateEntity = async ({ data, db, id, logger }: ActionArgs<unknown>): Promise<ActionResult<Entity>> => {
+export const updateEntity = async ({
+  data,
+  db,
+  id,
+  logger,
+}: ActionArgsWithDb<unknown>): Promise<ActionResult<Entity>> => {
   try {
     const body = validateEntity(data)
 

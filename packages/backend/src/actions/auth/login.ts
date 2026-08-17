@@ -1,4 +1,4 @@
-import type { ActionArgs, ActionResult } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult } from '@/types.js'
 import { users } from '@/db/schema.js'
 import { eq } from 'drizzle-orm'
 import { verifyPassword } from '@/services/password.js'
@@ -12,7 +12,7 @@ export const login = async ({
   db,
   logger,
   dependencies: { jwt },
-}: ActionArgs<unknown, { jwt: fastifyJwt.JWT }>): Promise<ActionResult<unknown>> => {
+}: ActionArgsWithDb<unknown, { jwt: fastifyJwt.JWT }>): Promise<ActionResult<unknown>> => {
   try {
     const body = loginSchema.parse(data)
 

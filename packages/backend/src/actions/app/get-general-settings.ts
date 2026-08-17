@@ -1,8 +1,8 @@
-import type { ActionResult, ActionArgs } from '@/types.js'
+import type { ActionResult, ActionArgsWithDb } from '@/types.js'
 import { getSetting } from '@/actions/app/common.js'
 import { SETTINGS_KEYS } from '@/config/constants.js'
 
-export const getGeneralSettings = async ({ db }: ActionArgs): Promise<ActionResult<unknown>> => {
+export const getGeneralSettings = async ({ db }: ActionArgsWithDb): Promise<ActionResult<unknown>> => {
   try {
     const [appName, autoSyncOnPublish, syncConflictResolution, country] = await Promise.all([
       getSetting(SETTINGS_KEYS.APP_NAME, db),

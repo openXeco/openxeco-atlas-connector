@@ -1,4 +1,4 @@
-import type { ActionArgs, ActionResult } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult } from '@/types.js'
 import type { PresentationUser } from '@/actions/auth/types.js'
 import { updateUserSchema } from '@/actions/auth/common.js'
 import { users } from '@/db/schema.js'
@@ -10,7 +10,7 @@ export const updateUser = async ({
   id,
   logger,
   db,
-}: ActionArgs<unknown>): Promise<ActionResult<PresentationUser>> => {
+}: ActionArgsWithDb<unknown>): Promise<ActionResult<PresentationUser>> => {
   try {
     if (!id) {
       return {

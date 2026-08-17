@@ -1,9 +1,9 @@
-import type { ActionResult, ActionArgs } from '@/types.js'
+import type { ActionResult, ActionArgsWithDb } from '@/types.js'
 import { type Taxonomy, taxonomies } from '@/db/schema.js'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
-export const getTaxonomy = async ({ db, logger, id }: ActionArgs): Promise<ActionResult<Taxonomy>> => {
+export const getTaxonomy = async ({ db, logger, id }: ActionArgsWithDb): Promise<ActionResult<Taxonomy>> => {
   try {
     if (!id) {
       return {

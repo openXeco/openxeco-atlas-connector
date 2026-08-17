@@ -1,4 +1,4 @@
-import type { ActionArgs, ActionResult } from '@/types.js'
+import type { ActionArgsWithDb, ActionResult } from '@/types.js'
 import type fastifyJwt from '@fastify/jwt'
 import { verifyRefreshToken, generateTokens } from '@/services/jwt.js'
 import { users } from '@/db/schema.js'
@@ -10,7 +10,7 @@ export const refresh = async ({
   db,
   logger,
   dependencies: { jwt },
-}: ActionArgs<unknown, { jwt: fastifyJwt.JWT }>): Promise<ActionResult<unknown>> => {
+}: ActionArgsWithDb<unknown, { jwt: fastifyJwt.JWT }>): Promise<ActionResult<unknown>> => {
   try {
     const { refreshToken } = z.object({ refreshToken: z.string() }).parse(data)
 

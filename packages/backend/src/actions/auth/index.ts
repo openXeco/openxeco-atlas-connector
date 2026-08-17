@@ -1,4 +1,4 @@
-import type { DB, ActionArgs, JwtPayload } from '@/types.js'
+import type { DB, ActionArgsWithDb, JwtPayload } from '@/types.js'
 import { handleActionResult } from '@/utils/action-helpers.js'
 import { login } from '@/actions/auth/login.js'
 import type fastifyJwt from '@fastify/jwt'
@@ -10,7 +10,7 @@ import { updateUser } from '@/actions/auth/update-user.js'
 import { setPassword } from '@/actions/auth/set-password.js'
 import { deleteUser } from '@/actions/auth/delete-user.js'
 
-export const authActions = (db: DB, logger: ActionArgs['logger'], jwt: fastifyJwt.JWT) => {
+export const authActions = (db: DB, logger: ActionArgsWithDb['logger'], jwt: fastifyJwt.JWT) => {
   return {
     login: async (data: unknown) => handleActionResult(await login({ data, logger, db, dependencies: { jwt } })),
     refresh: async (data: unknown) => handleActionResult(await refresh({ data, logger, db, dependencies: { jwt } })),

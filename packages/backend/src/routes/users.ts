@@ -2,8 +2,8 @@ import type { FastifyInstance } from 'fastify'
 import { db } from '../config/database.js'
 import { requireAdmin } from '../middleware/auth.js'
 import { handleRouteError } from '@/utils/reply-helpers.js'
-import { idParamSchema } from '@/actions/auth/common.js'
 import { authActions } from '@/actions/auth/index.js'
+import { idParamSchema } from '@/utils/request-helpers.js'
 
 export async function userRoutes(fastify: FastifyInstance): Promise<void> {
   const actions = authActions(db, fastify.log, fastify.jwt)
