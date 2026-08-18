@@ -1,4 +1,6 @@
 // Auth
+import type { ENTITY_STATUSES, SYNC_CODES, SYNC_STATUSES } from '@/lib/constants'
+
 export interface ApiClientOptions extends RequestInit {
   params?: Record<string, string>
   accessToken?: string
@@ -49,21 +51,14 @@ export interface Taxonomy {
   lastSyncedAt: string
 }
 
-export const ENTITY_STATUSES = ['draft', 'ready_for_publication', 'published', 'to_be_rejected', 'rejected'] as const
-export const SYNC_STATUSES = ['pending_push', 'synced', 'failed'] as const
-export const SYNC_CODES = ['conflict', 'not_found'] as const
-
 export type EntityStatus = (typeof ENTITY_STATUSES)[number]
 export type SyncStatus = (typeof SYNC_STATUSES)[number]
 export type SyncCode = (typeof SYNC_CODES)[number]
 
 export type SyncRecap = {
   total: number
-  local: number
-  synced: number
-  conflict: number
-  failed: number
-  pendingPush: number
+  moderation: Record<EntityStatus, number>
+  sync: Record<SyncStatus, number>
 }
 
 export interface Entity {

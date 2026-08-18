@@ -3,6 +3,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getApiClient } from '@/lib/api-client'
 import type { Entity } from '@/types'
+import { handleRouteError } from '@/lib/errors'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,9 +15,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ data: response.data })
   } catch (e) {
-    return NextResponse.json(
-      { message: `Unable to get the sync status. Reason: ${(e as Error).message}` },
-      { status: 500 },
-    )
+    return handleRouteError(e, logger)
   }
 }

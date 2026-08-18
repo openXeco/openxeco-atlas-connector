@@ -1,5 +1,6 @@
 import z from 'zod'
-import { ENTITY_STATUSES } from '@/types'
+
+import { ENTITY_STATUSES } from '@/lib/constants'
 
 // Auth
 export const loginSchema = z.object({

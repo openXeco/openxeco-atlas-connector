@@ -20,7 +20,7 @@ export const getStatusRecap = async ({ db }: ActionArgsWithDb): Promise<ActionRe
 
     for (const r of moderationRows) {
       moderationMap.set(r.status, r.count)
-      total++
+      total += r.count
     }
 
     return {

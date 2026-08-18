@@ -51,7 +51,7 @@ CLAUDE.md
 .githuman
 .opencode
 opencode.*
-./docs/plans
+docs
 
 .localData
 tmp

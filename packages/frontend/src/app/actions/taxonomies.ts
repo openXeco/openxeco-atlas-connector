@@ -7,7 +7,7 @@ import { refresh } from 'next/cache'
 export async function syncAll(): Promise<ActionState> {
   const apiClient = getApiClient()
   try {
-    await apiClient.post('/taxonomies/sync', {}, { credentials: 'include' })
+    await apiClient.post('/sync/taxonomies', {}, { credentials: 'include' })
     return {
       success: true,
       message: 'Successfully synced all taxonomies.',
@@ -25,7 +25,7 @@ export async function syncByType(_prevState: unknown, formData: FormData): Promi
   const apiClient = getApiClient()
 
   try {
-    await apiClient.post(`/taxonomies/sync/${type}`, {}, { credentials: 'include' })
+    await apiClient.post(`/sync/taxonomies/${type}`, {}, { credentials: 'include' })
     refresh()
     return {
       success: true,

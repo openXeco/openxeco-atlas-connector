@@ -48,26 +48,4 @@ export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
       return handleRouteError(error, reply, fastify.log)
     }
   })
-
-  // @TODO check if we need it
-  // fastify.get('/search', { preHandler: authenticate }, async (request, reply) => {
-  //   try {
-  //     const { q, type } = request.query as { q?: string; type?: string }
-  //
-  //     const validatedType = type ? taxonomyTypeSchema.parse(type) : undefined
-  //
-  //     const taxonomies = await taxonomySyncService.searchTaxonomies(q || '', validatedType as TaxonomyType | undefined)
-  //
-  //     return reply.send({
-  //       data: taxonomies,
-  //       meta: {
-  //         count: taxonomies.length,
-  //         query: q,
-  //         type: validatedType,
-  //       },
-  //     })
-  //   } catch (error) {
-  //     return handleRouteError(error, reply, fastify)
-  //   }
-  // })
 }

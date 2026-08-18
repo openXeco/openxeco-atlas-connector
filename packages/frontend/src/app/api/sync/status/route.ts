@@ -4,15 +4,17 @@ import { NextResponse } from 'next/server'
 import type { SyncRecap } from '@/types'
 import { getApiClient } from '@/lib/api-client'
 import { logger } from '@/lib/logger'
+import { handleRouteError } from '@/lib/errors'
 
 export async function GET() {
   try {
     const apiClient = getApiClient()
-    const response = await apiClient.get<{ data: SyncRecap }>('/sync/status', { credentials: 'include' })
+    const response = await apiClient.get<{ data: SyncRecap }>('/entities/status', { credentials: 'include' })
 
     return NextResponse.json({ data: response.data })
   } catch (e) {
     logger.error(e)
-    return NextResponse.json(`Unable to get the sync status. Reason: ${(e as Error).message}`, { status: 500 })
+    const { message, statusCode } = handleRouteError(e, logger)
+    return NextResponse.json(message, { status: statusCode })
   }
 }

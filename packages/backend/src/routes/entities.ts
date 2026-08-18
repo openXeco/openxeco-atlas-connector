@@ -16,7 +16,7 @@ export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
 
       const response = await actions.list({ page, limit, status, syncStatus })
 
-      return reply.send(response)
+      return reply.send({ ...response.data })
     } catch (error) {
       return handleRouteError(error, reply, fastify.log)
     }

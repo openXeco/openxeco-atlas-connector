@@ -31,7 +31,6 @@ export const columns = (): ColumnDef<EntitySync>[] => [
     cell: ({ row }) => {
       const { lastSyncedAt, atlasUpdatedAt } = row.original
 
-      console.log(row)
       return (
         <div className={'flex flex-col'}>
           <div>Updated at: {formatDate(row.getValue('updatedAt'), true)}</div>

@@ -34,7 +34,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
   const actions = atlasActions(db, fastify.log)
 
   // New endpoints
-  fastify.post('/sync/taxonomies/:type', { preHandler: authenticate }, async (request, reply) => {
+  fastify.post('/taxonomies/:type', { preHandler: authenticate }, async (request, reply) => {
     try {
       const { type } = request.params as { type: string }
 
@@ -51,7 +51,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     }
   })
 
-  fastify.post('/sync/taxonomies', { preHandler: authenticate }, async (_request, reply) => {
+  fastify.post('/taxonomies', { preHandler: authenticate }, async (_request, reply) => {
     try {
       const result = await actions.syncTaxonomies()
 
