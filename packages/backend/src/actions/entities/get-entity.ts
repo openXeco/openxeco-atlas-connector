@@ -1,7 +1,11 @@
-import type { Entity } from '@/db/schema.js'
 import type { ActionResult, ActionArgsWithDb } from '@/types.js'
+import type { EntityWithFullRelationships } from '@/actions/entities/types.js'
 
-export const getEntity = async ({ id, db, logger }: ActionArgsWithDb): Promise<ActionResult<Entity>> => {
+export const getEntity = async ({
+  id,
+  db,
+  logger,
+}: ActionArgsWithDb): Promise<ActionResult<EntityWithFullRelationships>> => {
   try {
     const entity = await db.query.entities.findFirst({
       where: { id },
@@ -26,7 +30,7 @@ export const getEntity = async ({ id, db, logger }: ActionArgsWithDb): Promise<A
 
     return {
       success: true,
-      data: entity,
+      data: { ...entity, clusterType: entity.clusterType || undefined, country: entity.country || undefined },
     }
   } catch (e) {
     logger.error(e)

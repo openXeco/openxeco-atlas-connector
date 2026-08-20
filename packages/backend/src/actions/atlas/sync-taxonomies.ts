@@ -1,14 +1,14 @@
 import type { ActionArgsWithDb, ActionResult } from '@/types.js'
-import type { getAtlasClient } from '@/actions/atlas/atlas-client.js'
 import { TAXONOMY_TYPES } from '@/config/constants.js'
-import { wait } from '@/actions/atlas/common.js'
 import { syncTaxonomiesByType } from '@/actions/atlas/sync-taxonomies-by-type.js'
+import type { AtlasActionDependencies } from '@/actions/atlas/types.js'
+import { wait } from '@/actions/atlas/utils/utils.js'
 
 export const syncTaxonomies = async ({
   db,
   logger,
   dependencies: { atlasClient },
-}: ActionArgsWithDb<undefined, { atlasClient: ReturnType<typeof getAtlasClient> }>): Promise<
+}: ActionArgsWithDb<undefined, AtlasActionDependencies>): Promise<
   ActionResult<{ success: number; failed: number }>
 > => {
   logger.info('Starting atlas sync taxonomies.')

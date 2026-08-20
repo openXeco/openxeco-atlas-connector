@@ -1,34 +1,19 @@
-export interface JsonApiResource {
+export interface JsonApiResourceIdentifier {
   type: string
   id: string
-  attributes: Record<string, unknown>
-  relationships?: Record<string, JsonApiRelationship>
-  links?: Record<string, string>
 }
-
-export type JsonApiAddress =
-  | { country_code?: string; locality?: string; address_line1?: string; postal_code?: string }
-  | null
-  | undefined
-
-export type JsonApiWebsite = { uri?: string } | string | null | undefined
 
 export interface JsonApiRelationship {
   data?: JsonApiResourceIdentifier | JsonApiResourceIdentifier[] | null
   links?: Record<string, string>
 }
 
-export interface JsonApiResourceIdentifier {
+export interface JsonApiResource {
   type: string
   id: string
-}
-
-export interface JsonApiDocument<T = JsonApiResource> {
-  data?: T | T[] | null
-  included?: JsonApiResource[]
-  meta?: Record<string, unknown>
+  attributes: Record<string, unknown>
+  relationships?: Record<string, JsonApiRelationship>
   links?: Record<string, string>
-  errors?: JsonApiError[]
 }
 
 export interface JsonApiError {
@@ -70,130 +55,6 @@ export interface ClusterAttributes {
   [key: string]: unknown
 }
 
-export interface Cluster {
-  id: string
-  atlasId: string
-
-  // Basic information
-  name: string
-  nameNational?: string
-  entityDepartment?: string
-
-  // Address (structured)
-  countryCode?: string
-  city?: string
-  streetAddress?: string
-
-  // Organisation details
-  email?: string
-  phone?: string
-  website?: string
-  registrationNumber?: string
-
-  // Headquarters
-  isHeadquarter?: boolean
-  headquarterInfo?: string
-
-  // Subsidiaries
-  hasSubsidiaries?: boolean
-  subsidiariesDetails?: string
-  hasMajorityShares?: boolean
-  majoritySharesDetails?: string
-
-  // Compliance
-  article138Compliance?: boolean
-  dataShareConsent?: boolean
-
-  // Contact person
-  contactFirstName?: string
-  contactLastName?: string
-  contactEmail?: string
-  contactPosition?: string
-  contactPhone?: string
-
-  // Expertise
-  expertiseDescription?: string
-  goalsToAchieve?: string
-  goalsToContribute?: string
-
-  // Taxonomy references
-  countryId?: string
-  clusterTypeId?: string
-  organizationTypeId?: string
-
-  // JRC Taxonomy IDs
-  thematicAreaIds?: string[]
-  sectorIds?: string[]
-  technologyIds?: string[]
-  useCaseIds?: string[]
-  fieldsOfActivityIds?: string[]
-
-  // Workflow
-  moderationState?: string
-
-  // Timestamps
-  updatedAt?: string // ATLAS 'changed' attribute (ISO date string)
-
-  metadata?: Record<string, unknown>
-}
-
-export interface ClusterInput {
-  // Basic information
-  name: string
-  nameNational?: string
-  entityDepartment?: string
-
-  // Address (structured)
-  countryCode?: string
-  city?: string
-  streetAddress?: string
-
-  // Organisation details
-  email?: string
-  phone?: string
-  website?: string
-  registrationNumber?: string
-
-  // Headquarters
-  isHeadquarter?: boolean
-  headquarterInfo?: string
-
-  // Subsidiaries
-  hasSubsidiaries?: boolean
-  subsidiariesDetails?: string
-  hasMajorityShares?: boolean
-  majoritySharesDetails?: string
-
-  // Compliance
-  article138Compliance?: boolean
-  dataShareConsent?: boolean
-
-  // Contact person
-  contactFirstName?: string
-  contactLastName?: string
-  contactEmail?: string
-  contactPosition?: string
-  contactPhone?: string
-
-  // Expertise
-  expertiseDescription?: string
-  goalsToAchieve?: string
-  goalsToContribute?: string
-
-  // Taxonomy references
-  clusterTypeId?: string
-
-  // JRC Taxonomy IDs
-  thematicAreaIds?: string[]
-  sectorIds?: string[]
-  technologyIds?: string[]
-  useCaseIds?: string[]
-  fieldsOfActivityIds?: string[]
-
-  // Workflow
-  moderationState?: string
-}
-
 export interface AtlasConfig {
   baseUrl: string
   apiKey: string
@@ -210,4 +71,12 @@ export interface QueryParams {
   filter?: Record<string, unknown>
   include?: string[]
   sort?: string
+}
+
+export interface JsonApiDocument<T = JsonApiResource> {
+  data?: T | T[] | null
+  included?: JsonApiResource[]
+  meta?: Record<string, unknown>
+  links?: Record<string, string>
+  errors?: JsonApiError[]
 }

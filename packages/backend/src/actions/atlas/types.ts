@@ -1,5 +1,6 @@
 import type { TaxonomyType } from '@/types.js'
 import type { getAtlasClient } from '@/actions/atlas/atlas-client.js'
+import type { atlasFieldsComparable } from '@/actions/atlas/constants.js'
 
 export interface AtlasConfig {
   baseUrl: URL
@@ -72,6 +73,7 @@ export interface AtlasApiError extends Error {
   readonly status: number
   readonly errors?: AtlasJsonApiError[]
 }
+
 export type AtlasTaxonomyTerm = {
   id: string
   atlasId: string
@@ -83,3 +85,130 @@ export type AtlasTaxonomyTerm = {
 }
 
 export type AtlasClient = ReturnType<typeof getAtlasClient>
+export type AtlasActionDependencies = {
+  atlasClient: AtlasClient
+}
+
+export type AtlasJsonApiAddress =
+  | { country_code?: string; locality?: string; address_line1?: string; postal_code?: string }
+  | null
+  | undefined
+
+export type AtlasJsonApiWebsite = { uri?: string } | string | null | undefined
+
+export type AtlasClusterInput = {
+  // Basic information
+  name: string
+  nameNational?: string
+  entityDepartment?: string
+
+  // Address (structured)
+  countryCode?: string
+  city?: string
+  streetAddress?: string
+
+  // Organisation details
+  email?: string
+  phone?: string
+  website?: string
+  registrationNumber?: string
+
+  // Headquarters
+  isHeadquarter?: boolean
+  headquarterInfo?: string
+
+  // Subsidiaries
+  hasSubsidiaries?: boolean
+  subsidiariesDetails?: string
+  hasMajorityShares?: boolean
+  majoritySharesDetails?: string
+
+  // Compliance
+  article138Compliance?: boolean
+  dataShareConsent?: boolean
+
+  // Contact person
+  contactFirstName?: string
+  contactLastName?: string
+  contactEmail?: string
+  contactPosition?: string
+  contactPhone?: string
+
+  // Expertise
+  expertiseDescription?: string
+  goalsToAchieve?: string
+  goalsToContribute?: string
+
+  // Taxonomy references
+  clusterTypeId?: string
+
+  // JRC Taxonomy IDs
+  thematicAreaIds?: string[]
+  sectorIds?: string[]
+  technologyIds?: string[]
+  useCaseIds?: string[]
+  fieldsOfActivityIds?: string[]
+
+  // Workflow
+  moderationState?: string
+}
+
+export type AtlasCluster = AtlasClusterInput & {
+  id: string
+  atlasId: string
+
+  // Taxonomy references
+  countryId?: string
+  organizationTypeId?: string
+
+  // Timestamps
+  updatedAt?: string // ATLAS 'changed' attribute (ISO date string)
+
+  metadata?: Record<string, unknown>
+}
+
+export type PushEntityInput = {
+  entityId: string
+  userId?: string
+}
+
+export type PushEntityResult =
+  | {
+      code: 'synced'
+      operation: 'created' | 'updated'
+      entityId: string
+      atlasId: string
+    }
+  | {
+      code: 'selection_required'
+      entityId: string
+      candidates: unknown[]
+    }
+  | {
+      code: 'conflict'
+      entityId: string
+      atlasId: string
+      conflictFields: string[]
+    }
+  | {
+      code: 'atlas_error'
+      entityId: string
+      message: string
+    }
+
+export type UpdateAtlasEntityResult =
+  | {
+      code: 'updated'
+      cluster: AtlasCluster
+    }
+  | {
+      code: 'conflict'
+      atlasId: string
+      conflictFields: string[]
+    }
+  | {
+      code: 'not_found'
+      atlasId: string
+    }
+
+export type AtlasFieldComparable = (typeof atlasFieldsComparable)[number]

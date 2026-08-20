@@ -8,6 +8,8 @@
  * Source: ATLAS API taxonomy_term/cluster_thematic_area descriptions
  */
 
+import type { AtlasClusterInput, AtlasFieldComparable } from '@/actions/atlas/types.js'
+
 /**
  * Maps sub-domain ATLAS UUID → parent domain ATLAS UUID.
  * Only sub-domains are listed; parent domains are NOT in this map.
@@ -211,4 +213,47 @@ export const KNOWLEDGE_DOMAIN_PARENT_IDS = new Set([
   '15ac16f3-68b6-450f-b593-aede52fd155b', // Steganography, Steganalysis and Watermarking
   'f4ececb0-f699-4402-b9ba-6d55793ddd2b', // Theoretical Foundations
   '888a384b-cdb6-4964-81dd-11b785ac0aa4', // Trust Management and Accountability
+])
+
+export const atlasFieldsComparable = [
+  'name',
+  'nameNational',
+  'entityDepartment',
+  'countryCode',
+  'city',
+  'streetAddress',
+  'email',
+  'phone',
+  'website',
+  'registrationNumber',
+  'isHeadquarter',
+  'headquarterInfo',
+  'hasSubsidiaries',
+  'subsidiariesDetails',
+  'hasMajorityShares',
+  'majoritySharesDetails',
+  'article138Compliance',
+  'dataShareConsent',
+  'contactFirstName',
+  'contactLastName',
+  'contactEmail',
+  'contactPosition',
+  'contactPhone',
+  'expertiseDescription',
+  'goalsToAchieve',
+  'goalsToContribute',
+  'clusterTypeId',
+  'thematicAreaIds',
+  'sectorIds',
+  'technologyIds',
+  'useCaseIds',
+  'fieldsOfActivityIds',
+] as const satisfies readonly (keyof AtlasClusterInput)[]
+
+export const atlasClusterTaxonomies = new Set<AtlasFieldComparable>([
+  'thematicAreaIds',
+  'sectorIds',
+  'technologyIds',
+  'useCaseIds',
+  'fieldsOfActivityIds',
 ])

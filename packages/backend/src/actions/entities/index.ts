@@ -1,12 +1,12 @@
 import { getEntity } from '@/actions/entities/get-entity.js'
 import { getEntities } from '@/actions/entities/get-entities.js'
 import type { DB, ActionArgsWithDb } from '@/types.js'
-import type { ListQuery } from '@/actions/entities/common.js'
 import { createEntity } from '@/actions/entities/create-entity.js'
 import { updateEntity } from '@/actions/entities/update-entity.js'
 import { deleteEntity } from '@/actions/entities/delete-entity.js'
 import { handleActionResult } from '@/utils/action-helpers.js'
 import { getStatusRecap } from '@/actions/entities/get-status-recap.js'
+import type { ListQuery } from '@/actions/entities/types.js'
 
 export const entityActions = (db: DB, logger: ActionArgsWithDb['logger']) => {
   return {

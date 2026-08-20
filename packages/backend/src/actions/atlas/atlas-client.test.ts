@@ -1,7 +1,8 @@
-import type { Logger, Env } from '@/types.js'
+import type { Env } from '@/types.js'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fetch } from 'undici'
 import type { AtlasClient } from '@/actions/atlas/types.js'
+import { makeLogger } from '@/actions/atlas/test-support/fakes.js'
 
 vi.mock('undici', async (importOriginal) => {
   const actual = await importOriginal<typeof import('undici')>()
@@ -16,11 +17,8 @@ type Client = AtlasClient
 type FetchResponse = Awaited<ReturnType<typeof fetch>>
 
 const fetchMock = vi.mocked(fetch)
-const logger = {
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-} as unknown as Logger
+const testLogger = makeLogger()
+const logger = testLogger.logger
 
 const appConfig: Env = {
   NODE_ENV: 'test',
@@ -61,9 +59,9 @@ describe('AtlasClient', () => {
 
   beforeEach(() => {
     fetchMock.mockReset()
-    vi.mocked(logger.info).mockClear()
-    vi.mocked(logger.warn).mockClear()
-    vi.mocked(logger.error).mockClear()
+    testLogger.info.mockClear()
+    testLogger.warn.mockClear()
+    testLogger.error.mockClear()
   })
 
   afterEach(() => {

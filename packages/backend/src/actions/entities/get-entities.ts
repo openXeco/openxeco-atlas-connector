@@ -1,10 +1,10 @@
-import type { ListQuery } from '@/actions/entities/common.js'
 import { eq, and, desc } from 'drizzle-orm'
 import { entities, type Entity } from '@/db/schema.js'
 import { count as countFn } from 'drizzle-orm/sql/functions/aggregate'
 import { atlasClient } from '@/services/atlas/client.js'
 
 import type { ActionArgsWithDb, ActionResult, PaginatedResult } from '@/types.js'
+import type { ListQuery } from '@/actions/entities/types.js'
 
 export const getEntities = async ({
   data: { page, limit, status, syncStatus },

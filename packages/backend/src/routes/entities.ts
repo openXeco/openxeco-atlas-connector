@@ -3,9 +3,9 @@ import { db } from '@/config/database.js'
 import { authenticate } from '../middleware/auth.js'
 
 import { handleRouteError } from '@/utils/reply-helpers.js'
-import { listQuerySchema } from '@/actions/entities/common.js'
 import { entityActions } from '@/actions/entities/index.js'
 import { getIdFromRequest } from '@/utils/request-helpers.js'
+import { listQuerySchema } from '@/actions/entities/constants.js'
 
 export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
   const actions = entityActions(db, fastify.log)

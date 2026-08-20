@@ -6,8 +6,8 @@ import { atlasClient } from '../atlas/client.js'
 import { jsonApiTransformer } from '../atlas/transformer.js'
 import type { Logger } from 'pino'
 import { getLogger } from '@/utils/logger.js'
-import type { Cluster } from '@/services/atlas/types.js'
 import type { BatchSyncResult, EntityDiff, ConflictReport, SyncResult } from '@/services/sync/types.js'
+import type { AtlasCluster } from '@/actions/atlas/types.js'
 
 export class EntitySyncService {
   private readonly logger: Logger
@@ -56,7 +56,7 @@ export class EntitySyncService {
         },
       )
 
-      let cluster: Cluster
+      let cluster: AtlasCluster
 
       if (entity.atlasId) {
         if (!options?.force) {

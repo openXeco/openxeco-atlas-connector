@@ -27,6 +27,7 @@ export async function updateGeneralSettings(
     return {
       success: true,
       message: 'Settings saved.',
+      country: parsed.data?.country,
     }
   }
 

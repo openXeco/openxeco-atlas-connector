@@ -1,34 +1,32 @@
 import type { Entity, Taxonomy } from '@/db/schema.js'
-import type {
-  JsonApiAddress,
-  JsonApiDocument,
-  JsonApiResource,
-  JsonApiRelationship,
-  Cluster,
-  ClusterInput,
-  JsonApiWebsite,
-} from './types.js'
+import type { JsonApiResource, JsonApiRelationship, JsonApiDocument } from './types.js'
 import { TAXONOMY_TYPES } from '@/config/constants.js'
 import { getLogger } from '@/utils/logger.js'
 import type { EntityStatus, TaxonomyType } from '@/types.js'
-import type { AtlasTaxonomyTerm } from '@/actions/atlas/types.js'
+import type {
+  AtlasTaxonomyTerm,
+  AtlasCluster,
+  AtlasJsonApiAddress,
+  AtlasJsonApiWebsite,
+  AtlasClusterInput,
+} from '@/actions/atlas/types.js'
 
 /**
  * Maps a JSON:API resource to a Cluster object, extracting ALL attributes and relationships.
  * Used as the single source of truth for parsing ATLAS API responses.
  */
-export function mapResourceToCluster(resource: JsonApiResource): Cluster {
+export function mapResourceToCluster(resource: JsonApiResource): AtlasCluster {
   const attrs = resource.attributes
 
   // Extract structured address (may be null or an object)
-  const address = attrs.field_address as JsonApiAddress
+  const address = attrs.field_address as AtlasJsonApiAddress
 
   // Extract website URL (may be { uri: string } or a plain string)
-  const websiteField = attrs.field_url as JsonApiWebsite
+  const websiteField = attrs.field_url as AtlasJsonApiWebsite
   const website =
     typeof websiteField === 'object' && websiteField !== null ? websiteField.uri : (websiteField as string | undefined)
 
-  const cluster: Cluster = {
+  const cluster: AtlasCluster = {
     id: resource.id,
     atlasId: resource.id,
 
@@ -150,7 +148,7 @@ export class JsonApiTransformer {
     }
   }
 
-  fromJsonApiCluster(document: JsonApiDocument): Cluster {
+  fromJsonApiCluster(document: JsonApiDocument): AtlasCluster {
     if (!document.data || Array.isArray(document.data)) {
       throw new Error('Invalid JSON:API document for cluster')
     }
@@ -158,7 +156,7 @@ export class JsonApiTransformer {
     return mapResourceToCluster(document.data)
   }
 
-  fromJsonApiClusters(document: JsonApiDocument): Cluster[] {
+  fromJsonApiClusters(document: JsonApiDocument): AtlasCluster[] {
     if (!document.data) {
       return []
     }
@@ -168,7 +166,7 @@ export class JsonApiTransformer {
     return resources.map((resource) => this.fromJsonApiCluster({ data: resource }))
   }
 
-  toEntityFromCluster(cluster: Cluster): Partial<Entity> {
+  toEntityFromCluster(cluster: AtlasCluster): Partial<Entity> {
     return {
       atlasId: cluster.atlasId,
 
@@ -237,7 +235,7 @@ export class JsonApiTransformer {
       useCaseIds?: string[]
       fieldsOfActivityIds?: string[]
     },
-  ): ClusterInput {
+  ): AtlasClusterInput {
     return {
       // Basic information
       name: entity.name,

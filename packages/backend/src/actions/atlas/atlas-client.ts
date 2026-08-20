@@ -7,7 +7,8 @@ import type {
 } from '@/actions/atlas/types.js'
 import { ProxyAgent, type RequestInit, fetch } from 'undici'
 import type { Logger, Env } from '@/types.js'
-import { AtlasApiError } from '@/actions/atlas/common.js'
+
+import { AtlasApiError } from '@/actions/atlas/utils/atlas-api-error.js'
 
 class AtlasClient {
   private readonly config: AtlasConfig

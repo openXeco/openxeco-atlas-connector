@@ -51,7 +51,7 @@ export const GeneralTab = () => {
       </CardHeader>
       <CardContent className='space-y-6'>
         <form action={formAction} id={'form-general-settings'}>
-          {state?.success !== undefined && (
+          {!pending && state?.success !== undefined && (
             <div className={'my-2'}>
               <Message message={state.success ? state.message : state.error} success={state.success} />
             </div>
@@ -59,7 +59,7 @@ export const GeneralTab = () => {
           <div className='grid gap-6'>
             <div className='grid gap-2'>
               <Label htmlFor='appName'>NCC country</Label>
-              <Select name={'country'} defaultValue={settings?.country}>
+              <Select name={'country'} defaultValue={settings?.country} key={settings?.country ?? 'no-country'}>
                 <SelectTrigger id='FORM-ECCC-001-Q102'>
                   <SelectValue placeholder='Select a country' />
                 </SelectTrigger>
@@ -75,8 +75,8 @@ export const GeneralTab = () => {
                 This field will be used as "country" value for all entities.{' '}
               </p>
               <p className={'text-yellow-600 text-sm'}>
-                Please note that any entities previously submitted under a different country will need to be handled
-                manually.
+                Please note that any entities previously saved under a different country will need to be handled
+                directly in the database.
               </p>
             </div>
           </div>
