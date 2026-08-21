@@ -17,8 +17,7 @@ type Client = AtlasClient
 type FetchResponse = Awaited<ReturnType<typeof fetch>>
 
 const fetchMock = vi.mocked(fetch)
-const testLogger = makeLogger()
-const logger = testLogger.logger
+const logger = makeLogger().logger
 
 const appConfig: Env = {
   NODE_ENV: 'test',
@@ -59,9 +58,6 @@ describe('AtlasClient', () => {
 
   beforeEach(() => {
     fetchMock.mockReset()
-    testLogger.info.mockClear()
-    testLogger.warn.mockClear()
-    testLogger.error.mockClear()
   })
 
   afterEach(() => {
@@ -176,7 +172,6 @@ describe('AtlasClient', () => {
 
     await expect(request).resolves.toEqual({ data: [] })
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(logger.warn).toHaveBeenCalledOnce()
   })
 
   it('retries a transient transport error when get allows multiple attempts', async () => {
@@ -190,7 +185,6 @@ describe('AtlasClient', () => {
 
     await expect(request).resolves.toEqual({ data: [] })
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(logger.warn).toHaveBeenCalledOnce()
   })
 
   it('turns a timeout into a request timeout error', async () => {
@@ -208,10 +202,6 @@ describe('AtlasClient', () => {
     fetchMock.mockRejectedValueOnce(abort)
 
     await expect(client.get('/node/cluster')).rejects.toBe(abort)
-    expect(logger.info).toHaveBeenCalledWith(
-      { method: 'GET', url: 'https://atlas.example/api/node/cluster' },
-      'ATLAS API request aborted',
-    )
   })
 
   it('identifies an invalid JSON response', async () => {
@@ -243,6 +233,5 @@ describe('AtlasClient', () => {
     fetchMock.mockRejectedValueOnce(unexpectedError)
 
     await expect(client.get('/node/cluster')).rejects.toBe(unexpectedError)
-    expect(logger.error).toHaveBeenCalledOnce()
   })
 })

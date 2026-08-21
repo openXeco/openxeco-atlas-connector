@@ -57,9 +57,9 @@ describe('paginate', () => {
     const page = [makeAtlasResource({ id: 'atlas-1' }), makeAtlasResource({ id: 'atlas-2' })]
     atlas.get.mockResolvedValue({ data: page })
 
-    await expect(
-      paginate({ path: '/node/cluster', limit: 2, logger, atlasClient: atlas.client }),
-    ).resolves.toEqual(page)
+    await expect(paginate({ path: '/node/cluster', limit: 2, logger, atlasClient: atlas.client })).resolves.toEqual(
+      page,
+    )
 
     expect(atlas.get).toHaveBeenCalledOnce()
     expect(waitMock).not.toHaveBeenCalled()

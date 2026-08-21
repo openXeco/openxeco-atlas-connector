@@ -7,6 +7,7 @@ import { syncTaxonomiesByType } from '@/actions/atlas/sync-taxonomies-by-type.js
 import { syncTaxonomies } from '@/actions/atlas/sync-taxonomies.js'
 import { getCluster } from '@/actions/atlas/get-cluster.js'
 import { pushEntity } from '@/actions/atlas/push-entity.js'
+import { selectCorrespondence } from '@/actions/atlas/select-correspondence.js'
 
 export const atlasActions = (db: DB, logger: ActionArgsWithDb['logger']) => {
   const atlasClient = getAtlasClient({ appConfig: config, logger })
@@ -21,5 +22,15 @@ export const atlasActions = (db: DB, logger: ActionArgsWithDb['logger']) => {
       handleActionResult(await getCluster({ logger, dependencies: { atlasClient }, id: atlasId })),
     pushEntity: async (id: string) =>
       handleActionResult(await pushEntity({ db, logger, dependencies: { atlasClient }, id })),
+    selectCorrespondence: async (id: string, atlasId: string) =>
+      handleActionResult(
+        await selectCorrespondence({
+          db,
+          logger,
+          dependencies: { atlasClient },
+          id,
+          data: { atlasId },
+        }),
+      ),
   }
 }

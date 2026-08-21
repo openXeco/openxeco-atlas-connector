@@ -63,12 +63,13 @@ describe('updateRemoteEntity', () => {
     expect(atlas.patch).not.toHaveBeenCalled()
   })
 
-  it('updates without comparing differences when the remote entity predates the last sync', async () => {
+  it('patches only changed attributes and omits an unchanged moderation state', async () => {
     atlas.get.mockResolvedValue({
       data: makeAtlasResource({
         attributes: {
           title: 'Different remote name',
           field_address: { country_code: 'LU' },
+          moderation_state: 'to_be_rejected',
           changed: '2026-07-31T10:00:00Z',
         },
       }),
@@ -78,34 +79,7 @@ describe('updateRemoteEntity', () => {
     await expect(
       updateRemoteEntity({
         atlasId: 'atlas-1',
-        input,
-        lastSyncedAt: new Date('2026-08-01T10:00:00Z'),
-        atlasClient: atlas.client,
-      }),
-    ).resolves.toMatchObject({
-      code: 'updated',
-      cluster: { atlasId: 'atlas-1' },
-    })
-
-    expect(atlas.patch).toHaveBeenCalledOnce()
-  })
-
-  it('patches when a remote modification does not conflict with local input', async () => {
-    atlas.get.mockResolvedValue({
-      data: makeAtlasResource({
-        attributes: {
-          title: 'Local entity',
-          field_address: { country_code: 'LU' },
-          changed: '2026-08-02T10:00:00Z',
-        },
-      }),
-    })
-    atlas.patch.mockResolvedValue({ data: makeAtlasResource() })
-
-    await expect(
-      updateRemoteEntity({
-        atlasId: 'atlas-1',
-        input,
+        input: makeAtlasInput({ registrationNumber: undefined, moderationState: 'to_be_rejected' }),
         lastSyncedAt: new Date('2026-08-01T10:00:00Z'),
         atlasClient: atlas.client,
       }),
@@ -116,11 +90,90 @@ describe('updateRemoteEntity', () => {
 
     expect(atlas.patch).toHaveBeenCalledWith('/node/cluster/atlas-1', {
       body: {
-        data: expect.objectContaining({
+        data: {
           type: 'node--cluster',
           id: 'atlas-1',
-          attributes: expect.objectContaining({ title: 'Local entity' }),
-        }),
+          attributes: {
+            title: 'Local entity',
+          },
+        },
+      },
+    })
+  })
+
+  it('does not patch when serialized local and remote values are unchanged', async () => {
+    atlas.get.mockResolvedValue({
+      data: makeAtlasResource({
+        attributes: {
+          title: 'Local entity',
+          field_address: { country_code: 'LU' },
+          moderation_state: 'draft',
+          changed: '2026-08-02T10:00:00Z',
+        },
+      }),
+    })
+    await expect(
+      updateRemoteEntity({
+        atlasId: 'atlas-1',
+        input,
+        lastSyncedAt: new Date('2026-08-01T10:00:00Z'),
+        atlasClient: atlas.client,
+      }),
+    ).resolves.toMatchObject({
+      code: 'updated',
+      cluster: { atlasId: 'atlas-1' },
+    })
+
+    expect(atlas.patch).not.toHaveBeenCalled()
+  })
+
+  it('patches only changed relationships', async () => {
+    atlas.get.mockResolvedValue({
+      data: makeAtlasResource({
+        attributes: {
+          title: 'Local entity',
+          field_address: { country_code: 'LU' },
+          changed: '2026-07-31T10:00:00Z',
+        },
+        relationships: {
+          field_cluster_type: {
+            data: {
+              type: 'taxonomy_term--cluster_type',
+              id: 'remote-cluster-type',
+            },
+          },
+        },
+      }),
+    })
+    atlas.patch.mockResolvedValue({ data: makeAtlasResource() })
+
+    await expect(
+      updateRemoteEntity({
+        atlasId: 'atlas-1',
+        input: makeAtlasInput({ registrationNumber: undefined, clusterTypeId: 'local-cluster-type' }),
+        lastSyncedAt: new Date('2026-08-01T10:00:00Z'),
+        atlasClient: atlas.client,
+      }),
+    ).resolves.toMatchObject({
+      code: 'updated',
+      cluster: { atlasId: 'atlas-1' },
+    })
+
+    expect(atlas.patch).toHaveBeenCalledWith('/node/cluster/atlas-1', {
+      body: {
+        data: {
+          type: 'node--cluster',
+          id: 'atlas-1',
+          attributes: {},
+          relationships: {
+            field_cluster_type: {
+              data: {
+                type: 'taxonomy_term--cluster_type',
+                id: 'local-cluster-type',
+              },
+            },
+          },
+        },
       },
     })
   })

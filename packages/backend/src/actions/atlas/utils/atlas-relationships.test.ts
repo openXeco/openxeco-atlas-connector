@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  buildJsonApiRelationships,
-  extractIdsFromJsonRelationship,
-} from '@/actions/atlas/utils/atlas-relationships.js'
+import { buildJsonApiRelationships, extractIdsFromJsonRelationship } from '@/actions/atlas/utils/atlas-relationships.js'
 import { makeAtlasInput } from '@/actions/atlas/test-support/fixtures.js'
 
 describe('extractIdsFromJsonRelationship', () => {

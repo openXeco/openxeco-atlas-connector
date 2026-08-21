@@ -9,6 +9,7 @@ import {
   canEntityBePushed,
   markEntityAsConflict,
   markEntityAsFailedSync,
+  markEntityAsPendingPush,
   markEntityAsSynced,
 } from '@/actions/entities/common.js'
 import { getEntity } from '@/actions/entities/get-entity.js'
@@ -39,6 +40,7 @@ vi.mock('@/actions/entities/common.js', () => ({
   canEntityBePushed: vi.fn(),
   markEntityAsConflict: vi.fn(),
   markEntityAsFailedSync: vi.fn(),
+  markEntityAsPendingPush: vi.fn(),
   markEntityAsSynced: vi.fn(),
 }))
 
@@ -50,6 +52,7 @@ const findCorrespondencesMock = vi.mocked(findCorrespondences)
 const toClusterInputFromEntityMock = vi.mocked(toClusterInputFromEntity)
 const markEntityAsConflictMock = vi.mocked(markEntityAsConflict)
 const markEntityAsFailedSyncMock = vi.mocked(markEntityAsFailedSync)
+const markEntityAsPendingPushMock = vi.mocked(markEntityAsPendingPush)
 const markEntityAsSyncedMock = vi.mocked(markEntityAsSynced)
 
 const db = makeDb()
@@ -130,7 +133,7 @@ describe('pushEntity', () => {
       atlasId: 'atlas-existing',
       lastSyncedAt: new Date('2026-08-01T10:00:00Z'),
     })
-    const cluster = makeAtlasCluster({ id: 'atlas-existing', atlasId: 'atlas-existing' })
+    const cluster = makeAtlasCluster({ atlasId: 'atlas-existing' })
     updateRemoteEntityMock.mockResolvedValue({ code: 'updated', cluster })
 
     const result = await callPushEntity()
@@ -141,7 +144,10 @@ describe('pushEntity', () => {
       lastSyncedAt: entity.lastSyncedAt,
       input: localInput,
     })
-    expect(markEntityAsSyncedMock).toHaveBeenCalledWith('entity-1', 'atlas-existing', db, logger)
+    expect(markEntityAsPendingPushMock).toHaveBeenCalledOnce()
+    expect(markEntityAsPendingPushMock.mock.calls[0]?.[0]).toBe('entity-1')
+    expect(markEntityAsSyncedMock).toHaveBeenCalledOnce()
+    expect(markEntityAsSyncedMock.mock.calls[0]?.slice(0, 2)).toEqual(['entity-1', 'atlas-existing'])
     expect(result).toEqual({
       success: true,
       data: {
@@ -166,7 +172,9 @@ describe('pushEntity', () => {
 
     const result = await callPushEntity()
 
-    expect(markEntityAsConflictMock).toHaveBeenCalledWith('entity-1', db, logger, conflictFields)
+    expect(markEntityAsConflictMock).toHaveBeenCalledOnce()
+    expect(markEntityAsConflictMock.mock.calls[0]?.[0]).toBe('entity-1')
+    expect(markEntityAsConflictMock.mock.calls[0]?.[3]).toEqual(conflictFields)
     expect(result).toMatchObject({
       success: false,
       code: 'conflict',
@@ -180,7 +188,7 @@ describe('pushEntity', () => {
       atlasId: 'atlas-missing',
       registrationNumber: '  LU-123  ',
     })
-    const candidate = makeAtlasCluster({ id: 'atlas-candidate', atlasId: 'atlas-candidate' })
+    const candidate = makeAtlasCluster({ atlasId: 'atlas-candidate' })
     updateRemoteEntityMock.mockResolvedValue({
       code: 'not_found',
       atlasId: 'atlas-missing',
@@ -204,14 +212,15 @@ describe('pushEntity', () => {
 
   it('creates automatically when the registration number is absent', async () => {
     setupEntity({ registrationNumber: '   ' })
-    const cluster = makeAtlasCluster({ id: 'atlas-created', atlasId: 'atlas-created' })
+    const cluster = makeAtlasCluster({ atlasId: 'atlas-created' })
     createRemoteEntityMock.mockResolvedValue(cluster)
 
     const result = await callPushEntity()
 
     expect(findCorrespondencesMock).not.toHaveBeenCalled()
     expect(createRemoteEntityMock).toHaveBeenCalledWith({ input: localInput, atlasClient })
-    expect(markEntityAsSyncedMock).toHaveBeenCalledWith('entity-1', 'atlas-created', db, logger)
+    expect(markEntityAsSyncedMock).toHaveBeenCalledOnce()
+    expect(markEntityAsSyncedMock.mock.calls[0]?.slice(0, 2)).toEqual(['entity-1', 'atlas-created'])
     expect(result).toEqual({
       success: true,
       data: {
@@ -225,14 +234,15 @@ describe('pushEntity', () => {
 
   it('creates automatically after a successful search finds no candidates', async () => {
     setupEntity({ registrationNumber: 'LU-123' })
-    const cluster = makeAtlasCluster({ id: 'atlas-created', atlasId: 'atlas-created' })
+    const cluster = makeAtlasCluster({ atlasId: 'atlas-created' })
     findCorrespondencesMock.mockResolvedValue([])
     createRemoteEntityMock.mockResolvedValue(cluster)
 
     const result = await callPushEntity()
 
     expect(findCorrespondencesMock).toHaveBeenCalledWith('LU-123', atlasClient, db)
-    expect(markEntityAsSyncedMock).toHaveBeenCalledWith('entity-1', 'atlas-created', db, logger)
+    expect(markEntityAsSyncedMock).toHaveBeenCalledOnce()
+    expect(markEntityAsSyncedMock.mock.calls[0]?.slice(0, 2)).toEqual(['entity-1', 'atlas-created'])
     expect(result).toMatchObject({
       success: true,
       data: {
@@ -244,10 +254,7 @@ describe('pushEntity', () => {
 
   it('returns candidates without changing local synchronization state', async () => {
     setupEntity({ registrationNumber: 'LU-123' })
-    const candidates = [
-      makeAtlasCluster({ id: 'atlas-1', atlasId: 'atlas-1' }),
-      makeAtlasCluster({ id: 'atlas-2', atlasId: 'atlas-2' }),
-    ]
+    const candidates = [makeAtlasCluster({ atlasId: 'atlas-1' }), makeAtlasCluster({ atlasId: 'atlas-2' })]
     findCorrespondencesMock.mockResolvedValue(candidates)
 
     const result = await callPushEntity()
@@ -290,7 +297,8 @@ describe('pushEntity', () => {
 
     const result = await callPushEntity()
 
-    expect(markEntityAsFailedSyncMock).toHaveBeenCalledWith('entity-1', db, logger)
+    expect(markEntityAsFailedSyncMock).toHaveBeenCalledOnce()
+    expect(markEntityAsFailedSyncMock.mock.calls[0]?.[0]).toBe('entity-1')
     expect(result).toEqual({
       success: false,
       code: 'unexpected',
@@ -306,7 +314,8 @@ describe('pushEntity', () => {
 
     const result = await callPushEntity()
 
-    expect(markEntityAsFailedSyncMock).toHaveBeenCalledWith('entity-1', db, logger)
+    expect(markEntityAsFailedSyncMock).toHaveBeenCalledOnce()
+    expect(markEntityAsFailedSyncMock.mock.calls[0]?.[0]).toBe('entity-1')
     expect(result).toEqual({
       success: false,
       code: 'unexpected',

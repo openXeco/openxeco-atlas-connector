@@ -16,7 +16,6 @@ describe('createRemoteEntity', () => {
     atlas.post.mockResolvedValue({ data: makeAtlasResource() })
 
     await expect(createRemoteEntity({ input, atlasClient: atlas.client })).resolves.toMatchObject({
-      id: 'atlas-1',
       atlasId: 'atlas-1',
       name: 'Remote entity',
       countryCode: 'LU',
@@ -38,8 +37,8 @@ describe('createRemoteEntity', () => {
   it('rejects an ATLAS response without created entity data', async () => {
     atlas.post.mockResolvedValue({})
 
-    await expect(
-      createRemoteEntity({ input: makeAtlasInput(), atlasClient: atlas.client }),
-    ).rejects.toThrow('ATLAS did not return the created entity.')
+    await expect(createRemoteEntity({ input: makeAtlasInput(), atlasClient: atlas.client })).rejects.toThrow(
+      'ATLAS did not return the created entity.',
+    )
   })
 })

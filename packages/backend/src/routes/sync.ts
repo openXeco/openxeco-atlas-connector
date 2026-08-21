@@ -11,6 +11,10 @@ import { atlasActions } from '@/actions/atlas/index.js'
 
 export const idParamSchema = z.object({ id: z.string().uuid() })
 
+const selectCorrespondenceSchema = z.object({
+  atlasId: z.string().min(1),
+})
+
 const resolveConflictSchema = z.object({
   resolution: z.enum(['local', 'remote']),
 })
@@ -64,32 +68,55 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     }
   })
 
-  // Old endpoints
   fastify.post('/entities/:id/push', { preHandler: authenticate }, async (request, reply) => {
     try {
       const { id } = idParamSchema.parse(request.params)
-      const userId = request.currentUser?.userId
+      await actions.pushEntity(id)
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
 
-      const result = await entitySyncService.pushEntity(id, userId)
-
-      if (!result.success) {
-        return sendErrorReply(
-          getErrorReply({
-            type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
-            message: result.message,
-          }),
-          reply,
-        )
-      }
+  fastify.post('/entities/:id/correspondences', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { id } = idParamSchema.parse(request.params)
+      const { atlasId } = selectCorrespondenceSchema.parse(request.body)
+      const result = await actions.selectCorrespondence(id, atlasId)
 
       return reply.send({
-        data: result,
-        message: result.message,
+        data: result.data,
       })
     } catch (error) {
       return handleRouteError(error, reply, fastify.log)
     }
   })
+
+  // Old endpoints
+  // fastify.post('/entities/:id/push', { preHandler: authenticate }, async (request, reply) => {
+  //   try {
+  //     const { id } = idParamSchema.parse(request.params)
+  //     const userId = request.currentUser?.userId
+  //
+  //     const result = await entitySyncService.pushEntity(id, userId)
+  //
+  //     if (!result.success) {
+  //       return sendErrorReply(
+  //         getErrorReply({
+  //           type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
+  //           message: result.message,
+  //         }),
+  //         reply,
+  //       )
+  //     }
+  //
+  //     return reply.send({
+  //       data: result,
+  //       message: result.message,
+  //     })
+  //   } catch (error) {
+  //     return handleRouteError(error, reply, fastify.log)
+  //   }
+  // })
 
   fastify.post('/entities/:id/pull', { preHandler: authenticate }, async (request, reply) => {
     try {

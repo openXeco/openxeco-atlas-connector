@@ -154,7 +154,6 @@ export type AtlasClusterInput = {
 }
 
 export type AtlasCluster = AtlasClusterInput & {
-  id: string
   atlasId: string
 
   // Taxonomy references
@@ -182,7 +181,7 @@ export type PushEntityResult =
   | {
       code: 'selection_required'
       entityId: string
-      candidates: unknown[]
+      candidates: AtlasCluster[]
     }
   | {
       code: 'conflict'
@@ -208,6 +207,29 @@ export type UpdateAtlasEntityResult =
     }
   | {
       code: 'not_found'
+      atlasId: string
+    }
+
+export type SelectCorrespondenceResult =
+  | {
+      code: 'synced'
+      entityId: string
+      atlasId: string
+    }
+  | {
+      code: 'conflict'
+      entityId: string
+      atlasId: string
+      conflictFields: string[]
+    }
+  | {
+      code: 'candidate_not_found'
+      entityId: string
+      atlasId: string
+    }
+  | {
+      code: 'already_linked'
+      entityId: string
       atlasId: string
     }
 

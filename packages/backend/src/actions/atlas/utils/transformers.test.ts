@@ -62,7 +62,6 @@ describe('toClusterFromResource', () => {
     })
 
     expect(toClusterFromResource(resource)).toMatchObject({
-      id: 'atlas-42',
       atlasId: 'atlas-42',
       name: 'English name',
       nameNational: 'National name',

@@ -26,7 +26,7 @@
     "safeclean": "pnpm -r run safeclean && pnpm clean"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.8",
+    "@biomejs/biome": "^2.5.9",
     "@types/node": "^24.13.3",
     "env-cmd": "^11.0.0",
     "rimraf": "^6.1.3",

@@ -27,7 +27,6 @@ export function mapResourceToCluster(resource: JsonApiResource): AtlasCluster {
     typeof websiteField === 'object' && websiteField !== null ? websiteField.uri : (websiteField as string | undefined)
 
   const cluster: AtlasCluster = {
-    id: resource.id,
     atlasId: resource.id,
 
     // Basic information

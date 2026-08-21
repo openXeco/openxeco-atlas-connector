@@ -10,7 +10,6 @@ export const makeAtlasInput = (overrides: Partial<AtlasClusterInput> = {}): Atla
 })
 
 export const makeAtlasCluster = (overrides: Partial<AtlasCluster> = {}): AtlasCluster => ({
-  id: 'atlas-1',
   atlasId: 'atlas-1',
   name: 'Remote entity',
   countryCode: 'LU',
@@ -32,9 +31,7 @@ export const makeAtlasResource = (
   },
 })
 
-export const makeEntity = (
-  overrides: Partial<EntityWithFullRelationships> = {},
-): EntityWithFullRelationships =>
+export const makeEntity = (overrides: Partial<EntityWithFullRelationships> = {}): EntityWithFullRelationships =>
   ({
     id: 'entity-1',
     atlasId: null,

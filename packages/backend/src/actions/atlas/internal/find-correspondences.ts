@@ -6,5 +6,5 @@ import type { DB } from '@/types.js'
 export const findCorrespondences = async (registrationNumber: string, atlasClient: AtlasClient, db: DB) => {
   const excludedIds = await getEntitiesIdWithAtlasId(db)
 
-  return await getClustersByRegistrationCode(registrationNumber, excludedIds, atlasClient)
+  return getClustersByRegistrationCode(registrationNumber, excludedIds, atlasClient, db)
 }

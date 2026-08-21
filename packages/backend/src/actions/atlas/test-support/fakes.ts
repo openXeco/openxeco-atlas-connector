@@ -12,6 +12,7 @@ type AtlasClientFake = {
 
 type LoggerFake = {
   logger: Logger
+  debug: Mock
   info: Mock
   warn: Mock
   error: Mock
@@ -33,12 +34,14 @@ export const makeAtlasClient = (): AtlasClientFake => {
 }
 
 export const makeLogger = (): LoggerFake => {
+  const debug = vi.fn()
   const info = vi.fn()
   const warn = vi.fn()
   const error = vi.fn()
 
   return {
-    logger: { info, warn, error } as unknown as Logger,
+    logger: { debug, info, warn, error } as unknown as Logger,
+    debug,
     info,
     warn,
     error,

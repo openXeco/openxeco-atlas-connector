@@ -34,6 +34,6 @@ describe('findCorrespondences', () => {
     await expect(findCorrespondences('LU-123', atlasClient, db)).resolves.toBe(matches)
 
     expect(getEntitiesIdWithAtlasIdMock).toHaveBeenCalledWith(db)
-    expect(getClustersByRegistrationCodeMock).toHaveBeenCalledWith('LU-123', excludedIds, atlasClient)
+    expect(getClustersByRegistrationCodeMock).toHaveBeenCalledWith('LU-123', excludedIds, atlasClient, db)
   })
 })

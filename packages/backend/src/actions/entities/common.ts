@@ -1,4 +1,4 @@
-import type { PgTable, PgAsyncTransaction } from 'drizzle-orm/pg-core'
+import type { PgTable } from 'drizzle-orm/pg-core'
 import type { CreateOrUpdateEntity } from '@/actions/entities/types.js'
 import { createOrUpdateEntitySchema } from '@/actions/entities/constants.js'
 import type { DB, Logger } from '@/types.js'
@@ -63,13 +63,26 @@ export const prepareEntity = (data: CreateOrUpdateEntity) => {
   }
 }
 
-export const canEntityBePushed = (entity: Entity) => entity.syncStatus === 'pending_push'
+export const canEntityBePushed = (entity: Entity) =>
+  entity.syncStatus === 'pending_push' || entity.syncStatus === 'failed'
 
 export const getEntitiesIdWithAtlasId = async (db: DB) => {
   const rows = await db.select({ atlasId: entities.atlasId }).from(entities).where(isNotNull(entities.atlasId))
 
   // biome-ignore lint/style/noNonNullAssertion: Drizzle doesn not type `isNotNull` unfortunately
   return rows.map((r) => r.atlasId!)
+}
+
+export const markEntityAsPendingPush = async (id: string, db: DB, logger: Logger): Promise<void> => {
+  logger.info(`Mark entity ${id} as pending_push`)
+  await db
+    .update(entities)
+    .set({
+      syncStatus: 'pending_push',
+      syncCode: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(entities.id, id))
 }
 
 export const markEntityAsSynced = async (id: string, atlasId: string, db: DB, logger: Logger): Promise<void> => {
@@ -117,13 +130,20 @@ export const markEntityAsFailedSync = async (id: string, db: DB, logger: Logger)
     .where(eq(entities.id, id))
 }
 
-export const saveTaxonomy = async (
-  id: string,
-  data: string[] | undefined | null,
-  // biome-ignore lint/suspicious/noExplicitAny: We need it here
-  tx: PgAsyncTransaction<any>,
-  table: PgTable,
-) => {
+export const isAtlasIdLinkedToEntity = async (atlasId: string, db: DB): Promise<boolean> => {
+  const row = await db.query.entities.findFirst({
+    columns: {
+      atlasId: true,
+    },
+    where: {
+      atlasId,
+    },
+  })
+
+  return !!row
+}
+
+export const saveTaxonomy = async (id: string, data: string[] | undefined | null, tx: DB, table: PgTable) => {
   if (data && data.length > 0) {
     await tx.insert(table).values(
       data.map((taxonomyId) => ({

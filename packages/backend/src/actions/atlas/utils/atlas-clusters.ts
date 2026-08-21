@@ -2,7 +2,7 @@ import type { AtlasClient, AtlasCluster, AtlasJsonApiResource } from '@/actions/
 import { toClusterFromResource } from '@/actions/atlas/utils/transformers.js'
 import { getSetting } from '@/actions/app/common.js'
 import { SETTINGS_KEYS } from '@/config/constants.js'
-import { db } from '@/config/database.js'
+import type { DB } from '@/types.js'
 
 export const getClusterByID = async (id: string, atlasClient: AtlasClient): Promise<AtlasCluster> => {
   const cluster = await atlasClient.get<AtlasJsonApiResource>(`/node/cluster/${id}`)
@@ -11,15 +11,13 @@ export const getClusterByID = async (id: string, atlasClient: AtlasClient): Prom
 }
 /**
  * Retrieves all remote entities searching for registration number (and fixed country)
- * @param regNumber
- * @param atlasIds if provided it's a list of ids to exclude from the results
- * @param atlasClient
  */
 export const getClustersByRegistrationCode = async (
   regNumber: string,
   atlasIds: string[],
   atlasClient: AtlasClient,
-) => {
+  db: DB,
+): Promise<AtlasCluster[]> => {
   if (!regNumber.trim().length) {
     return []
   }
@@ -34,7 +32,7 @@ export const getClustersByRegistrationCode = async (
         value: regNumber,
       },
       country_code: {
-        path: 'field_country_code',
+        path: 'field_country.id',
         operator: '=',
         value: countryCode,
       },

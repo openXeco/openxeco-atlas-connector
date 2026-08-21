@@ -8,7 +8,7 @@ import type {
 import { getClusterByID, wasClusterRemotelyModified } from '@/actions/atlas/utils/atlas-clusters.js'
 import { AtlasApiError } from '@/actions/atlas/utils/atlas-api-error.js'
 import { findConflictFields } from '@/actions/atlas/utils/conflicts.js'
-import { toResourceFromCluster, toClusterFromResource } from '@/actions/atlas/utils/transformers.js'
+import { toPatchResourceFromCluster, toClusterFromResource } from '@/actions/atlas/utils/transformers.js'
 
 type UpdateRemoteEntityArgs = {
   atlasId: string
@@ -50,12 +50,19 @@ export const updateRemoteEntity = async ({
     }
   }
 
-  const resource = toResourceFromCluster(input, atlasId)
+  const patchResource = toPatchResourceFromCluster(input, remote, atlasId)
+
+  if (Object.keys(patchResource.attributes).length === 0 && !patchResource.relationships) {
+    return {
+      code: 'updated',
+      cluster: remote,
+    }
+  }
 
   try {
     const response = await atlasClient.patch<AtlasJsonApiResource>(`/node/cluster/${atlasId}`, {
       body: {
-        data: resource,
+        data: patchResource,
       },
     })
 

@@ -12,6 +12,7 @@ import {
   markEntityAsSynced,
   canEntityBePushed,
   markEntityAsFailedSync,
+  markEntityAsPendingPush,
 } from '@/actions/entities/common.js'
 import { getEntity } from '@/actions/entities/get-entity.js'
 import { createRemoteEntity } from '@/actions/atlas/internal/create-remote-entity.js'
@@ -66,6 +67,8 @@ export const pushEntity = async ({
 
     // If the entity has already `atlasId` it means that it was already pushed to ATLAS at least once
     if (entity.atlasId) {
+      logger.debug('Entity has already an `atlasId`. Switching to update branch.')
+      await markEntityAsPendingPush(entity.id, db, logger)
       const updateResult = await updateRemoteEntity({
         atlasId: entity.atlasId,
         atlasClient,

@@ -1,5 +1,6 @@
 import type {
   AtlasJsonApiResource,
+  AtlasJsonApiRelationship,
   AtlasTaxonomyTerm,
   AtlasCluster,
   AtlasJsonApiAddress,
@@ -10,6 +11,7 @@ import type { TaxonomyType, EntityStatus } from '@/types.js'
 import type { Taxonomy } from '@/db/schema.js'
 import type { EntityWithRelationships, EntityWithFullRelationships } from '@/actions/entities/types.js'
 import { buildJsonApiRelationships, extractIdsFromJsonRelationship } from '@/actions/atlas/utils/atlas-relationships.js'
+import { findChangedKeys } from '@/actions/atlas/utils/utils.js'
 
 export const toClusterFromResource = (resource: AtlasJsonApiResource): AtlasCluster => {
   const attrs = resource.attributes
@@ -20,7 +22,6 @@ export const toClusterFromResource = (resource: AtlasJsonApiResource): AtlasClus
     typeof websiteField === 'object' && websiteField !== null ? websiteField.uri : (websiteField as string | undefined)
 
   const cluster: AtlasCluster = {
-    id: resource.id,
     atlasId: resource.id,
 
     // Basic information
@@ -147,15 +148,14 @@ export const toClusterInputFromEntity = (entity: EntityWithFullRelationships): A
 
 export const toEntityFromCluster = (
   cluster: AtlasCluster,
-): Omit<EntityWithRelationships, 'id' | 'updatedAt' | 'createdAt'> => {
+): Omit<EntityWithRelationships, 'id' | 'updatedAt' | 'createdAt'> &
+  Partial<Pick<EntityWithRelationships, 'id' | 'updatedAt' | 'createdAt'>> => {
   return {
     atlasId: cluster.atlasId,
 
     // Basic information
     name: cluster.name,
-    nameNational: Array.isArray(cluster.nameNational)
-      ? (cluster.nameNational[0] ?? '')
-      : (cluster.nameNational ?? ''),
+    nameNational: Array.isArray(cluster.nameNational) ? (cluster.nameNational[0] ?? '') : (cluster.nameNational ?? ''),
     entityDepartment: cluster.entityDepartment ?? null,
 
     // Address (structured)
@@ -279,6 +279,37 @@ export const toResourceFromCluster = (
     },
 
     relationships: buildJsonApiRelationships(cluster),
+  }
+}
+
+export const toPatchResourceFromCluster = (
+  local: AtlasClusterInput,
+  remote: AtlasCluster,
+  atlasId: string,
+): AtlasJsonApiResource => {
+  const localResource = toResourceFromCluster(local, atlasId)
+  const remoteResource = toResourceFromCluster(remote, atlasId)
+  const attributeKeys = Array.from(
+    new Set([...Object.keys(localResource.attributes), ...Object.keys(remoteResource.attributes)]),
+  )
+  const changedAttributeKeys = findChangedKeys(localResource.attributes, remoteResource.attributes, attributeKeys)
+  const attributes = Object.fromEntries(changedAttributeKeys.map((key) => [key, localResource.attributes[key] ?? null]))
+
+  const localRelationships = localResource.relationships ?? {}
+  const remoteRelationships = remoteResource.relationships ?? {}
+  const relationshipKeys = Array.from(
+    new Set([...Object.keys(localRelationships), ...Object.keys(remoteRelationships)]),
+  )
+  const changedRelationshipKeys = findChangedKeys(localRelationships, remoteRelationships, relationshipKeys)
+  const relationships = Object.fromEntries(
+    changedRelationshipKeys.map((key) => [key, localRelationships[key]]),
+  ) as Record<string, AtlasJsonApiRelationship>
+
+  return {
+    type: 'node--cluster',
+    id: atlasId,
+    attributes,
+    ...(changedRelationshipKeys.length > 0 && { relationships }),
   }
 }
 
