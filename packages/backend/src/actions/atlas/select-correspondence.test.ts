@@ -132,6 +132,7 @@ describe('selectCorrespondence', () => {
       code: 'conflict',
       atlasId: 'atlas-candidate',
       conflictFields,
+      remote: makeAtlasCluster({ atlasId: 'atlas-candidate' }),
     })
 
     await expect(callSelectCorrespondence()).resolves.toEqual({

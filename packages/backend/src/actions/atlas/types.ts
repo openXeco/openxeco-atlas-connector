@@ -204,6 +204,7 @@ export type UpdateAtlasEntityResult =
       code: 'conflict'
       atlasId: string
       conflictFields: string[]
+      remote: AtlasCluster
     }
   | {
       code: 'not_found'
@@ -232,5 +233,37 @@ export type SelectCorrespondenceResult =
       entityId: string
       atlasId: string
     }
+
+export type ForceCreateEntityResult =
+  | {
+      code: 'synced'
+      operation: 'created'
+      entityId: string
+      atlasId: string
+    }
+  | {
+      code: 'already_linked'
+      entityId: string
+      atlasId: string
+    }
+
+export type ForceSyncEntityResult =
+  | {
+      code: 'synced'
+      entityId: string
+      atlasId: string
+    }
+  | {
+      code: 'not_linked' | 'no_conflict'
+      entityId: string
+    }
+  | {
+      code: 'remote_not_found'
+      entityId: string
+      atlasId: string
+    }
+
+export type ForcePushEntityResult = ForceSyncEntityResult
+export type ForcePullEntityResult = ForceSyncEntityResult
 
 export type AtlasFieldComparable = (typeof atlasFieldsComparable)[number]

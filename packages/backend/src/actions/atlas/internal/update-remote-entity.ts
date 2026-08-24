@@ -14,6 +14,7 @@ type UpdateRemoteEntityArgs = {
   atlasId: string
   input: AtlasClusterInput
   lastSyncedAt: Date | null
+  conflictPolicy?: 'reject' | 'overwrite'
   atlasClient: AtlasClient
 }
 
@@ -21,6 +22,7 @@ export const updateRemoteEntity = async ({
   atlasId,
   input,
   lastSyncedAt,
+  conflictPolicy = 'reject',
   atlasClient,
 }: UpdateRemoteEntityArgs): Promise<UpdateAtlasEntityResult> => {
   let remote: AtlasCluster
@@ -38,7 +40,7 @@ export const updateRemoteEntity = async ({
     throw e
   }
 
-  if (wasClusterRemotelyModified(lastSyncedAt, remote.updatedAt)) {
+  if (conflictPolicy === 'reject' && wasClusterRemotelyModified(lastSyncedAt, remote.updatedAt)) {
     const conflictFields = findConflictFields(input, remote)
 
     if (conflictFields.length > 0) {
@@ -46,6 +48,7 @@ export const updateRemoteEntity = async ({
         code: 'conflict',
         atlasId,
         conflictFields,
+        remote,
       }
     }
   }

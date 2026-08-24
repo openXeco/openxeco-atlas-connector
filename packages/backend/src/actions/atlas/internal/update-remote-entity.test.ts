@@ -58,6 +58,10 @@ describe('updateRemoteEntity', () => {
       code: 'conflict',
       atlasId: 'atlas-1',
       conflictFields: ['name'],
+      remote: expect.objectContaining({
+        atlasId: 'atlas-1',
+        name: 'Remote entity',
+      }),
     })
 
     expect(atlas.patch).not.toHaveBeenCalled()

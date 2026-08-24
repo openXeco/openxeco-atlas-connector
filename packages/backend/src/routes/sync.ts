@@ -91,6 +91,45 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     }
   })
 
+  fastify.post('/entities/:id/correspondences/create', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { id } = idParamSchema.parse(request.params)
+      const result = await actions.forceCreateEntity(id)
+
+      return reply.send({
+        data: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
+  fastify.post('/entities/:id/force-push', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { id } = idParamSchema.parse(request.params)
+      const result = await actions.forcePushEntity(id)
+
+      return reply.send({
+        data: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
+  fastify.post('/entities/:id/force-pull', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { id } = idParamSchema.parse(request.params)
+      const result = await actions.forcePullEntity(id)
+
+      return reply.send({
+        data: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
   // Old endpoints
   // fastify.post('/entities/:id/push', { preHandler: authenticate }, async (request, reply) => {
   //   try {

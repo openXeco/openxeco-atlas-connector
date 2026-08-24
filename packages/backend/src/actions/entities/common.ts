@@ -130,6 +130,18 @@ export const markEntityAsFailedSync = async (id: string, db: DB, logger: Logger)
     .where(eq(entities.id, id))
 }
 
+export const markEntityAsNotFound = async (id: string, db: DB, logger: Logger): Promise<void> => {
+  logger.info(`Mark entity ${id} as not_found`)
+  await db
+    .update(entities)
+    .set({
+      syncStatus: 'failed',
+      syncCode: 'not_found',
+      updatedAt: new Date(),
+    })
+    .where(eq(entities.id, id))
+}
+
 export const isAtlasIdLinkedToEntity = async (atlasId: string, db: DB): Promise<boolean> => {
   const row = await db.query.entities.findFirst({
     columns: {

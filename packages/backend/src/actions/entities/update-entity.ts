@@ -39,7 +39,7 @@ export const updateEntity = async ({
       }
     }
 
-    return db.transaction(async (tx) => {
+    return await db.transaction(async (tx) => {
       const [updated] = await tx
         .update(entities)
         .set({

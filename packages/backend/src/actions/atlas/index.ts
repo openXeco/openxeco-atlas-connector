@@ -8,6 +8,9 @@ import { syncTaxonomies } from '@/actions/atlas/sync-taxonomies.js'
 import { getCluster } from '@/actions/atlas/get-cluster.js'
 import { pushEntity } from '@/actions/atlas/push-entity.js'
 import { selectCorrespondence } from '@/actions/atlas/select-correspondence.js'
+import { forceCreateEntity } from '@/actions/atlas/force-create-entity.js'
+import { forcePushEntity } from '@/actions/atlas/force-push-entity.js'
+import { forcePullEntity } from '@/actions/atlas/force-pull-entity.js'
 
 export const atlasActions = (db: DB, logger: ActionArgsWithDb['logger']) => {
   const atlasClient = getAtlasClient({ appConfig: config, logger })
@@ -32,5 +35,11 @@ export const atlasActions = (db: DB, logger: ActionArgsWithDb['logger']) => {
           data: { atlasId },
         }),
       ),
+    forceCreateEntity: async (id: string) =>
+      handleActionResult(await forceCreateEntity({ db, logger, dependencies: { atlasClient }, id })),
+    forcePushEntity: async (id: string) =>
+      handleActionResult(await forcePushEntity({ db, logger, dependencies: { atlasClient }, id })),
+    forcePullEntity: async (id: string) =>
+      handleActionResult(await forcePullEntity({ db, logger, dependencies: { atlasClient }, id })),
   }
 }

@@ -9,7 +9,6 @@ import {
   canEntityBePushed,
   markEntityAsConflict,
   markEntityAsFailedSync,
-  markEntityAsPendingPush,
   markEntityAsSynced,
 } from '@/actions/entities/common.js'
 import { getEntity } from '@/actions/entities/get-entity.js'
@@ -40,7 +39,6 @@ vi.mock('@/actions/entities/common.js', () => ({
   canEntityBePushed: vi.fn(),
   markEntityAsConflict: vi.fn(),
   markEntityAsFailedSync: vi.fn(),
-  markEntityAsPendingPush: vi.fn(),
   markEntityAsSynced: vi.fn(),
 }))
 
@@ -52,7 +50,6 @@ const findCorrespondencesMock = vi.mocked(findCorrespondences)
 const toClusterInputFromEntityMock = vi.mocked(toClusterInputFromEntity)
 const markEntityAsConflictMock = vi.mocked(markEntityAsConflict)
 const markEntityAsFailedSyncMock = vi.mocked(markEntityAsFailedSync)
-const markEntityAsPendingPushMock = vi.mocked(markEntityAsPendingPush)
 const markEntityAsSyncedMock = vi.mocked(markEntityAsSynced)
 
 const db = makeDb()
@@ -144,8 +141,6 @@ describe('pushEntity', () => {
       lastSyncedAt: entity.lastSyncedAt,
       input: localInput,
     })
-    expect(markEntityAsPendingPushMock).toHaveBeenCalledOnce()
-    expect(markEntityAsPendingPushMock.mock.calls[0]?.[0]).toBe('entity-1')
     expect(markEntityAsSyncedMock).toHaveBeenCalledOnce()
     expect(markEntityAsSyncedMock.mock.calls[0]?.slice(0, 2)).toEqual(['entity-1', 'atlas-existing'])
     expect(result).toEqual({
@@ -168,6 +163,7 @@ describe('pushEntity', () => {
       code: 'conflict',
       atlasId: 'atlas-existing',
       conflictFields,
+      remote: makeAtlasCluster({ atlasId: 'atlas-existing' }),
     })
 
     const result = await callPushEntity()
