@@ -49,7 +49,7 @@ export const columns = ({
     accessorKey: 'syncStatus',
     header: 'Sync Status',
     cell: ({ row }) => {
-      return <StatusBadge type={'sync'} status={row.getValue('syncStatus')} />
+      return <StatusBadge type={'sync'} status={row.getValue('syncStatus')} code={row.original.syncCode} />
     },
   },
   {

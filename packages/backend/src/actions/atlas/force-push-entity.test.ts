@@ -48,8 +48,7 @@ const transaction = vi.fn(async (callback: (transactionDb: DB) => unknown) => ca
 const db = { transaction } as unknown as DB
 const input = makeAtlasInput()
 
-const callForcePushEntity = (id = 'entity-1') =>
-  forcePushEntity({ id, db, logger, dependencies: { atlasClient } })
+const callForcePushEntity = (id = 'entity-1') => forcePushEntity({ id, db, logger, dependencies: { atlasClient } })
 
 describe('forcePushEntity', () => {
   beforeEach(() => {

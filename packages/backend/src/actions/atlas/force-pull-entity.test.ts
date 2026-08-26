@@ -36,8 +36,7 @@ const atlasClient = makeAtlasClient().client
 const db = makeDb()
 const logger = makeLogger().logger
 
-const callForcePullEntity = (id = 'entity-1') =>
-  forcePullEntity({ id, db, logger, dependencies: { atlasClient } })
+const callForcePullEntity = (id = 'entity-1') => forcePullEntity({ id, db, logger, dependencies: { atlasClient } })
 
 describe('forcePullEntity', () => {
   beforeEach(() => {
