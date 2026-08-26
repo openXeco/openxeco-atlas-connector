@@ -1,18 +1,10 @@
 import { ProxyAgent } from 'undici'
 import { config } from '@/config/index.js'
-import { type Logger, getLogger } from '@/utils/logger.js'
+import { getLogger } from '@/utils/logger.js'
 import { mapResourceToCluster } from './transformer.js'
-import type {
-  AtlasConfig,
-  JsonApiDocument,
-  JsonApiResource,
-  TaxonomyType,
-  TaxonomyTerm,
-  Cluster,
-  ClusterInput,
-  QueryParams,
-  PaginatedResponse,
-} from './types.js'
+import type { AtlasConfig, JsonApiResource, QueryParams, PaginatedResponse, JsonApiDocument } from './types.js'
+import type { Logger, TaxonomyType } from '@/types.js'
+import type { AtlasTaxonomyTerm, AtlasCluster, AtlasClusterInput } from '@/actions/atlas/types.js'
 
 class AtlasClient {
   private config: AtlasConfig
@@ -52,10 +44,10 @@ class AtlasClient {
     }
   }
 
-  async getTaxonomies(type: TaxonomyType): Promise<TaxonomyTerm[]> {
+  async getTaxonomies(type: TaxonomyType): Promise<AtlasTaxonomyTerm[]> {
     this.logger.info(`Fetching taxonomies of type: ${type}`)
 
-    const allTerms: TaxonomyTerm[] = []
+    const allTerms: AtlasTaxonomyTerm[] = []
     let offset = 0
     const limit = 50
     const pageDelayMs = 1500
@@ -86,7 +78,10 @@ class AtlasClient {
       }
 
       // Stop if we got fewer results than limit (last page) or no next link
-      if (resources.length < limit || !response.links?.next) break
+      if (resources.length < limit || !response.links?.next) {
+        break
+      }
+
       offset += limit
 
       // Delay between pages to avoid ATLAS API rate limiting
@@ -96,7 +91,7 @@ class AtlasClient {
     return allTerms
   }
 
-  async getTaxonomy(type: TaxonomyType, id: string): Promise<TaxonomyTerm> {
+  async getTaxonomy(type: TaxonomyType, id: string): Promise<AtlasTaxonomyTerm> {
     this.logger.info(`Fetching taxonomy: ${type}/${id}`)
 
     const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}/${id}`)
@@ -120,7 +115,7 @@ class AtlasClient {
     }
   }
 
-  async getClusters(params?: QueryParams): Promise<PaginatedResponse<Cluster>> {
+  async getClusters(params?: QueryParams): Promise<PaginatedResponse<AtlasCluster>> {
     this.logger.info('Fetching clusters from ATLAS')
 
     const response = await this.request<JsonApiResource>('GET', '/node/cluster', { params })
@@ -134,7 +129,7 @@ class AtlasClient {
 
     const resources = Array.isArray(response.data) ? response.data : [response.data]
 
-    const clusters: Cluster[] = resources.map((resource) => mapResourceToCluster(resource))
+    const clusters: AtlasCluster[] = resources.map((resource) => mapResourceToCluster(resource))
 
     return {
       data: clusters,
@@ -147,7 +142,7 @@ class AtlasClient {
     }
   }
 
-  async getCluster(id: string): Promise<Cluster> {
+  async getCluster(id: string): Promise<AtlasCluster> {
     this.logger.info(`Fetching cluster: ${id}`)
 
     const response = await this.request<JsonApiResource>('GET', `/node/cluster/${id}`)
@@ -161,7 +156,7 @@ class AtlasClient {
     return mapResourceToCluster(resource)
   }
 
-  async createCluster(data: ClusterInput): Promise<Cluster> {
+  async createCluster(data: AtlasClusterInput): Promise<AtlasCluster> {
     this.logger.info('Creating cluster in ATLAS')
 
     const body = {
@@ -181,7 +176,6 @@ class AtlasClient {
                   country_code: data.countryCode,
                   locality: data.city,
                   address_line1: data.streetAddress,
-                  // postal_code: data.postalCode,
                 }
               : undefined,
 
@@ -233,7 +227,7 @@ class AtlasClient {
     return mapResourceToCluster(response.data)
   }
 
-  async updateCluster(id: string, data: Partial<ClusterInput>): Promise<Cluster> {
+  async updateCluster(id: string, data: Partial<AtlasClusterInput>): Promise<AtlasCluster> {
     this.logger.info(`Updating cluster: ${id}`)
 
     const attributes: Record<string, unknown> = {}
@@ -524,7 +518,7 @@ class AtlasClient {
     }
   }
 
-  private buildRelationships(data: Partial<ClusterInput>): Record<string, unknown> {
+  private buildRelationships(data: Partial<AtlasClusterInput>): Record<string, unknown> {
     const relationships: Record<string, unknown> = {}
 
     // Organisation type (cluster_type) *

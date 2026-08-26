@@ -1,4 +1,5 @@
 import { uuid, varchar, text, timestamp, jsonb, boolean, index, uniqueIndex, pgTable } from 'drizzle-orm/pg-core'
+import { SYNC_CODES, SYNC_STATUSES, ENTITY_STATUSES } from '@/config/constants.js'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -40,9 +41,9 @@ export const entities = pgTable(
     entityDepartment: varchar('entity_department', { length: 400 }), // field_entity_department
 
     // Status and workflow
-    status: varchar('status', { length: 50 }).default('draft'), // draft, ready_for_publication, published, rejected
-    moderationState: varchar('moderation_state', { length: 50 }).default('draft'), // ATLAS moderation_state
-    syncStatus: varchar('sync_status', { length: 50 }).default('local'),
+    status: varchar('status', { enum: ENTITY_STATUSES }).default('draft').notNull(), // draft, ready_for_publication, published, rejected
+    syncStatus: varchar('sync_status', { enum: SYNC_STATUSES }).default('pending_push').notNull(),
+    syncCode: varchar('sync_code', { enum: SYNC_CODES }),
 
     // Address (structured) - mandatory fields
     countryCode: varchar('country_code', { length: 2 }), // field_address.country_code *
@@ -98,8 +99,8 @@ export const entities = pgTable(
   (table) => [
     index('entity_atlas_id_idx').on(table.atlasId),
     index('entity_status_idx').on(table.status),
-    index('entity_moderation_state_idx').on(table.moderationState),
     index('entity_sync_status_idx').on(table.syncStatus),
+    index('entity_sync_sync_code_idx').on(table.syncCode),
     index('entity_country_code_idx').on(table.countryCode),
   ],
 )

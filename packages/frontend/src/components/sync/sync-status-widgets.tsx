@@ -2,10 +2,10 @@
 
 import useSWR from 'swr'
 import type { SyncRecap } from '@/types'
-import { type FullCardProps, FullCard } from '@/components/ui/full-card'
 import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
 import { Message } from '@/components/ui/message'
 import { ArrowUpCircle, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
+import { type FullCardProps, FullCard } from '@/components/ui/full-card'
 
 export const SyncStatusWidgets = () => {
   const { data, error, isLoading } = useSWR<{
@@ -23,49 +23,28 @@ export const SyncStatusWidgets = () => {
       variant: 'info',
       title: 'Total Entities',
       Icon: ArrowUpCircle,
-      children: (
-        <>
-          <div className='text-2xl font-bold'>{status.total}</div>
-          <p className='text-xs text-muted-foreground'>All entities in system</p>
-        </>
-      ),
+      value: status.total,
     },
     {
       variant: 'success',
       title: 'Synced',
       Icon: CheckCircle2,
-      children: (
-        <>
-          <div className='text-2xl font-bold text-green-600'>{status.synced}</div>
-          <p className='text-xs text-muted-foreground'>
-            {status.total > 0 ? Math.round((status.synced / status.total) * 100) : 0}% of total
-          </p>
-        </>
-      ),
+      value: status.sync.synced,
+      description: status.total > 0 ? `${Math.round((status.sync.synced / status.total) * 100)}% of total` : '',
     },
     {
       variant: 'warning',
       title: 'Pending',
       Icon: Clock,
-      children: (
-        <>
-          <div className='text-2xl font-bold text-yellow-600'>{status.local}</div>
-          <p className='text-xs text-muted-foreground'>Local only, not synced</p>
-        </>
-      ),
+      value: status.sync.pending_push,
+      description: status.total > 0 ? `${Math.round((status.sync.pending_push / status.total) * 100)}% of total` : '',
     },
     {
       variant: 'danger',
-      title: 'Issues',
+      title: 'Failed',
       Icon: AlertCircle,
-      children: (
-        <>
-          <div className='text-2xl font-bold text-red-600'>{status.conflict + status.failed}</div>
-          <p className='text-xs text-muted-foreground'>
-            {status.conflict} conflicts, {status.failed} failed
-          </p>
-        </>
-      ),
+      value: status.sync.failed,
+      description: status.total > 0 ? `${Math.round((status.sync.failed / status.total) * 100)}% of total` : '',
     },
   ]
 

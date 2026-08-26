@@ -87,7 +87,7 @@ export const entityToForm = (entity: Entity): Partial<EntityFormData> => {
     goalsToContribute: entity.goalsToContribute || undefined,
     countryId: entity.countryId || undefined,
     clusterTypeId: entity.clusterTypeId || undefined,
-    moderationState: entity.moderationState || undefined,
+    status: entity.status || undefined,
     thematicAreaIds: entity.thematicAreas?.map((t) => t.id) || [],
     sectorIds: entity.sectors?.map((t) => t.id) || [],
     technologyIds: entity.technologies?.map((t) => t.id) || [],

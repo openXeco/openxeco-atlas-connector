@@ -5,9 +5,10 @@
  * This file provides the hardcoded mapping from sub-domain ATLAS UUIDs to their parent domain UUIDs,
  * derived from the parent domain descriptions which explicitly list their sub-domains.
  *
- * Structure: 15 parent domains, 150 sub-domains
  * Source: ATLAS API taxonomy_term/cluster_thematic_area descriptions
  */
+
+import type { AtlasClusterInput, AtlasFieldComparable } from '@/actions/atlas/types.js'
 
 /**
  * Maps sub-domain ATLAS UUID → parent domain ATLAS UUID.
@@ -193,7 +194,7 @@ export const KNOWLEDGE_DOMAIN_HIERARCHY: Record<string, string> = {
   'fb1a5487-59bf-4057-9b60-f6f7fd98c791': '888a384b-cdb6-4964-81dd-11b785ac0aa4', // Trust in securing digital as well as physical assets
   '44b06ae5-118c-4862-a5f3-b61015d0ab8f': '888a384b-cdb6-4964-81dd-11b785ac0aa4', // Trust management architectures, mechanisms and policies
   '81ca6640-56ff-4b17-a62a-ff688b90d567': '888a384b-cdb6-4964-81dd-11b785ac0aa4', // Trusted computing
-}
+} as const
 
 /** Set of parent domain ATLAS UUIDs (the 15 top-level knowledge domains) */
 export const KNOWLEDGE_DOMAIN_PARENT_IDS = new Set([
@@ -212,4 +213,47 @@ export const KNOWLEDGE_DOMAIN_PARENT_IDS = new Set([
   '15ac16f3-68b6-450f-b593-aede52fd155b', // Steganography, Steganalysis and Watermarking
   'f4ececb0-f699-4402-b9ba-6d55793ddd2b', // Theoretical Foundations
   '888a384b-cdb6-4964-81dd-11b785ac0aa4', // Trust Management and Accountability
+])
+
+export const atlasFieldsComparable = [
+  'name',
+  'nameNational',
+  'entityDepartment',
+  'countryCode',
+  'city',
+  'streetAddress',
+  'email',
+  'phone',
+  'website',
+  'registrationNumber',
+  'isHeadquarter',
+  'headquarterInfo',
+  'hasSubsidiaries',
+  'subsidiariesDetails',
+  'hasMajorityShares',
+  'majoritySharesDetails',
+  'article138Compliance',
+  'dataShareConsent',
+  'contactFirstName',
+  'contactLastName',
+  'contactEmail',
+  'contactPosition',
+  'contactPhone',
+  'expertiseDescription',
+  'goalsToAchieve',
+  'goalsToContribute',
+  'clusterTypeId',
+  'thematicAreaIds',
+  'sectorIds',
+  'technologyIds',
+  'useCaseIds',
+  'fieldsOfActivityIds',
+] as const satisfies readonly (keyof AtlasClusterInput)[]
+
+export const atlasClusterTaxonomies = new Set<AtlasFieldComparable>([
+  'thematicAreaIds',
+  'sectorIds',
+  'technologyIds',
+  'useCaseIds',
+  'fieldsOfActivityIds',
 ])

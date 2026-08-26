@@ -1,15 +1,19 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { eq, desc, and, gte, lte, count } from 'drizzle-orm'
+import { eq, desc, and, gte, lte } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import { syncLogs, entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { entitySyncService } from '../services/sync/entity-sync.js'
-import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
-import { listQuerySchema } from '@/actions/entities/common.js'
-import { getEntities } from '@/actions/entities/list.js'
+import { sendErrorReply, handleRouteError, getErrorReply } from '@/utils/reply-helpers.js'
+import { taxonomyTypeSchema } from '@/config/constants.js'
+import { atlasActions } from '@/actions/atlas/index.js'
 
-const idParamSchema = z.object({ id: z.string().uuid() })
+export const idParamSchema = z.object({ id: z.string().uuid() })
+
+const selectCorrespondenceSchema = z.object({
+  atlasId: z.string().min(1),
+})
 
 const resolveConflictSchema = z.object({
   resolution: z.enum(['local', 'remote']),
@@ -31,29 +35,127 @@ const syncLogsQuerySchema = z.object({
 })
 
 export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
+  const actions = atlasActions(db, fastify.log)
+
+  // New endpoints
+  fastify.post('/taxonomies/:type', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { type } = request.params as { type: string }
+
+      const validatedType = taxonomyTypeSchema.parse(type)
+
+      const result = await actions.syncTaxonomiesByType(validatedType)
+
+      return reply.send({
+        message: `Synced ${result.data} terms for taxonomy type: ${type}`,
+        count: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
+  fastify.post('/taxonomies', { preHandler: authenticate }, async (_request, reply) => {
+    try {
+      const result = await actions.syncTaxonomies()
+
+      return reply.send({
+        message: 'Taxonomy sync completed',
+        data: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
   fastify.post('/entities/:id/push', { preHandler: authenticate }, async (request, reply) => {
     try {
       const { id } = idParamSchema.parse(request.params)
-      const userId = request.currentUser?.userId
-
-      const result = await entitySyncService.pushEntity(id, userId)
-
-      if (!result.success) {
-        return sendErrorReply({
-          reply,
-          type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
-          message: result.message,
-        })
-      }
-
-      return reply.send({
-        data: result,
-        message: result.message,
-      })
+      await actions.pushEntity(id)
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
+
+  fastify.post('/entities/:id/correspondences', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { id } = idParamSchema.parse(request.params)
+      const { atlasId } = selectCorrespondenceSchema.parse(request.body)
+      const result = await actions.selectCorrespondence(id, atlasId)
+
+      return reply.send({
+        data: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
+  fastify.post('/entities/:id/correspondences/create', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { id } = idParamSchema.parse(request.params)
+      const result = await actions.forceCreateEntity(id)
+
+      return reply.send({
+        data: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
+  fastify.post('/entities/:id/force-push', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { id } = idParamSchema.parse(request.params)
+      const result = await actions.forcePushEntity(id)
+
+      return reply.send({
+        data: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
+  fastify.post('/entities/:id/force-pull', { preHandler: authenticate }, async (request, reply) => {
+    try {
+      const { id } = idParamSchema.parse(request.params)
+      const result = await actions.forcePullEntity(id)
+
+      return reply.send({
+        data: result.data,
+      })
+    } catch (error) {
+      return handleRouteError(error, reply, fastify.log)
+    }
+  })
+
+  // Old endpoints
+  // fastify.post('/entities/:id/push', { preHandler: authenticate }, async (request, reply) => {
+  //   try {
+  //     const { id } = idParamSchema.parse(request.params)
+  //     const userId = request.currentUser?.userId
+  //
+  //     const result = await entitySyncService.pushEntity(id, userId)
+  //
+  //     if (!result.success) {
+  //       return sendErrorReply(
+  //         getErrorReply({
+  //           type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
+  //           message: result.message,
+  //         }),
+  //         reply,
+  //       )
+  //     }
+  //
+  //     return reply.send({
+  //       data: result,
+  //       message: result.message,
+  //     })
+  //   } catch (error) {
+  //     return handleRouteError(error, reply, fastify.log)
+  //   }
+  // })
 
   fastify.post('/entities/:id/pull', { preHandler: authenticate }, async (request, reply) => {
     try {
@@ -62,17 +164,22 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const [entity] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
 
       if (!entity?.atlasId) {
-        return sendErrorReply({ reply, type: 'notFound', message: 'Entity not found or not synced to ATLAS' })
+        return sendErrorReply(
+          getErrorReply({ type: 'notFound', message: 'Entity not found or not synced to ATLAS' }),
+          reply,
+        )
       }
 
       const result = await entitySyncService.pullEntity(entity.atlasId)
 
       if (!result.success) {
-        return sendErrorReply({
+        return sendErrorReply(
+          getErrorReply({
+            type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
+            message: result.message,
+          }),
           reply,
-          type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
-          message: result.message,
-        })
+        )
       }
 
       return reply.send({
@@ -80,7 +187,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -98,7 +205,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -112,7 +219,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         data: conflict,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -125,7 +232,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const result = await entitySyncService.resolveConflict(id, body.resolution, userId)
 
       if (!result.success) {
-        return sendErrorReply({ reply, type: 'unexpected', message: result.message })
+        return sendErrorReply(getErrorReply({ type: 'unexpected', message: result.message }), reply)
       }
 
       return reply.send({
@@ -133,7 +240,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: result.message,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -143,11 +250,13 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const userId = request.currentUser?.userId
 
       if (!body.entityIds || body.entityIds.length === 0) {
-        return sendErrorReply({
+        return sendErrorReply(
+          getErrorReply({
+            type: 'badRequest',
+            message: 'entityIds array is required and must not be empty',
+          }),
           reply,
-          type: 'badRequest',
-          message: 'entityIds array is required and must not be empty',
-        })
+        )
       }
 
       const result = await entitySyncService.pushBatch(body.entityIds, userId)
@@ -157,7 +266,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Batch push completed: ${result.success} succeeded, ${result.failed} failed`,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -166,11 +275,13 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
       const body = batchSyncSchema.parse(request.body)
 
       if (!body.atlasIds || body.atlasIds.length === 0) {
-        return sendErrorReply({
+        return sendErrorReply(
+          getErrorReply({
+            type: 'badRequest',
+            message: 'atlasIds array is required and must not be empty',
+          }),
           reply,
-          type: 'badRequest',
-          message: 'atlasIds array is required and must not be empty',
-        })
+        )
       }
 
       const result = await entitySyncService.pullBatch(body.atlasIds)
@@ -180,54 +291,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         message: `Batch pull completed: ${result.success} succeeded, ${result.failed} failed`,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
-
-  fastify.get('/status', { preHandler: authenticate }, async (_request, reply) => {
-    try {
-      const rows = await db
-        .select({
-          syncStatus: entities.syncStatus,
-          count: count(),
-        })
-        .from(entities)
-        .groupBy(entities.syncStatus)
-
-      const counts: Record<string, number> = {}
-      let total = 0
-      for (const row of rows) {
-        counts[row.syncStatus || 'local'] = row.count
-        total += row.count
-      }
-
-      const local = counts.local || 0
-      const conflict = counts.conflict || 0
-
-      return reply.send({
-        data: {
-          total,
-          local,
-          synced: counts.synced || 0,
-          conflict,
-          failed: counts.failed || 0,
-          pendingPush: local + conflict,
-        },
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
-
-  fastify.get('/entities', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const { page, limit, status, syncStatus } = listQuerySchema.parse(request.query)
-
-      const response = await getEntities({ page, limit, status, syncStatus, fetchRemote: true })
-
-      return reply.send(response)
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -272,7 +336,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         },
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 
@@ -288,7 +352,7 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         deleted,
       })
     } catch (error) {
-      return handleRouteError(error, reply, fastify)
+      return handleRouteError(error, reply, fastify.log)
     }
   })
 }

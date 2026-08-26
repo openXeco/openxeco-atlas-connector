@@ -2,26 +2,34 @@
 
 import { User, LogOut } from 'lucide-react'
 import useSWR from 'swr'
-import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
-import { redirect } from 'next/navigation'
+import { apiFetcher } from '@/lib/swr'
+import { useRouter } from 'next/navigation'
 import type { User as TUser } from '@/types'
 import { logout } from '@/app/actions/auth'
 import { useActionState, useEffect } from 'react'
+import { logger } from '@/lib/logger'
 
 export function Header() {
-  const { data, error, isLoading } = useSWR<{ data: TUser }>('/api/auth/me', apiFetcher, {
-    ...swrDefaultOptions,
-  })
+  const router = useRouter()
+  const { data, error, isLoading, mutate } = useSWR<{ data: TUser }>('/api/auth/me', apiFetcher)
+
   const [state, formAction] = useActionState(logout, undefined)
 
   useEffect(() => {
-    if (state?.success === true) {
-      redirect('/login')
+    if (!state?.success) {
+      return
     }
-  }, [state])
+
+    mutate(data, { revalidate: false }).then(() => {
+      router.replace('/')
+      router.refresh()
+    })
+  }, [state, mutate, router, data])
 
   if (error) {
-    redirect('/login')
+    logger.error(error)
+    router.replace('/login')
+    router.refresh()
   }
 
   const user = data?.data

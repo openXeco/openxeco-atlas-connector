@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 
-export async function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
   logger.debug('Entering the proxy', request.nextUrl.pathname)
   const hasSession = request.cookies.has(process.env.FRONTEND_SESSION_COOKIE_NAME || 'atlas-session')
 
@@ -21,5 +21,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|favicon|_next/static|.well-known|_next/image|.*\\.png$).*)'],
+  matcher: [
+    '/((?!api(?:/|$)|_next/static(?:/|$)|_next/image(?:/|$)|\\.well-known(?:/|$)|favicon\\.ico$|sitemap\\.xml$|robots\\.txt$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)',
+  ],
 }
