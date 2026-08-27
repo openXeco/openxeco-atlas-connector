@@ -5,9 +5,10 @@ import { replaceLocalEntityFromAtlas } from '@/actions/atlas/internal/replace-lo
 import { getClusterByID } from '@/actions/atlas/utils/atlas-clusters.js'
 import { AtlasApiError } from '@/actions/atlas/utils/atlas-api-error.js'
 import { getEntity } from '@/actions/entities/get-entity.js'
-import { markEntityAsFailedSync, markEntityAsNotFound } from '@/actions/entities/common.js'
 import { makeAtlasClient, makeDb, makeLogger } from '@/actions/atlas/test-support/fakes.js'
 import { makeAtlasCluster, makeEntity } from '@/actions/atlas/test-support/fixtures.js'
+import { finalizeEntitySyncFailure, finalizeEntitySyncSuccess } from '@/actions/atlas/internal/finalize-entity-sync.js'
+import type { DB } from '@/types.js'
 
 vi.mock('@/actions/atlas/internal/replace-local-entity-from-atlas.js', () => ({
   replaceLocalEntityFromAtlas: vi.fn(),
@@ -21,19 +22,21 @@ vi.mock('@/actions/entities/get-entity.js', () => ({
   getEntity: vi.fn(),
 }))
 
-vi.mock('@/actions/entities/common.js', () => ({
-  markEntityAsFailedSync: vi.fn(),
-  markEntityAsNotFound: vi.fn(),
+vi.mock('@/actions/atlas/internal/finalize-entity-sync.js', () => ({
+  finalizeEntitySyncFailure: vi.fn(),
+  finalizeEntitySyncSuccess: vi.fn(),
 }))
 
 const getClusterByIDMock = vi.mocked(getClusterByID)
 const getEntityMock = vi.mocked(getEntity)
-const markEntityAsFailedSyncMock = vi.mocked(markEntityAsFailedSync)
-const markEntityAsNotFoundMock = vi.mocked(markEntityAsNotFound)
+const finalizeEntitySyncFailureMock = vi.mocked(finalizeEntitySyncFailure)
+const finalizeEntitySyncSuccessMock = vi.mocked(finalizeEntitySyncSuccess)
 const replaceLocalEntityFromAtlasMock = vi.mocked(replaceLocalEntityFromAtlas)
 
 const atlasClient = makeAtlasClient().client
-const db = makeDb()
+const tx = makeDb()
+const transaction = vi.fn(async (callback: (transactionDb: DB) => unknown) => callback(tx))
+const db = { transaction } as unknown as DB
 const logger = makeLogger().logger
 
 const callForcePullEntity = (id = 'entity-1') => forcePullEntity({ id, db, logger, dependencies: { atlasClient } })
@@ -64,7 +67,8 @@ describe('forcePullEntity', () => {
       },
     })
 
-    expect(replaceLocalEntityFromAtlasMock).toHaveBeenCalledWith('entity-1', remote, db)
+    expect(replaceLocalEntityFromAtlasMock).toHaveBeenCalledWith('entity-1', remote, tx)
+    expect(finalizeEntitySyncSuccessMock).toHaveBeenCalledWith('force-pull', 'entity-1', 'atlas-1', db, logger)
   })
 
   it('returns not linked when the entity has no atlas id', async () => {
@@ -74,8 +78,9 @@ describe('forcePullEntity', () => {
     })
 
     await expect(callForcePullEntity()).resolves.toEqual({
-      success: true,
-      data: { code: 'not_linked', entityId: 'entity-1' },
+      success: false,
+      code: 'validation',
+      message: 'The entity entity-1 is not linked with any ATLAS counterpart.',
     })
 
     expect(getClusterByIDMock).not.toHaveBeenCalled()
@@ -88,8 +93,9 @@ describe('forcePullEntity', () => {
     })
 
     await expect(callForcePullEntity()).resolves.toEqual({
-      success: true,
-      data: { code: 'no_conflict', entityId: 'entity-1' },
+      success: false,
+      code: 'validation',
+      message: 'The entity entity-1 has not conflicts to resolve.',
     })
 
     expect(getClusterByIDMock).not.toHaveBeenCalled()
@@ -99,16 +105,19 @@ describe('forcePullEntity', () => {
     getClusterByIDMock.mockRejectedValue(new AtlasApiError('Not found', 404))
 
     await expect(callForcePullEntity()).resolves.toEqual({
-      success: true,
-      data: {
-        code: 'remote_not_found',
-        entityId: 'entity-1',
-        atlasId: 'atlas-1',
-      },
+      success: false,
+      code: 'notFound',
+      message: 'Remote entity atlas-1 not found.',
     })
 
-    expect(markEntityAsNotFoundMock).toHaveBeenCalledOnce()
-    expect(markEntityAsNotFoundMock.mock.calls[0]?.[0]).toBe('entity-1')
+    expect(finalizeEntitySyncFailureMock).toHaveBeenCalledWith(
+      'force-pull',
+      'not_found',
+      'entity-1',
+      'atlas-1',
+      db,
+      logger,
+    )
     expect(replaceLocalEntityFromAtlasMock).not.toHaveBeenCalled()
   })
 
@@ -123,7 +132,13 @@ describe('forcePullEntity', () => {
       error,
     })
 
-    expect(markEntityAsFailedSyncMock).toHaveBeenCalledOnce()
-    expect(markEntityAsFailedSyncMock.mock.calls[0]?.[0]).toBe('entity-1')
+    expect(finalizeEntitySyncFailureMock).toHaveBeenCalledWith(
+      'force-pull',
+      'failed',
+      'entity-1',
+      'atlas-1',
+      db,
+      logger,
+    )
   })
 })

@@ -99,12 +99,7 @@ export const markEntityAsSynced = async (id: string, atlasId: string, db: DB, lo
     .where(eq(entities.id, id))
 }
 
-export const markEntityAsConflict = async (
-  id: string,
-  db: DB,
-  logger: Logger,
-  _conflictFields: string[],
-): Promise<void> => {
+export const markEntityAsConflict = async (id: string, db: DB, logger: Logger): Promise<void> => {
   logger.info(`Mark entity ${id} as conflict`)
   await db
     .update(entities)
@@ -114,8 +109,6 @@ export const markEntityAsConflict = async (
       updatedAt: new Date(),
     })
     .where(eq(entities.id, id))
-
-  //@TODO Save conflict fields
 }
 
 export const markEntityAsFailedSync = async (id: string, db: DB, logger: Logger): Promise<void> => {

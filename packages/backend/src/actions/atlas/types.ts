@@ -183,17 +183,6 @@ export type PushEntityResult =
       entityId: string
       candidates: AtlasCluster[]
     }
-  | {
-      code: 'conflict'
-      entityId: string
-      atlasId: string
-      conflictFields: string[]
-    }
-  | {
-      code: 'atlas_error'
-      entityId: string
-      message: string
-    }
 
 export type UpdateAtlasEntityResult =
   | {
@@ -211,57 +200,24 @@ export type UpdateAtlasEntityResult =
       atlasId: string
     }
 
-export type SelectCorrespondenceResult =
-  | {
-      code: 'synced'
-      entityId: string
-      atlasId: string
-    }
-  | {
-      code: 'conflict'
-      entityId: string
-      atlasId: string
-      conflictFields: string[]
-    }
-  | {
-      code: 'candidate_not_found'
-      entityId: string
-      atlasId: string
-    }
-  | {
-      code: 'already_linked'
-      entityId: string
-      atlasId: string
-    }
+export type SelectCorrespondenceResult = {
+  code: 'selected'
+  entityId: string
+  atlasId: string
+}
 
-export type ForceCreateEntityResult =
-  | {
-      code: 'synced'
-      operation: 'created'
-      entityId: string
-      atlasId: string
-    }
-  | {
-      code: 'already_linked'
-      entityId: string
-      atlasId: string
-    }
+export type ForceCreateEntityResult = {
+  code: 'synced'
+  operation: 'created'
+  entityId: string
+  atlasId: string
+}
 
-export type ForceSyncEntityResult =
-  | {
-      code: 'synced'
-      entityId: string
-      atlasId: string
-    }
-  | {
-      code: 'not_linked' | 'no_conflict'
-      entityId: string
-    }
-  | {
-      code: 'remote_not_found'
-      entityId: string
-      atlasId: string
-    }
+export type ForceSyncEntityResult = {
+  code: 'synced'
+  entityId: string
+  atlasId: string
+}
 
 export type ForcePushEntityResult = ForceSyncEntityResult
 export type ForcePullEntityResult = ForceSyncEntityResult

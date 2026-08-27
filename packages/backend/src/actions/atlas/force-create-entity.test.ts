@@ -6,15 +6,11 @@ import { getClusterByID } from '@/actions/atlas/utils/atlas-clusters.js'
 import { AtlasApiError } from '@/actions/atlas/utils/atlas-api-error.js'
 import { toClusterInputFromEntity } from '@/actions/atlas/utils/transformers.js'
 import { getEntity } from '@/actions/entities/get-entity.js'
-import {
-  canEntityBePushed,
-  markEntityAsFailedSync,
-  markEntityAsPendingPush,
-  markEntityAsSynced,
-} from '@/actions/entities/common.js'
+import { canEntityBePushed, markEntityAsPendingPush } from '@/actions/entities/common.js'
+import { createSyncLog } from '@/actions/atlas/internal/create-sync-log.js'
+import { finalizeEntitySyncFailure, finalizeEntitySyncSuccess } from '@/actions/atlas/internal/finalize-entity-sync.js'
 import { makeAtlasClient, makeDb, makeLogger } from '@/actions/atlas/test-support/fakes.js'
 import { makeAtlasCluster, makeAtlasInput, makeEntity } from '@/actions/atlas/test-support/fixtures.js'
-import type { DB } from '@/types.js'
 
 vi.mock('@/actions/atlas/internal/create-remote-entity.js', () => ({
   createRemoteEntity: vi.fn(),
@@ -34,24 +30,30 @@ vi.mock('@/actions/entities/get-entity.js', () => ({
 
 vi.mock('@/actions/entities/common.js', () => ({
   canEntityBePushed: vi.fn(),
-  markEntityAsFailedSync: vi.fn(),
   markEntityAsPendingPush: vi.fn(),
-  markEntityAsSynced: vi.fn(),
+}))
+
+vi.mock('@/actions/atlas/internal/create-sync-log.js', () => ({
+  createSyncLog: vi.fn(),
+}))
+
+vi.mock('@/actions/atlas/internal/finalize-entity-sync.js', () => ({
+  finalizeEntitySyncFailure: vi.fn(),
+  finalizeEntitySyncSuccess: vi.fn(),
 }))
 
 const canEntityBePushedMock = vi.mocked(canEntityBePushed)
 const createRemoteEntityMock = vi.mocked(createRemoteEntity)
+const createSyncLogMock = vi.mocked(createSyncLog)
+const finalizeEntitySyncFailureMock = vi.mocked(finalizeEntitySyncFailure)
+const finalizeEntitySyncSuccessMock = vi.mocked(finalizeEntitySyncSuccess)
 const getClusterByIDMock = vi.mocked(getClusterByID)
 const getEntityMock = vi.mocked(getEntity)
-const markEntityAsFailedSyncMock = vi.mocked(markEntityAsFailedSync)
 const markEntityAsPendingPushMock = vi.mocked(markEntityAsPendingPush)
-const markEntityAsSyncedMock = vi.mocked(markEntityAsSynced)
 const toClusterInputFromEntityMock = vi.mocked(toClusterInputFromEntity)
 
 const atlasClient = makeAtlasClient().client
-const tx = makeDb()
-const transaction = vi.fn(async (callback: (transactionDb: DB) => unknown) => callback(tx))
-const db = { transaction } as unknown as DB
+const db = makeDb()
 const logger = makeLogger().logger
 const input = makeAtlasInput()
 
@@ -89,8 +91,7 @@ describe('forceCreateEntity', () => {
     expect(createRemoteEntityMock).toHaveBeenCalledWith({ input, atlasClient })
     expect(markEntityAsPendingPushMock).toHaveBeenCalledOnce()
     expect(markEntityAsPendingPushMock.mock.calls[0]?.[0]).toBe('entity-1')
-    expect(markEntityAsSyncedMock).toHaveBeenCalledOnce()
-    expect(markEntityAsSyncedMock.mock.calls[0]?.slice(0, 2)).toEqual(['entity-1', 'atlas-created'])
+    expect(finalizeEntitySyncSuccessMock).toHaveBeenCalledWith('force-create', 'entity-1', 'atlas-created', db, logger)
   })
 
   it('rejects a request without a local entity id', async () => {
@@ -145,14 +146,12 @@ describe('forceCreateEntity', () => {
     getClusterByIDMock.mockResolvedValue(makeAtlasCluster({ atlasId: 'atlas-existing' }))
 
     await expect(callForceCreateEntity()).resolves.toEqual({
-      success: true,
-      data: {
-        code: 'already_linked',
-        entityId: 'entity-1',
-        atlasId: 'atlas-existing',
-      },
+      success: false,
+      code: 'validation',
+      message: 'The entity entity-1 is already linked to atlas-existing.',
     })
 
+    expect(createSyncLogMock).toHaveBeenCalledOnce()
     expect(createRemoteEntityMock).not.toHaveBeenCalled()
     expect(markEntityAsPendingPushMock).not.toHaveBeenCalled()
   })
@@ -201,13 +200,18 @@ describe('forceCreateEntity', () => {
 
     await expect(callForceCreateEntity()).resolves.toEqual({
       success: false,
-      code: 'external',
-      message: 'Unable to create entity entity-1 in ATLAS.',
-      error,
+      code: 'unexpected',
+      message: 'Unavailable',
     })
 
-    expect(markEntityAsFailedSyncMock).toHaveBeenCalledOnce()
-    expect(markEntityAsFailedSyncMock.mock.calls[0]?.[0]).toBe('entity-1')
-    expect(markEntityAsSyncedMock).not.toHaveBeenCalled()
+    expect(finalizeEntitySyncFailureMock).toHaveBeenCalledWith(
+      'force-create',
+      'failed',
+      'entity-1',
+      undefined,
+      db,
+      logger,
+    )
+    expect(finalizeEntitySyncSuccessMock).not.toHaveBeenCalled()
   })
 })

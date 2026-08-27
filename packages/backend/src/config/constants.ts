@@ -71,5 +71,7 @@ export const TAXONOMY_TYPES = [
   'technologies',
   'use_cases',
 ] as const
-
 export const taxonomyTypeSchema = z.enum(TAXONOMY_TYPES)
+
+export const SYNC_LOG_OPERATIONS = ['create', 'update', 'force-create', 'force-push', 'force-pull', 'sync'] as const
+export const syncLogOperationSchema = z.enum(SYNC_LOG_OPERATIONS)

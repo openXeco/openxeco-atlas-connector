@@ -1,20 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { selectCorrespondence } from '@/actions/atlas/select-correspondence.js'
-import { updateRemoteEntity } from '@/actions/atlas/internal/update-remote-entity.js'
-import { toClusterInputFromEntity } from '@/actions/atlas/utils/transformers.js'
+import { getClusterByID } from '@/actions/atlas/utils/atlas-clusters.js'
+import { AtlasApiError } from '@/actions/atlas/utils/atlas-api-error.js'
 import { getEntity } from '@/actions/entities/get-entity.js'
-import { isAtlasIdLinkedToEntity, markEntityAsSynced } from '@/actions/entities/common.js'
+import { isAtlasIdLinkedToEntity } from '@/actions/entities/common.js'
 import { makeAtlasClient, makeLogger } from '@/actions/atlas/test-support/fakes.js'
-import { makeAtlasCluster, makeAtlasInput, makeEntity } from '@/actions/atlas/test-support/fixtures.js'
+import { makeAtlasCluster, makeEntity } from '@/actions/atlas/test-support/fixtures.js'
 import type { DB } from '@/types.js'
 
-vi.mock('@/actions/atlas/internal/update-remote-entity.js', () => ({
-  updateRemoteEntity: vi.fn(),
-}))
-
-vi.mock('@/actions/atlas/utils/transformers.js', () => ({
-  toClusterInputFromEntity: vi.fn(),
+vi.mock('@/actions/atlas/utils/atlas-clusters.js', () => ({
+  getClusterByID: vi.fn(),
 }))
 
 vi.mock('@/actions/entities/get-entity.js', () => ({
@@ -23,19 +19,14 @@ vi.mock('@/actions/entities/get-entity.js', () => ({
 
 vi.mock('@/actions/entities/common.js', () => ({
   isAtlasIdLinkedToEntity: vi.fn(),
-  markEntityAsSynced: vi.fn(),
 }))
 
+const getClusterByIDMock = vi.mocked(getClusterByID)
 const getEntityMock = vi.mocked(getEntity)
 const isAtlasIdLinkedToEntityMock = vi.mocked(isAtlasIdLinkedToEntity)
-const markEntityAsSyncedMock = vi.mocked(markEntityAsSynced)
-const toClusterInputFromEntityMock = vi.mocked(toClusterInputFromEntity)
-const updateRemoteEntityMock = vi.mocked(updateRemoteEntity)
 
 const atlasClient = makeAtlasClient().client
 const logger = makeLogger().logger
-const entity = makeEntity({ atlasId: 'atlas-missing' })
-const input = makeAtlasInput()
 const where = vi.fn().mockResolvedValue(undefined)
 const set = vi.fn(() => ({ where }))
 const update = vi.fn(() => ({ set }))
@@ -53,9 +44,12 @@ const callSelectCorrespondence = (id: string | undefined = 'entity-1') =>
 describe('selectCorrespondence', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getEntityMock.mockResolvedValue({ success: true, data: entity })
+    getEntityMock.mockResolvedValue({
+      success: true,
+      data: makeEntity({ atlasId: 'atlas-missing' }),
+    })
     isAtlasIdLinkedToEntityMock.mockResolvedValue(false)
-    toClusterInputFromEntityMock.mockReturnValue(input)
+    getClusterByIDMock.mockResolvedValue(makeAtlasCluster({ atlasId: 'atlas-candidate' }))
   })
 
   it('rejects a request without a local entity id', async () => {
@@ -88,101 +82,75 @@ describe('selectCorrespondence', () => {
       message: 'Entity with id entity-1 was not found.',
     })
 
-    expect(updateRemoteEntityMock).not.toHaveBeenCalled()
+    expect(getClusterByIDMock).not.toHaveBeenCalled()
+    expect(update).not.toHaveBeenCalled()
   })
 
-  it('does not select a candidate already linked to a local entity', async () => {
+  it('rejects a candidate already linked to a local entity', async () => {
     isAtlasIdLinkedToEntityMock.mockResolvedValue(true)
 
     await expect(callSelectCorrespondence()).resolves.toEqual({
-      success: true,
-      data: {
-        code: 'already_linked',
-        entityId: 'entity-1',
-        atlasId: 'atlas-candidate',
-      },
+      success: false,
+      code: 'validation',
+      message: 'Entity with atlasId atlas-candidate was already linked.',
     })
 
-    expect(updateRemoteEntityMock).not.toHaveBeenCalled()
-    expect(markEntityAsSyncedMock).not.toHaveBeenCalled()
+    expect(getClusterByIDMock).not.toHaveBeenCalled()
+    expect(update).not.toHaveBeenCalled()
   })
 
-  it('reports a candidate that disappeared before selection without changing the link', async () => {
-    updateRemoteEntityMock.mockResolvedValue({
-      code: 'not_found',
-      atlasId: 'atlas-candidate',
-    })
+  it('rejects a candidate that disappeared before selection', async () => {
+    getClusterByIDMock.mockRejectedValue(new AtlasApiError('Not found', 404))
 
     await expect(callSelectCorrespondence()).resolves.toEqual({
-      success: true,
-      data: {
-        code: 'candidate_not_found',
-        entityId: 'entity-1',
-        atlasId: 'atlas-candidate',
-      },
+      success: false,
+      code: 'notFound',
+      message: 'Remote entity atlas-candidate not found.',
     })
 
     expect(update).not.toHaveBeenCalled()
-    expect(markEntityAsSyncedMock).not.toHaveBeenCalled()
   })
 
-  it('links the selected candidate and records conflicting fields without updating ATLAS', async () => {
-    const conflictFields = ['name', 'website']
-    updateRemoteEntityMock.mockResolvedValue({
-      code: 'conflict',
-      atlasId: 'atlas-candidate',
-      conflictFields,
-      remote: makeAtlasCluster({ atlasId: 'atlas-candidate' }),
+  it('does not link a candidate when ATLAS verification fails', async () => {
+    getClusterByIDMock.mockRejectedValue(new AtlasApiError('Unavailable', 503))
+
+    await expect(callSelectCorrespondence()).resolves.toEqual({
+      success: false,
+      code: 'external',
+      message: 'Error occurred. Unavailable',
     })
 
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  it('links the selected candidate and leaves it pending for the next push', async () => {
     await expect(callSelectCorrespondence()).resolves.toEqual({
       success: true,
       data: {
-        code: 'conflict',
+        code: 'selected',
         entityId: 'entity-1',
         atlasId: 'atlas-candidate',
-        conflictFields,
       },
     })
 
+    expect(getClusterByIDMock).toHaveBeenCalledWith('atlas-candidate', atlasClient)
     expect(set).toHaveBeenCalledWith({
       atlasId: 'atlas-candidate',
-      lastSyncedAt: null,
-      syncStatus: 'failed',
-      syncCode: 'conflict',
+      syncStatus: 'pending_push',
+      syncCode: null,
       updatedAt: expect.any(Date),
-    })
-    expect(markEntityAsSyncedMock).not.toHaveBeenCalled()
-  })
-
-  it('uses a fresh synchronization baseline for the selected candidate', async () => {
-    const cluster = makeAtlasCluster({ atlasId: 'atlas-candidate' })
-    updateRemoteEntityMock.mockResolvedValue({ code: 'updated', cluster })
-
-    await callSelectCorrespondence()
-
-    expect(updateRemoteEntityMock).toHaveBeenCalledWith({
-      atlasId: 'atlas-candidate',
-      input,
       lastSyncedAt: null,
-      atlasClient,
     })
   })
 
-  it('marks the local entity as synced after successfully reconciling the candidate', async () => {
-    const cluster = makeAtlasCluster({ atlasId: 'atlas-candidate' })
-    updateRemoteEntityMock.mockResolvedValue({ code: 'updated', cluster })
+  it('returns an unexpected failure when the local link cannot be saved', async () => {
+    const error = new Error('Database unavailable')
+    where.mockRejectedValueOnce(error)
 
     await expect(callSelectCorrespondence()).resolves.toEqual({
-      success: true,
-      data: {
-        code: 'synced',
-        entityId: 'entity-1',
-        atlasId: 'atlas-candidate',
-      },
+      success: false,
+      code: 'unexpected',
+      message: 'Unexpected error when selecting correspondence. Database unavailable',
     })
-
-    expect(markEntityAsSyncedMock).toHaveBeenCalledOnce()
-    expect(markEntityAsSyncedMock.mock.calls[0]?.slice(0, 2)).toEqual(['entity-1', 'atlas-candidate'])
   })
 })

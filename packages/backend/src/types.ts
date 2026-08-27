@@ -2,7 +2,14 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { relations } from '@/db/relations.js'
 import type pino from 'pino'
 import type { ZodError, z } from 'zod'
-import type { SYNC_CODES, SYNC_STATUSES, ENTITY_STATUSES, replies, TAXONOMY_TYPES } from '@/config/constants.js'
+import type {
+  SYNC_CODES,
+  SYNC_STATUSES,
+  ENTITY_STATUSES,
+  replies,
+  TAXONOMY_TYPES,
+  SYNC_LOG_OPERATIONS,
+} from '@/config/constants.js'
 import type { FastifyBaseLogger } from 'fastify'
 import type { envSchema } from '@/config/schema.js'
 
@@ -121,3 +128,4 @@ export type EntityStatus = (typeof ENTITY_STATUSES)[number]
 export type SyncStatus = (typeof SYNC_STATUSES)[number]
 export type SyncCode = (typeof SYNC_CODES)[number]
 export type TaxonomyType = (typeof TAXONOMY_TYPES)[number]
+export type SyncLogOperation = (typeof SYNC_LOG_OPERATIONS)[number]

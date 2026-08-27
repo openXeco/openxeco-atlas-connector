@@ -4,7 +4,7 @@ import type { Entity } from '@/types'
 import { ENTITY_STATUS_DEFINITIONS, SYNC_STATUS_DEFINITIONS } from '@/lib/constants'
 
 export const SyncEntity = ({ entity }: { entity: Entity }) => {
-  const definition = ENTITY_STATUS_DEFINITIONS[entity.status]
+  const _definition = ENTITY_STATUS_DEFINITIONS[entity.status]
   const syncDefinition = SYNC_STATUS_DEFINITIONS[entity.syncStatus]
 
   return (

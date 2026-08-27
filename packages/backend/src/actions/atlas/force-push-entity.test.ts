@@ -4,15 +4,9 @@ import { forcePushEntity } from '@/actions/atlas/force-push-entity.js'
 import { updateRemoteEntity } from '@/actions/atlas/internal/update-remote-entity.js'
 import { toClusterInputFromEntity } from '@/actions/atlas/utils/transformers.js'
 import { getEntity } from '@/actions/entities/get-entity.js'
-import {
-  markEntityAsFailedSync,
-  markEntityAsNotFound,
-  markEntityAsPendingPush,
-  markEntityAsSynced,
-} from '@/actions/entities/common.js'
+import { finalizeEntitySyncFailure, finalizeEntitySyncSuccess } from '@/actions/atlas/internal/finalize-entity-sync.js'
 import { makeAtlasClient, makeDb, makeLogger } from '@/actions/atlas/test-support/fakes.js'
 import { makeAtlasCluster, makeAtlasInput, makeEntity } from '@/actions/atlas/test-support/fixtures.js'
-import type { DB } from '@/types.js'
 
 vi.mock('@/actions/atlas/internal/update-remote-entity.js', () => ({
   updateRemoteEntity: vi.fn(),
@@ -26,26 +20,21 @@ vi.mock('@/actions/entities/get-entity.js', () => ({
   getEntity: vi.fn(),
 }))
 
-vi.mock('@/actions/entities/common.js', () => ({
-  markEntityAsFailedSync: vi.fn(),
-  markEntityAsNotFound: vi.fn(),
-  markEntityAsPendingPush: vi.fn(),
-  markEntityAsSynced: vi.fn(),
+vi.mock('@/actions/atlas/internal/finalize-entity-sync.js', () => ({
+  finalizeEntitySyncFailure: vi.fn(),
+  finalizeEntitySyncConflict: vi.fn(),
+  finalizeEntitySyncSuccess: vi.fn(),
 }))
 
 const getEntityMock = vi.mocked(getEntity)
-const markEntityAsFailedSyncMock = vi.mocked(markEntityAsFailedSync)
-const markEntityAsNotFoundMock = vi.mocked(markEntityAsNotFound)
-const markEntityAsPendingPushMock = vi.mocked(markEntityAsPendingPush)
-const markEntityAsSyncedMock = vi.mocked(markEntityAsSynced)
+const finalizeEntitySyncFailureMock = vi.mocked(finalizeEntitySyncFailure)
+const finalizeEntitySyncSuccessMock = vi.mocked(finalizeEntitySyncSuccess)
 const toClusterInputFromEntityMock = vi.mocked(toClusterInputFromEntity)
 const updateRemoteEntityMock = vi.mocked(updateRemoteEntity)
 
 const atlasClient = makeAtlasClient().client
 const logger = makeLogger().logger
-const tx = makeDb()
-const transaction = vi.fn(async (callback: (transactionDb: DB) => unknown) => callback(tx))
-const db = { transaction } as unknown as DB
+const db = makeDb()
 const input = makeAtlasInput()
 
 const callForcePushEntity = (id = 'entity-1') => forcePushEntity({ id, db, logger, dependencies: { atlasClient } })
@@ -84,10 +73,7 @@ describe('forcePushEntity', () => {
       conflictPolicy: 'overwrite',
       atlasClient,
     })
-    expect(markEntityAsPendingPushMock).toHaveBeenCalledOnce()
-    expect(markEntityAsPendingPushMock.mock.calls[0]?.slice(0, 2)).toEqual(['entity-1', tx])
-    expect(markEntityAsSyncedMock).toHaveBeenCalledOnce()
-    expect(markEntityAsSyncedMock.mock.calls[0]?.slice(0, 3)).toEqual(['entity-1', 'atlas-1', tx])
+    expect(finalizeEntitySyncSuccessMock).toHaveBeenCalledWith('force-push', 'entity-1', 'atlas-1', db, logger)
   })
 
   it('returns not linked without writing when the entity has no atlas id', async () => {
@@ -97,8 +83,9 @@ describe('forcePushEntity', () => {
     })
 
     await expect(callForcePushEntity()).resolves.toEqual({
-      success: true,
-      data: { code: 'not_linked', entityId: 'entity-1' },
+      success: false,
+      code: 'validation',
+      message: 'The entity entity-1 is not linked with any ATLAS counterpart.',
     })
 
     expect(updateRemoteEntityMock).not.toHaveBeenCalled()
@@ -111,8 +98,9 @@ describe('forcePushEntity', () => {
     })
 
     await expect(callForcePushEntity()).resolves.toEqual({
-      success: true,
-      data: { code: 'no_conflict', entityId: 'entity-1' },
+      success: false,
+      code: 'validation',
+      message: 'The entity entity-1 has not conflicts to resolve.',
     })
 
     expect(updateRemoteEntityMock).not.toHaveBeenCalled()
@@ -122,20 +110,23 @@ describe('forcePushEntity', () => {
     updateRemoteEntityMock.mockResolvedValue({ code: 'not_found', atlasId: 'atlas-1' })
 
     await expect(callForcePushEntity()).resolves.toEqual({
-      success: true,
-      data: {
-        code: 'remote_not_found',
-        entityId: 'entity-1',
-        atlasId: 'atlas-1',
-      },
+      success: false,
+      code: 'notFound',
+      message: 'Remote entity not found.',
     })
 
-    expect(markEntityAsNotFoundMock).toHaveBeenCalledOnce()
-    expect(markEntityAsNotFoundMock.mock.calls[0]?.slice(0, 2)).toEqual(['entity-1', tx])
-    expect(markEntityAsSyncedMock).not.toHaveBeenCalled()
+    expect(finalizeEntitySyncFailureMock).toHaveBeenCalledWith(
+      'force-push',
+      'not_found',
+      'entity-1',
+      'atlas-1',
+      db,
+      logger,
+    )
+    expect(finalizeEntitySyncSuccessMock).not.toHaveBeenCalled()
   })
 
-  it('marks synchronization as failed when the forced update fails', async () => {
+  it('preserves the conflict state when the forced update fails', async () => {
     const error = new Error('ATLAS unavailable')
     updateRemoteEntityMock.mockRejectedValue(error)
 
@@ -146,7 +137,7 @@ describe('forcePushEntity', () => {
       error,
     })
 
-    expect(markEntityAsFailedSyncMock).toHaveBeenCalledOnce()
-    expect(markEntityAsFailedSyncMock.mock.calls[0]?.[0]).toBe('entity-1')
+    expect(finalizeEntitySyncFailureMock).not.toHaveBeenCalled()
+    expect(finalizeEntitySyncSuccessMock).not.toHaveBeenCalled()
   })
 })
