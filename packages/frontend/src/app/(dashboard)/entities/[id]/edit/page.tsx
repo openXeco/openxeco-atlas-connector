@@ -8,9 +8,11 @@ import type { Entity, EntityTaxonomies } from '@/types'
 import React from 'react'
 import useSWR from 'swr'
 import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
+import { useRouter } from 'next/navigation'
 
 export default function EditEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
+  const router = useRouter()
 
   const { data, isLoading, mutate } = useSWR<{ data: { entity: Entity } }>(
     `/api/entities/${id}`,
@@ -58,7 +60,7 @@ export default function EditEntityPage({ params }: { params: Promise<{ id: strin
       ) : (
         <>
           <div className='mb-6 flex items-center gap-4'>
-            <Link href={'/entities'} variant={'ghost'}>
+            <Link href={'#'} onClick={router.back} variant={'ghost'}>
               <ArrowLeft className='h-5 w-5' />
             </Link>
             <div>

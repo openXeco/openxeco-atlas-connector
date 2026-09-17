@@ -51,7 +51,6 @@ export default function ViewEntityPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
         <div className='flex items-center gap-2'>
-          <PushEntityButton id={id} />
           <Link href={`/entities/${id}/edit`} variant={'outline'}>
             <Pencil className='h-4 w-4' />
             Edit

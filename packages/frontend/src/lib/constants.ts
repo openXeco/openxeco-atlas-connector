@@ -92,14 +92,14 @@ export const SYNC_STATUS_DEFINITIONS = {
     description: 'The local entity and its ATLAS version were synchronized successfully.',
     tone: 'success',
     requiresAttention: false,
-    actions: ['pull'],
+    actions: ['edit'],
   },
   failed: {
     label: 'Failed',
     description: 'The last synchronization attempt failed.',
     tone: 'danger',
     requiresAttention: true,
-    actions: ['retry_push'],
+    actions: ['push'],
   },
 } as const satisfies Record<SyncStatus, StatusDefinition>
 

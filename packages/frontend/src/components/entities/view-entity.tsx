@@ -1,31 +1,15 @@
 'use client'
 
-import { Building2, Clock, ExternalLink, FileText, Globe, MapPin } from 'lucide-react'
+import { Building2, ExternalLink, FileText, Globe, MapPin } from 'lucide-react'
 import { CardHeader, CardTitle, CardContent, Card } from '../ui/card'
 import { EntityDisplayField } from '@/components/entities/entity-display-field'
-import { formatDate } from '@/lib/utils'
 import type { Entity } from '@/types'
+import { EntityMetadata } from '@/components/entities/entity-metadata'
 
 export const ViewEntity = ({ entity }: { entity: Entity }) => {
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <Clock className='h-5 w-5' />
-            Metadata
-          </CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-4'>
-          <EntityDisplayField title={'Created'} value={formatDate(entity.createdAt.toString(), true)} />
-          <EntityDisplayField title={'Last Updated'} value={formatDate(entity.updatedAt.toString(), true)} />
-
-          {entity.lastSyncedAt && (
-            <EntityDisplayField title={'Last Synced'} value={formatDate(entity.lastSyncedAt.toString(), true)} />
-          )}
-          {entity.atlasId && <EntityDisplayField title={'Atlas ID'} value={entity.atlasId} />}
-        </CardContent>
-      </Card>
+      <EntityMetadata entity={entity} />
       <div className={'grid grid-cols-1 xl:grid-cols-3 gap-4'}>
         <Card>
           <CardHeader>
