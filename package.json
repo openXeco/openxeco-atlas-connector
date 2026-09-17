@@ -16,8 +16,8 @@
   },
   "scripts": {
     "dev": "env-cmd -- pnpm -r --parallel dev",
-    "dev:frontend": "env-cmd -- pnpm -filter=@openxeco/atlas-connector-frontend dev",
-    "dev:backend": "env-cmd -- pnpm -filter=@openxeco/atlas-connector-backend dev",
+    "dev:frontend": "env-cmd -- pnpm --filter=@openxeco/atlas-connector-frontend dev",
+    "dev:backend": "env-cmd -- pnpm --filter=@openxeco/atlas-connector-backend dev",
     "build": "pnpm -r build",
     "lint": "biome check .",
     "lint:fix": "biome check  --write",
