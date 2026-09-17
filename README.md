@@ -132,91 +132,8 @@ production.
 
 ## API
 
-All endpoints require an access-token Bearer header unless marked public. User and settings endpoints require an
-administrator token.
-
-### Auth
-
-| Method | Endpoint        | Auth   | Description                                     |
-|--------|-----------------|--------|-------------------------------------------------|
-| POST   | `/auth/login`   | Public | Return an access/refresh token pair             |
-| POST   | `/auth/refresh` | Public | Rotate tokens using a refresh token in the body |
-| GET    | `/auth/me`      | Bearer | Return the current user                         |
-| GET    | `/auth/check`   | Bearer | Check whether an access token is valid          |
-| POST   | `/auth/logout`  | Bearer | Acknowledge logout; backend logout is stateless |
-
-### Entities
-
-| Method | Endpoint             | Description                  |
-|--------|----------------------|------------------------------|
-| GET    | `/entities`          | List (paginated)             |
-| GET    | `/entities/:id`      | Get by ID                    |
-| POST   | `/entities`          | Create                       |
-| PUT    | `/entities/:id`      | Replace/update               |
-| DELETE | `/entities/:id`      | Delete                       |
-| POST   | `/entities/:id/push` | Push to ATLAS (legacy alias) |
-
-### Sync
-
-| Method | Endpoint                       | Description                         |
-|--------|--------------------------------|-------------------------------------|
-| POST   | `/sync/entities/:id/push`      | Push entity to ATLAS                |
-| POST   | `/sync/entities/:id/pull`      | Pull entity from ATLAS              |
-| GET    | `/sync/entities/:id/diff`      | Field-level diff                    |
-| GET    | `/sync/entities/:id/conflicts` | Detect conflicts                    |
-| POST   | `/sync/entities/:id/resolve`   | Resolve conflict                    |
-| POST   | `/sync/batch/push`             | Batch push                          |
-| POST   | `/sync/batch/pull`             | Batch pull                          |
-| GET    | `/sync/status`                 | Sync status overview                |
-| GET    | `/sync/entities`               | List local and remote sync entities |
-| GET    | `/sync/logs`                   | Sync log history                    |
-| DELETE | `/sync/logs/cleanup`           | Clean old logs                      |
-
-### Taxonomies
-
-| Method | Endpoint                   | Description                   |
-|--------|----------------------------|-------------------------------|
-| POST   | `/taxonomies/sync`         | Sync all from ATLAS           |
-| POST   | `/taxonomies/sync/:type`   | Sync one type                 |
-| GET    | `/taxonomies/:type`        | List by type                  |
-| GET    | `/taxonomies/id/:id`       | Get by ID                     |
-| GET    | `/taxonomies/count/:type?` | Count all or by optional type |
-| GET    | `/taxonomies/search`       | Search by name                |
-
-### Import
-
-| Method | Endpoint                | Description                                    |
-|--------|-------------------------|------------------------------------------------|
-| POST   | `/import/openxeco`      | Import ECCC form data from cybersecurity.lu    |
-| GET    | `/import/openxeco/info` | Return information about the configured import |
-
-### Settings (administrator)
-
-| Method | Endpoint               | Description                         |
-|--------|------------------------|-------------------------------------|
-| GET    | `/settings/atlas`      | Read non-secret ATLAS configuration |
-| PATCH  | `/settings/atlas`      | Update ATLAS configuration          |
-| POST   | `/settings/atlas/test` | Test an ATLAS connection            |
-| GET    | `/settings/general`    | Read general settings               |
-| PATCH  | `/settings/general`    | Update general settings             |
-
-### Users (administrator)
-
-| Method | Endpoint              | Description         |
-|--------|-----------------------|---------------------|
-| GET    | `/users`              | List users          |
-| POST   | `/users`              | Create a user       |
-| PATCH  | `/users/:id`          | Update a user email |
-| PATCH  | `/users/:id/password` | Change a password   |
-| DELETE | `/users/:id`          | Delete a user       |
-
-### Health
-
-| Method | Endpoint        | Description     |
-|--------|-----------------|-----------------|
-| GET    | `/health`       | Health check    |
-| GET    | `/health/live`  | Liveness probe  |
-| GET    | `/health/ready` | Readiness probe |
+All endpoints require an access-token Bearer header unless marked public.
+User and settings endpoints require an administrator token to be executed.
 
 ## ECCC Registration Fields
 
@@ -255,6 +172,7 @@ Supported entity statuses are:
 - `published` (coming from ATLAS)
 - `to_be_rejected`
 - `rejected` (coming from ATLAS)
+- `revision_requested` (coming from ATLAS)
 
 Entity creation and update requests currently accept `draft`, `ready_for_publication`, and `to_be_rejected`. Statuses
 received from ATLAS are stored in the same `status` field.
@@ -271,6 +189,7 @@ A failed synchronization can have an optional `syncCode`:
 - `not_found`: the entity identified by its `atlasId` could not be found
 - `null`: the failure has no specific application-level classification
 
+Here is a schematic flow of entity's state transitions:
 ```text
 create/update ───────────────→ pending_push
 synced ── local update ──────→ pending_push
@@ -280,6 +199,7 @@ pending_push ── success ─────→ synced
 pending_push ── failure ─────→ failed
 pull ────────── success ─────→ synced
 pull ────────── conflict ────→ failed (syncCode: conflict)
+```
 
 ## Deployment
 
@@ -294,8 +214,9 @@ Once the production stack is running and the backend has applied its migrations,
 docker compose -f docker-compose.prod.yml exec backend node dist/scripts/seed-admin.js
 ```
 
-The command creates the default administrator. Change its credentials immediately after the first login. To override the
-seed credentials, provide `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the backend container environment.
+The command creates the default administrator. To protect the administrator login you have 2 alternatives:
+1. change its credentials immediately after the first login.
+2. override the seed credentials, and provide `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the backend container environment.
 
 ## Environment
 
@@ -312,10 +233,9 @@ See [Contributing](./CONTRIBUTING.md)
 
 ## Roadmap
 
+- Sync features and fronted conflict resolution
+- Provide OPENAPI endpoint
 - Bulk import of multiple entities (JSON upload)
-- Complete the frontend conflict-resolution workflow
-- Enable ATLAS API settings in the frontend
-- Unit tests on all critical modules
 - Improve the Authentication mechanism with MFA
 - Integration with openXeco CORE (V1)
-- Integration with openXeco CORE (V2)
+- Integration with openXeco CORE (V2) once released

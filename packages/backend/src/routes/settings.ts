@@ -16,26 +16,46 @@ export async function settingsRoutes(fastify: FastifyInstance): Promise<void> {
   const actions = appActions(db, fastify.log)
 
   // Get general settings
-  fastify.get('/general', { preHandler: requireAdmin }, async (_request, reply) => {
-    try {
-      const result = await actions.getGeneralSettings()
+  fastify.get(
+    '/general',
+    {
+      schema: {
+        tags: ['settings'],
+        description: 'Get the general application settings.',
+      },
+      preHandler: requireAdmin,
+    },
+    async (_request, reply) => {
+      try {
+        const result = await actions.getGeneralSettings()
 
-      return reply.send(result.data)
-    } catch (e) {
-      handleRouteError(e, reply, fastify.log)
-    }
-  })
+        return reply.send(result.data)
+      } catch (e) {
+        handleRouteError(e, reply, fastify.log)
+      }
+    },
+  )
 
   // Update general settings
-  fastify.patch('/general', { preHandler: requireAdmin }, async (request, reply) => {
-    try {
-      await actions.setGeneralSettings(request.body)
+  fastify.patch(
+    '/general',
+    {
+      schema: {
+        tags: ['settings'],
+        description: 'Update the general application settings.',
+      },
+      preHandler: requireAdmin,
+    },
+    async (request, reply) => {
+      try {
+        await actions.setGeneralSettings(request.body)
 
-      return reply.send({ message: 'General settings updated successfully' })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify.log)
-    }
-  })
+        return reply.send({ message: 'General settings updated successfully' })
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
+      }
+    },
+  )
 
   // Get ATLAS API settings
   // @TODO check if we need it

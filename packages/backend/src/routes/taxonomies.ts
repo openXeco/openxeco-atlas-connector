@@ -9,43 +9,73 @@ import type { TaxonomyType } from '@/types.js'
 export async function taxonomyRoutes(fastify: FastifyInstance): Promise<void> {
   const actions = taxonomyActions(db, fastify.log)
 
-  fastify.get('/count/:type?', { preHandler: authenticate }, async (request, reply) => {
-    const { type } = request.params as { type: TaxonomyType }
+  fastify.get(
+    '/count/:type?',
+    {
+      schema: {
+        tags: ['taxonomies'],
+        description: 'Count taxonomy terms, optionally filtered by taxonomy type.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      const { type } = request.params as { type: TaxonomyType }
 
-    try {
-      const result = await actions.count(type)
+      try {
+        const result = await actions.count(type)
 
-      return reply.send({
-        data: result.data,
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify.log)
-    }
-  })
+        return reply.send({
+          data: result.data,
+        })
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
+      }
+    },
+  )
 
-  fastify.get('/:type', { preHandler: authenticate }, async (request, reply) => {
-    const { type } = request.params as { type: TaxonomyType }
-    try {
-      const result = await actions.getByType(type)
+  fastify.get(
+    '/:type',
+    {
+      schema: {
+        tags: ['taxonomies'],
+        description: 'List taxonomy terms for the specified type.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      const { type } = request.params as { type: TaxonomyType }
+      try {
+        const result = await actions.getByType(type)
 
-      return reply.send({
-        data: result.data?.taxonomies,
-        meta: result.data?.meta,
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify.log)
-    }
-  })
+        return reply.send({
+          data: result.data?.taxonomies,
+          meta: result.data?.meta,
+        })
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
+      }
+    },
+  )
 
-  fastify.get('/id/:id', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const id = getIdFromRequest(request.params)
+  fastify.get(
+    '/id/:id',
+    {
+      schema: {
+        tags: ['taxonomies'],
+        description: 'Get a taxonomy term by its ID.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      try {
+        const id = getIdFromRequest(request.params)
 
-      const result = await actions.get(id)
+        const result = await actions.get(id)
 
-      return reply.send({ data: result.data })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify.log)
-    }
-  })
+        return reply.send({ data: result.data })
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
+      }
+    },
+  )
 }
