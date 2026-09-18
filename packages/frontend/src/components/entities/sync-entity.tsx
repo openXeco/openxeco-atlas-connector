@@ -2,12 +2,12 @@ import type { Entity, SyncLog } from '@/types'
 
 import { CardContent, Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { StatusBadge } from '@/components/entities/status-badge'
-import { SYNC_STATUS_DEFINITIONS, SYNC_CODE_DEFINITIONS } from '@/lib/constants'
+import { SYNC_STATUS_DEFINITIONS, SYNC_CODE_DEFINITIONS, atlasErrorLabels, syncOperationLabels } from '@/lib/constants'
 import { EntityMetadata } from '@/components/entities/entity-metadata'
 import { PushEntityButton } from '@/components/entities/push-entity-button'
 import { Pencil, DatabaseArrowUp, TableOfContents } from 'lucide-react'
 import { Link } from '@/components/ui/link'
-import { formatDate } from '@/lib/utils'
+import { formatDate, fieldLabel, asText, asRecord } from '@/lib/utils'
 import { EntityDisplayField } from '@/components/entities/entity-display-field'
 
 const getActionButton = (action: string, entityId: string) => {
@@ -28,52 +28,13 @@ const getActionButton = (action: string, entityId: string) => {
   }
 }
 
-const asRecord = (value: unknown): Record<string, unknown> => {
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return value as Record<string, unknown>
-  }
-  return {}
-}
-
-const asText = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
-
-const fieldLabel = (field: string) =>
-  field
-    .replace(/^\/data\/(attributes|relationships)\//, '')
-    .replace(/~1/g, '/')
-    .replace(/~0/g, '~')
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/[_-]/g, ' ')
-    .replace(/^./, (letter) => letter.toUpperCase())
-
-const operationLabels: Record<string, string> = {
-  create: 'Create in ATLAS',
-  update: 'Update in ATLAS',
-  'force-create': 'Force create in ATLAS',
-  'force-push': 'Overwrite ATLAS version',
-  'force-pull': 'Replace local version',
-  sync: 'Synchronize',
-  push: 'Push to ATLAS',
-  pull: 'Pull from ATLAS',
-}
-
-const atlasErrorLabels: Record<string, string> = {
-  '400': 'ATLAS rejected the request',
-  '401': 'ATLAS authentication failed',
-  '403': 'ATLAS access denied',
-  '404': 'ATLAS resource not found',
-  '409': 'ATLAS reported a conflict',
-  '422': 'ATLAS validation failed',
-  '429': 'ATLAS request limit reached',
-}
-
 const formatLog = (log: SyncLog) => {
   const details = asRecord(log.details)
   const succeeded = log.status === 'synced' || log.status === 'success'
   const failed = log.status === 'failed'
   const conflict = failed && details.syncCode === 'conflict'
   const notFound = failed && details.syncCode === 'not_found'
-  const message = asText(details.errorMessage) || asText(details.error)
+  const message = asText(details.errorMessage)
   const atlasId = asText(details.atlasId)
   const conflictFields = Array.isArray(details.conflictFields)
     ? [...new Set(details.conflictFields.map(asText).filter(Boolean))]
@@ -89,9 +50,8 @@ const formatLog = (log: SyncLog) => {
       ? 'Conflicting changes need review'
       : notFound
         ? 'Linked entity not found in ATLAS'
-        : failed
-          ? 'Synchronization failed'
-          : 'Synchronization recorded'
+        : failed && 'Synchronization failed'
+
   const date = log.createdAt && !Number.isNaN(Date.parse(log.createdAt)) ? log.createdAt : undefined
 
   return (
@@ -101,7 +61,10 @@ const formatLog = (log: SyncLog) => {
         <StatusBadge type={'sync'} status={failed ? 'failed' : 'synced'} />
       </div>
       <dl className='grid gap-3 text-sm sm:grid-cols-2'>
-        <EntityDisplayField title={'Operation'} value={operationLabels[log.operation] || fieldLabel(log.operation)} />
+        <EntityDisplayField
+          title={'Operation'}
+          value={syncOperationLabels[log.operation] || fieldLabel(log.operation)}
+        />
         <EntityDisplayField title={'Date'} value={date ? formatDate(date, true) : 'Date unavailable'} />
         {atlasId && <EntityDisplayField className={'sm:col-span-2'} title={'ATLAS ID'} value={atlasId} />}
       </dl>

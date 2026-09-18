@@ -146,3 +146,24 @@ export const getEntitySyncActions = ({ atlasId, syncStatus, syncCode }: EntitySy
 
   return SYNC_STATUS_DEFINITIONS[syncStatus].actions
 }
+
+export const syncOperationLabels: Record<string, string> = {
+  create: 'Create in ATLAS',
+  update: 'Update in ATLAS',
+  'force-create': 'Force create in ATLAS',
+  'force-push': 'Overwrite ATLAS version',
+  'force-pull': 'Replace local version',
+  sync: 'Synchronize',
+  push: 'Push to ATLAS',
+  pull: 'Pull from ATLAS',
+}
+
+export const atlasErrorLabels: Record<string, string> = {
+  '400': 'ATLAS rejected the request',
+  '401': 'ATLAS authentication failed',
+  '403': 'ATLAS access denied',
+  '404': 'ATLAS resource not found',
+  '409': 'ATLAS reported a conflict',
+  '422': 'ATLAS validation failed',
+  '429': 'ATLAS request limit reached',
+}
