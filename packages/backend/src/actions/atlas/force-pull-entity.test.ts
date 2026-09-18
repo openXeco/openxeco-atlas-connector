@@ -102,7 +102,8 @@ describe('forcePullEntity', () => {
   })
 
   it('records a confirmed missing remote entity', async () => {
-    getClusterByIDMock.mockRejectedValue(new AtlasApiError('Not found', 404))
+    const error = new AtlasApiError('Not found', 404, [{ status: '404', detail: 'Cluster missing' }])
+    getClusterByIDMock.mockRejectedValue(error)
 
     await expect(callForcePullEntity()).resolves.toEqual({
       success: false,
@@ -115,6 +116,7 @@ describe('forcePullEntity', () => {
       'not_found',
       'entity-1',
       'atlas-1',
+      error,
       db,
       logger,
     )
@@ -137,6 +139,7 @@ describe('forcePullEntity', () => {
       'failed',
       'entity-1',
       'atlas-1',
+      error,
       db,
       logger,
     )

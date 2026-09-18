@@ -1,3 +1,4 @@
+import type { AtlasJsonApiError } from '@/actions/atlas/types.js'
 import type { SyncLogOperation, DB, TaxonomyType, SyncStatus, SyncCode } from '@/types.js'
 import { syncLogs, type Entity } from '@/db/schema.js'
 
@@ -5,6 +6,8 @@ type EntitySyncLogDetails = {
   syncCode?: SyncCode
   entityId: string
   atlasId?: string
+  errorDetails?: AtlasJsonApiError[]
+  errorMessage?: string
   conflictFields?: string[]
 }
 
@@ -56,6 +59,8 @@ const getSyncLogValues = (args: CreateSyncLogArgs) => {
           atlasId: args.details.atlasId,
           syncCode: args.details.syncCode,
           conflictFields: args.details.conflictFields,
+          errorMessage: args.details.errorMessage,
+          errorDetails: args.details.errorDetails,
           ...(args.error ? { error: args.error } : {}),
         },
       }
@@ -89,7 +94,11 @@ export const createTaxonomySyncLog = async (
 
 export const createEntitySyncLog = async (
   operation: CreateSyncLogArgs['operation'],
-  entity: Pick<Entity, 'id' | 'atlasId' | 'syncStatus' | 'syncCode'> & { conflictFields?: string[] },
+  entity: Pick<Entity, 'id' | 'atlasId' | 'syncStatus' | 'syncCode'> & {
+    conflictFields?: string[]
+    errorDetails?: AtlasJsonApiError[]
+    errorMessage?: string
+  },
   db: DB,
 ): Promise<void> => {
   await createSyncLog(
@@ -102,6 +111,8 @@ export const createEntitySyncLog = async (
         atlasId: entity.atlasId ?? undefined,
         syncCode: entity.syncCode ?? undefined,
         conflictFields: entity.conflictFields ?? undefined,
+        errorMessage: entity.errorMessage ?? undefined,
+        errorDetails: entity.errorDetails,
       },
     },
     db,

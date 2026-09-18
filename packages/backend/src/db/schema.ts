@@ -230,3 +230,4 @@ export const atlasConfig = pgTable('atlas_config', {
 export type User = typeof users.$inferSelect
 export type Taxonomy = typeof taxonomies.$inferSelect
 export type Entity = typeof entities.$inferSelect
+export type SyncLog = typeof syncLogs.$inferSelect

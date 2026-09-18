@@ -56,6 +56,7 @@ export const pushEntity = async ({
   }
 
   const entity = entityResult.data
+  logger.debug('Entering "pushEntity" action...')
 
   if (!canEntityBePushed(entity)) {
     return {
@@ -91,6 +92,7 @@ export const pushEntity = async ({
     switch (updateResult.code) {
       case 'conflict':
         try {
+          logger.debug('Found conflicts in remote entity.')
           await finalizeEntitySyncConflict('update', id, updateResult.atlasId, updateResult.conflictFields, db, logger)
 
           return {
@@ -146,6 +148,7 @@ export const pushEntity = async ({
     const correspondences = await findCorrespondences(registrationNumber, atlasClient, db)
 
     if (!correspondences.length) {
+      logger.debug('No correspondences found. Creating the entity in ATLAS.')
       return _createEntity(id, toClusterInputFromEntity(entity), atlasClient, db, logger)
     }
 
@@ -185,7 +188,7 @@ const _createEntity = async (
     })
   } catch (error) {
     try {
-      await finalizeEntitySyncFailure('create', 'failed', id, undefined, db, logger)
+      await finalizeEntitySyncFailure('create', 'failed', id, undefined, error, db, logger)
     } catch (e) {
       logger.warn({ error: e, entityId: id }, 'Unexpected error when saving sync failure log.')
     }

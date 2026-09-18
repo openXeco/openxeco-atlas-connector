@@ -1,13 +1,14 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { eq, desc, and, gte, lte } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db } from '../config/database.js'
-import { syncLogs, entities } from '../db/schema.js'
+import { entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 import { entitySyncService } from '../services/sync/entity-sync.js'
 import { sendErrorReply, handleRouteError, getErrorReply } from '@/utils/reply-helpers.js'
 import { taxonomyTypeSchema } from '@/config/constants.js'
 import { atlasActions } from '@/actions/atlas/index.js'
+import { syncLogsQuerySchema } from '@/actions/atlas/get-sync-logs.js'
 
 export const idParamSchema = z.object({ id: z.string().uuid() })
 
@@ -22,16 +23,6 @@ const resolveConflictSchema = z.object({
 const batchSyncSchema = z.object({
   entityIds: z.array(z.string().uuid()).optional(),
   atlasIds: z.array(z.string()).optional(),
-})
-
-const syncLogsQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  entityId: z.string().uuid().optional(),
-  operation: z.enum(['push', 'pull', 'sync']).optional(),
-  status: z.enum(['success', 'failed']).optional(),
-  startDate: z.string().datetime({ offset: true }).optional(),
-  endDate: z.string().datetime({ offset: true }).optional(),
 })
 
 export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
@@ -194,6 +185,28 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
         return reply.send({
           data: result.data,
         })
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
+      }
+    },
+  )
+
+  fastify.get(
+    '/logs',
+    {
+      schema: {
+        tags: ['sync'],
+        description:
+          'List synchronization logs with pagination and optional entity, operation, status, and date filters.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      try {
+        const query = syncLogsQuerySchema.parse(request.query)
+        const result = await actions.getSyncLogs(query)
+
+        return reply.send(result.data)
       } catch (error) {
         return handleRouteError(error, reply, fastify.log)
       }
@@ -425,63 +438,63 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     },
   )
 
-  fastify.get(
-    '/logs',
-    {
-      schema: {
-        tags: ['sync-old'],
-        description:
-          'List synchronization logs with pagination and optional entity, operation, status, and date filters.',
-      },
-      preHandler: authenticate,
-    },
-    async (request, reply) => {
-      try {
-        const { page, limit, entityId, operation, status, startDate, endDate } = syncLogsQuerySchema.parse(
-          request.query,
-        )
-
-        const offset = (page - 1) * limit
-
-        let query = db.select().from(syncLogs)
-
-        const conditions = []
-        if (entityId) {
-          conditions.push(eq(syncLogs.entityId, entityId))
-        }
-        if (operation) {
-          conditions.push(eq(syncLogs.operation, operation))
-        }
-        if (status) {
-          conditions.push(eq(syncLogs.status, status))
-        }
-        if (startDate) {
-          conditions.push(gte(syncLogs.createdAt, new Date(startDate)))
-        }
-        if (endDate) {
-          conditions.push(lte(syncLogs.createdAt, new Date(endDate)))
-        }
-
-        if (conditions.length > 0) {
-          // biome-ignore lint/suspicious/noExplicitAny: Drizzle-orm magic
-          query = query.where(and(...conditions)) as any
-        }
-
-        const logs = await query.limit(limit).offset(offset).orderBy(desc(syncLogs.createdAt))
-
-        return reply.send({
-          data: logs,
-          meta: {
-            page,
-            limit,
-            count: logs.length,
-          },
-        })
-      } catch (error) {
-        return handleRouteError(error, reply, fastify.log)
-      }
-    },
-  )
+  // fastify.get(
+  //   '/logs',
+  //   {
+  //     schema: {
+  //       tags: ['sync-old'],
+  //       description:
+  //         'List synchronization logs with pagination and optional entity, operation, status, and date filters.',
+  //     },
+  //     preHandler: authenticate,
+  //   },
+  //   async (request, reply) => {
+  //     try {
+  //       const { page, limit, entityId, operation, status, startDate, endDate } = syncLogsQuerySchema.parse(
+  //         request.query,
+  //       )
+  //
+  //       const offset = (page - 1) * limit
+  //
+  //       let query = db.select().from(syncLogs)
+  //
+  //       const conditions = []
+  //       if (entityId) {
+  //         conditions.push(eq(syncLogs.entityId, entityId))
+  //       }
+  //       if (operation) {
+  //         conditions.push(eq(syncLogs.operation, operation))
+  //       }
+  //       if (status) {
+  //         conditions.push(eq(syncLogs.status, status))
+  //       }
+  //       if (startDate) {
+  //         conditions.push(gte(syncLogs.createdAt, new Date(startDate)))
+  //       }
+  //       if (endDate) {
+  //         conditions.push(lte(syncLogs.createdAt, new Date(endDate)))
+  //       }
+  //
+  //       if (conditions.length > 0) {
+  //         // biome-ignore lint/suspicious/noExplicitAny: Drizzle-orm magic
+  //         query = query.where(and(...conditions)) as any
+  //       }
+  //
+  //       const logs = await query.limit(limit).offset(offset).orderBy(desc(syncLogs.createdAt))
+  //
+  //       return reply.send({
+  //         data: logs,
+  //         meta: {
+  //           page,
+  //           limit,
+  //           count: logs.length,
+  //         },
+  //       })
+  //     } catch (error) {
+  //       return handleRouteError(error, reply, fastify.log)
+  //     }
+  //   },
+  // )
 
   fastify.delete(
     '/logs/cleanup',

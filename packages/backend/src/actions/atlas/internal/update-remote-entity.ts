@@ -34,6 +34,7 @@ export const updateRemoteEntity = async ({
       return {
         code: 'not_found',
         atlasId,
+        error: e,
       }
     }
 
@@ -82,6 +83,7 @@ export const updateRemoteEntity = async ({
       return {
         code: 'not_found',
         atlasId,
+        error: e,
       }
     }
 

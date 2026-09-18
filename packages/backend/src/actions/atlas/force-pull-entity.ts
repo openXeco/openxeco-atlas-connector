@@ -55,7 +55,7 @@ export const forcePullEntity = async ({
     remote = await getClusterByID(atlasId, atlasClient)
   } catch (error) {
     if (error instanceof AtlasApiError && error.status === 404) {
-      await finalizeEntitySyncFailure('force-pull', 'not_found', id, atlasId, db, logger)
+      await finalizeEntitySyncFailure('force-pull', 'not_found', id, atlasId, error, db, logger)
 
       return {
         success: false,
@@ -64,7 +64,7 @@ export const forcePullEntity = async ({
       }
     }
 
-    await finalizeEntitySyncFailure('force-pull', 'failed', id, atlasId, db, logger)
+    await finalizeEntitySyncFailure('force-pull', 'failed', id, atlasId, error, db, logger)
 
     return {
       success: false,

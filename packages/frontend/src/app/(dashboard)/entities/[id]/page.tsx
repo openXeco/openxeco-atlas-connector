@@ -1,25 +1,30 @@
 'use client'
 
-import type { Entity } from '@/types'
+import type { Entity, SyncLog } from '@/types'
 import React from 'react'
 import { ArrowLeft, Pencil } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { PushEntityButton } from '@/components/entities/push-entity-button'
 import { DeleteEntityButton } from '@/components/entities/delete-entity-button'
 import { Link } from '@/components/ui/link'
 import { StatusBadge } from '@/components/entities/status-badge'
 import useSWR from 'swr'
-import { apiFetcher, swrDefaultOptions } from '@/lib/swr'
+import { apiFetcher } from '@/lib/swr'
 import { ViewEntity } from '@/components/entities/view-entity'
 import { SyncEntity } from '@/components/entities/sync-entity'
 
 export default function ViewEntityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
 
-  const { data, isLoading } = useSWR<{ data: { entity: Entity } }>(`/api/entities/${id}`, apiFetcher, swrDefaultOptions)
+  const { data, isLoading } = useSWR<{ data: { entity: Entity } }>(`/api/entities/${id}`, apiFetcher)
+  const { data: logsData, isLoading: isLogsLoading } = useSWR<{ data: SyncLog[] }>(
+    `/api/sync/logs?entityId=${id}`,
+    apiFetcher,
+  )
 
   const { entity } = data?.data || {}
-  if (isLoading) {
+  const logs = logsData?.data || []
+
+  if (isLoading || isLogsLoading) {
     return <>Loading...</>
   }
 
@@ -71,7 +76,7 @@ export default function ViewEntityPage({ params }: { params: Promise<{ id: strin
           <ViewEntity entity={entity} />
         </TabsContent>
         <TabsContent value={'sync'}>
-          <SyncEntity entity={entity} />
+          <SyncEntity entity={entity} logs={logs} />
         </TabsContent>
       </Tabs>
     </>

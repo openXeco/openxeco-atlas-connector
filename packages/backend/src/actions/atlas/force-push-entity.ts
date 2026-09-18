@@ -70,7 +70,7 @@ export const forcePushEntity = async ({
 
   if (updateResult.code === 'not_found') {
     try {
-      await finalizeEntitySyncFailure('force-push', 'not_found', id, atlasId, db, logger)
+      await finalizeEntitySyncFailure('force-push', 'not_found', id, atlasId, updateResult.error, db, logger)
     } catch (e) {
       logger.warn(
         {

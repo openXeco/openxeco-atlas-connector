@@ -1,3 +1,4 @@
+import { AtlasApiError } from '@/actions/atlas/utils/atlas-api-error.js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { forcePushEntity } from '@/actions/atlas/force-push-entity.js'
@@ -106,25 +107,29 @@ describe('forcePushEntity', () => {
     expect(updateRemoteEntityMock).not.toHaveBeenCalled()
   })
 
-  it('records a confirmed missing remote entity', async () => {
-    updateRemoteEntityMock.mockResolvedValue({ code: 'not_found', atlasId: 'atlas-1' })
+  it.each([undefined, new AtlasApiError('Not found', 404, [{ status: '404', detail: 'Cluster missing' }])])(
+    'records a confirmed missing remote entity with error %s',
+    async (error) => {
+      updateRemoteEntityMock.mockResolvedValue({ code: 'not_found', atlasId: 'atlas-1', error })
 
-    await expect(callForcePushEntity()).resolves.toEqual({
-      success: false,
-      code: 'notFound',
-      message: 'Remote entity not found.',
-    })
+      await expect(callForcePushEntity()).resolves.toEqual({
+        success: false,
+        code: 'notFound',
+        message: 'Remote entity not found.',
+      })
 
-    expect(finalizeEntitySyncFailureMock).toHaveBeenCalledWith(
-      'force-push',
-      'not_found',
-      'entity-1',
-      'atlas-1',
-      db,
-      logger,
-    )
-    expect(finalizeEntitySyncSuccessMock).not.toHaveBeenCalled()
-  })
+      expect(finalizeEntitySyncFailureMock).toHaveBeenCalledWith(
+        'force-push',
+        'not_found',
+        'entity-1',
+        'atlas-1',
+        error,
+        db,
+        logger,
+      )
+      expect(finalizeEntitySyncSuccessMock).not.toHaveBeenCalled()
+    },
+  )
 
   it('preserves the conflict state when the forced update fails', async () => {
     const error = new Error('ATLAS unavailable')

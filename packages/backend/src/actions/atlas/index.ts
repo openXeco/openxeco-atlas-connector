@@ -11,11 +11,14 @@ import { selectCorrespondence } from '@/actions/atlas/select-correspondence.js'
 import { forceCreateEntity } from '@/actions/atlas/force-create-entity.js'
 import { forcePushEntity } from '@/actions/atlas/force-push-entity.js'
 import { forcePullEntity } from '@/actions/atlas/force-pull-entity.js'
+import { getSyncLogs } from '@/actions/atlas/get-sync-logs.js'
+import type { SyncLogsQuery } from '@/actions/atlas/types.js'
 
 export const atlasActions = (db: DB, logger: ActionArgsWithDb['logger']) => {
   const atlasClient = getAtlasClient({ appConfig: config, logger })
 
   return {
+    getSyncLogs: async (query: SyncLogsQuery) => handleActionResult(await getSyncLogs({ data: query, db, logger })),
     getTaxonomies: async (type: TaxonomyType) =>
       handleActionResult(await getTaxonomies({ logger, dependencies: { atlasClient }, data: { type } })),
     syncTaxonomies: async () => handleActionResult(await syncTaxonomies({ db, logger, dependencies: { atlasClient } })),

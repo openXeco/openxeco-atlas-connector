@@ -9,7 +9,6 @@
  */
 
 import type { AtlasClusterInput, AtlasFieldComparable } from '@/actions/atlas/types.js'
-
 /**
  * Maps sub-domain ATLAS UUID → parent domain ATLAS UUID.
  * Only sub-domains are listed; parent domains are NOT in this map.

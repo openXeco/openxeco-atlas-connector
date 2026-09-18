@@ -112,7 +112,7 @@ export const markEntityAsConflict = async (id: string, db: DB, logger: Logger): 
 }
 
 export const markEntityAsFailedSync = async (id: string, db: DB, logger: Logger): Promise<void> => {
-  logger.info(`Mark entity ${id} as conflict`)
+  logger.info(`Mark entity ${id} as failed`)
   await db
     .update(entities)
     .set({

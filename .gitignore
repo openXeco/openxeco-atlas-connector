@@ -27,7 +27,7 @@ out/
 Thumbs.db
 
 # Logs
-logs/
+./logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
@@ -51,7 +51,7 @@ CLAUDE.md
 .githuman
 .opencode
 opencode.*
-docs
+./docs
 
 .localData
 tmp

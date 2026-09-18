@@ -61,6 +61,16 @@ export type SyncRecap = {
   sync: Record<SyncStatus, number>
 }
 
+export interface SyncLog {
+  id: string
+  entityType: string
+  entityId: string | null
+  operation: string
+  status: string
+  details: unknown
+  createdAt: string | null
+}
+
 export interface Entity {
   id: string
   atlasId: string | null

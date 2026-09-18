@@ -298,7 +298,15 @@ describe('pushEntity', () => {
 
     const result = await callPushEntity()
 
-    expect(finalizeEntitySyncFailureMock).toHaveBeenCalledWith('create', 'failed', 'entity-1', undefined, db, logger)
+    expect(finalizeEntitySyncFailureMock).toHaveBeenCalledWith(
+      'create',
+      'failed',
+      'entity-1',
+      undefined,
+      error,
+      db,
+      logger,
+    )
     expect(result).toEqual({
       success: false,
       code: 'unexpected',

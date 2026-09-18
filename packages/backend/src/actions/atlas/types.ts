@@ -1,6 +1,10 @@
 import type { TaxonomyType } from '@/types.js'
 import type { getAtlasClient } from '@/actions/atlas/atlas-client.js'
 import type { atlasFieldsComparable } from '@/actions/atlas/constants.js'
+import type { syncLogsQuerySchema } from '@/actions/atlas/get-sync-logs.js'
+import type { z } from 'zod'
+
+export type SyncLogsQuery = z.infer<typeof syncLogsQuerySchema>
 
 export interface AtlasConfig {
   baseUrl: URL
@@ -198,6 +202,7 @@ export type UpdateAtlasEntityResult =
   | {
       code: 'not_found'
       atlasId: string
+      error?: AtlasApiError
     }
 
 export type SelectCorrespondenceResult = {

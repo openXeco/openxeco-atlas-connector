@@ -100,7 +100,7 @@ export const forceCreateEntity = async ({
     created = await createRemoteEntity({ input, atlasClient })
   } catch (error) {
     try {
-      await finalizeEntitySyncFailure('force-create', 'failed', id, undefined, db, logger)
+      await finalizeEntitySyncFailure('force-create', 'failed', id, undefined, error, db, logger)
     } catch (e) {
       logger.warn({ error: e, entityId: id }, 'Error while creating sync log for force-create')
     }

@@ -1,3 +1,4 @@
+import { AtlasApiError } from '@/actions/atlas/utils/atlas-api-error.js'
 import type { SyncLogOperation, DB, Logger } from '@/types.js'
 import {
   markEntityAsSynced,
@@ -58,6 +59,7 @@ export const finalizeEntitySyncFailure = async (
   outcome: 'failed' | 'not_found',
   entityId: string,
   atlasId: string | undefined,
+  error: unknown,
   db: DB,
   logger: Logger,
 ) => {
@@ -75,6 +77,8 @@ export const finalizeEntitySyncFailure = async (
         atlasId: atlasId ?? null,
         syncStatus: 'failed',
         syncCode: outcome === 'not_found' ? 'not_found' : null,
+        errorMessage: error instanceof Error ? error.message : undefined,
+        errorDetails: error instanceof AtlasApiError ? error.errors : undefined,
       },
       tx,
     )

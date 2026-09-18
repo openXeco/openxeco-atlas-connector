@@ -209,6 +209,7 @@ describe('forceCreateEntity', () => {
       'failed',
       'entity-1',
       undefined,
+      error,
       db,
       logger,
     )

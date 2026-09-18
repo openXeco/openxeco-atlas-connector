@@ -15,13 +15,15 @@ describe('updateRemoteEntity', () => {
   })
 
   it('returns not found when the entity cannot be read from ATLAS', async () => {
-    atlas.get.mockRejectedValue(new AtlasApiError('Not found', 404))
+    const error = new AtlasApiError('Not found', 404, [{ status: '404', detail: 'Cluster missing' }])
+    atlas.get.mockRejectedValue(error)
 
     await expect(
       updateRemoteEntity({ atlasId: 'atlas-1', input, lastSyncedAt: null, atlasClient: atlas.client }),
     ).resolves.toEqual({
       code: 'not_found',
       atlasId: 'atlas-1',
+      error,
     })
 
     expect(atlas.patch).not.toHaveBeenCalled()
@@ -186,7 +188,8 @@ describe('updateRemoteEntity', () => {
     atlas.get.mockResolvedValue({
       data: makeAtlasResource({ attributes: { changed: '2026-07-31T10:00:00Z' } }),
     })
-    atlas.patch.mockRejectedValue(new AtlasApiError('Not found', 404))
+    const error = new AtlasApiError('Not found', 404, [{ status: '404', detail: 'Cluster missing' }])
+    atlas.patch.mockRejectedValue(error)
 
     await expect(
       updateRemoteEntity({
@@ -198,6 +201,7 @@ describe('updateRemoteEntity', () => {
     ).resolves.toEqual({
       code: 'not_found',
       atlasId: 'atlas-1',
+      error,
     })
   })
 
