@@ -38,6 +38,7 @@ export const ExpertiseCard = ({
       <div className='space-y-2'>
         <Label htmlFor='FORM-ECCC-001-Q302'>Expertise - detailed description *</Label>
         <Textarea
+          aria-label={'FORM-ECCC-001-Q302'}
           id='FORM-ECCC-001-Q302'
           {...register('expertiseDescription')}
           placeholder='Describe your expertise (max 800 characters)'
@@ -100,7 +101,13 @@ export const ExpertiseCard = ({
 
       <div className='space-y-2'>
         <Label htmlFor='FORM-ECCC-001-Q303-2'>What do you seek to achieve by joining the community?</Label>
-        <Textarea id='FORM-ECCC-001-Q303-2' {...register('goalsToAchieve')} placeholder='Goals to achieve' rows={3} />
+        <Textarea
+          aria-label={'FORM-ECCC-001-Q303-2'}
+          id='FORM-ECCC-001-Q303-2'
+          {...register('goalsToAchieve')}
+          placeholder='Goals to achieve'
+          rows={3}
+        />
       </div>
 
       <div className='space-y-2'>
@@ -108,6 +115,7 @@ export const ExpertiseCard = ({
           How and in which goals and tasks of the community can you contribute?
         </Label>
         <Textarea
+          aria-label={'FORM-ECCC-001-Q305'}
           id='FORM-ECCC-001-Q305'
           {...register('goalsToContribute')}
           placeholder='Goals to contribute'

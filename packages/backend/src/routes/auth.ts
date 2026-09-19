@@ -1,120 +1,97 @@
 import type { FastifyInstance } from 'fastify'
-import { z } from 'zod'
-import { eq } from 'drizzle-orm'
 import { db } from '../config/database.js'
-import { users } from '../db/schema.js'
-import { verifyPassword } from '../services/password.js'
-import { generateTokens, verifyRefreshToken } from '../services/jwt.js'
 import { authenticate } from '../middleware/auth.js'
-import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-})
+import { handleRouteError } from '@/utils/reply-helpers.js'
+import { authActions } from '@/actions/auth/index.js'
 
 export async function authRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.post('/login', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
-    try {
-      const body = loginSchema.parse(request.body)
+  const actions = authActions(db, fastify.log, fastify.jwt)
 
-      const [user] = await db.select().from(users).where(eq(users.email, body.email)).limit(1)
+  fastify.post(
+    '/login',
+    {
+      schema: {
+        tags: ['auth'],
+        description: 'Authenticate with an email and password and return access and refresh tokens.',
+      },
+      config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+    },
+    async (request, reply) => {
+      try {
+        const result = await actions.login(request.body)
 
-      if (!user) {
-        return sendErrorReply({ reply, type: 'unauthorized', message: 'Invalid email or password' })
+        return reply.send(result.data)
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
       }
+    },
+  )
 
-      const isValidPassword = await verifyPassword(user.passwordHash, body.password)
+  fastify.post(
+    '/refresh',
+    {
+      schema: {
+        tags: ['auth'],
+        description: 'Issue new access and refresh tokens using a valid refresh token.',
+      },
+      config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    },
+    async (request, reply) => {
+      try {
+        const result = await actions.refresh(request.body)
 
-      if (!isValidPassword) {
-        return sendErrorReply({ reply, type: 'unauthorized', message: 'Invalid email or password' })
+        return reply.send(result.data)
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
       }
+    },
+  )
 
-      const tokens = generateTokens(fastify, {
-        userId: user.id,
-        email: user.email,
-        role: user.role || 'admin',
-      })
+  fastify.get(
+    '/me',
+    {
+      schema: {
+        tags: ['auth'],
+        description: 'Get the profile of the authenticated user.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      try {
+        const result = await actions.currentUser({ currentUser: request.currentUser })
 
-      return reply.send({
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        refreshTokenExpiresAt: tokens.refreshTokenExpiresAt,
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-        },
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
-
-  fastify.post('/refresh', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (request, reply) => {
-    try {
-      const { refreshToken } = z.object({ refreshToken: z.string() }).parse(request.body)
-
-      if (!refreshToken) {
-        return sendErrorReply({ reply, type: 'unauthorized', message: 'Refresh token not found' })
+        return reply.send(result.data)
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
       }
+    },
+  )
 
-      const payload = await verifyRefreshToken(fastify, refreshToken)
+  fastify.get(
+    '/check',
+    {
+      schema: {
+        tags: ['auth'],
+        description: 'Check that the current request is authenticated.',
+      },
+      preHandler: authenticate,
+    },
+    async (_request, reply) => {
+      return reply.send({ message: 'OK' })
+    },
+  )
 
-      if (!payload) {
-        return sendErrorReply({ reply, type: 'unauthorized', message: 'Invalid or expired refresh token' })
-      }
-
-      const [user] = await db.select().from(users).where(eq(users.id, payload.userId)).limit(1)
-
-      if (!user) {
-        return sendErrorReply({ reply, type: 'unauthorized', message: 'User not found' })
-      }
-
-      const tokens = generateTokens(fastify, {
-        userId: user.id,
-        email: user.email,
-        role: user.role || 'admin',
-      })
-
-      return reply.send({
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        refreshTokenExpiresAt: tokens.refreshTokenExpiresAt,
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
-
-  fastify.get('/me', { preHandler: authenticate }, async (request, reply) => {
-    if (!request.currentUser) {
-      return sendErrorReply({ reply, type: 'unauthorized', message: 'User not authenticated' })
-    }
-
-    const [user] = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        role: users.role,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .where(eq(users.id, request.currentUser.userId))
-      .limit(1)
-
-    if (!user) {
-      return sendErrorReply({ reply, type: 'unauthorized', message: 'User not found' })
-    }
-
-    return reply.send({ user })
-  })
-
-  fastify.get('/check', { preHandler: authenticate }, async (_request, reply) => {
-    return reply.send({ message: 'OK' })
-  })
-
-  fastify.post('/logout', { preHandler: authenticate }, async (_request, reply) => {
-    return reply.send({ message: 'Logged out successfully' })
-  })
+  fastify.post(
+    '/logout',
+    {
+      schema: {
+        tags: ['auth'],
+        description: 'Acknowledge logout for the authenticated user without revoking tokens.',
+      },
+      preHandler: authenticate,
+    },
+    async (_request, reply) => {
+      return reply.send({ message: 'Logged out successfully' })
+    },
+  )
 }

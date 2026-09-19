@@ -1,7 +1,8 @@
 'use server'
 
 import type { ApiClientOptions } from '@/types'
-import { ApiClientError } from '@/lib/api-client-error'
+
+import { ApiClientError } from '@/lib/errors'
 
 export const request = async <T>(
   baseUrl: string,

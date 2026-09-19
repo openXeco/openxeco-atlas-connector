@@ -11,7 +11,8 @@ import type {
   OpenXecoSession,
   OpenXecoCredentials,
 } from './types.js'
-import { type Logger, getLogger } from '@/utils/logger.js'
+import { getLogger } from '@/utils/logger.js'
+import type { Logger } from '@/types.js'
 
 const OPENXECO_API_BASE = 'https://api.cybersecurity.lu'
 const ECCC_FORM_ID = 11

@@ -1,4 +1,5 @@
 import type { ApiClientError as IApiClientError } from '@/types'
+import type { logger as log } from '@/lib/logger'
 
 export class ApiClientError extends Error implements IApiClientError {
   readonly statusCode: number
@@ -31,5 +32,20 @@ export class ApiClientError extends Error implements IApiClientError {
       message: this.message,
       payload: this.payload,
     }
+  }
+}
+
+export const handleRouteError = (error: unknown, logger: typeof log): { message: string; statusCode: number } => {
+  if (error instanceof ApiClientError) {
+    logger.error(error.toJSON())
+    return {
+      message: error.message,
+      statusCode: error.statusCode,
+    }
+  }
+
+  return {
+    message: 'Unexpected error',
+    statusCode: 500,
   }
 }

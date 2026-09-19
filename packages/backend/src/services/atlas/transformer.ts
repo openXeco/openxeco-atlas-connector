@@ -1,35 +1,32 @@
 import type { Entity, Taxonomy } from '@/db/schema.js'
-import type {
-  JsonApiAddress,
-  JsonApiDocument,
-  JsonApiResource,
-  JsonApiRelationship,
-  Cluster,
-  ClusterInput,
-  TaxonomyTerm,
-  JsonApiWebsite,
-  TaxonomyType,
-} from './types.js'
-import { TAXONOMY_TYPES } from '@/services/atlas/taxonomy-types.js'
+import type { JsonApiResource, JsonApiRelationship, JsonApiDocument } from './types.js'
+import { TAXONOMY_TYPES } from '@/config/constants.js'
 import { getLogger } from '@/utils/logger.js'
+import type { EntityStatus, TaxonomyType } from '@/types.js'
+import type {
+  AtlasTaxonomyTerm,
+  AtlasCluster,
+  AtlasJsonApiAddress,
+  AtlasJsonApiWebsite,
+  AtlasClusterInput,
+} from '@/actions/atlas/types.js'
 
 /**
  * Maps a JSON:API resource to a Cluster object, extracting ALL attributes and relationships.
  * Used as the single source of truth for parsing ATLAS API responses.
  */
-export function mapResourceToCluster(resource: JsonApiResource): Cluster {
+export function mapResourceToCluster(resource: JsonApiResource): AtlasCluster {
   const attrs = resource.attributes
 
   // Extract structured address (may be null or an object)
-  const address = attrs.field_address as JsonApiAddress
+  const address = attrs.field_address as AtlasJsonApiAddress
 
   // Extract website URL (may be { uri: string } or a plain string)
-  const websiteField = attrs.field_url as JsonApiWebsite
+  const websiteField = attrs.field_url as AtlasJsonApiWebsite
   const website =
     typeof websiteField === 'object' && websiteField !== null ? websiteField.uri : (websiteField as string | undefined)
 
-  const cluster: Cluster = {
-    id: resource.id,
+  const cluster: AtlasCluster = {
     atlasId: resource.id,
 
     // Basic information
@@ -75,7 +72,6 @@ export function mapResourceToCluster(resource: JsonApiResource): Cluster {
     goalsToContribute: attrs.field_goals_to_contribute as string | undefined,
 
     // Workflow
-    status: attrs.status as string | undefined,
     moderationState: attrs.moderation_state as string | undefined,
 
     // Timestamps
@@ -151,7 +147,7 @@ export class JsonApiTransformer {
     }
   }
 
-  fromJsonApiCluster(document: JsonApiDocument): Cluster {
+  fromJsonApiCluster(document: JsonApiDocument): AtlasCluster {
     if (!document.data || Array.isArray(document.data)) {
       throw new Error('Invalid JSON:API document for cluster')
     }
@@ -159,7 +155,7 @@ export class JsonApiTransformer {
     return mapResourceToCluster(document.data)
   }
 
-  fromJsonApiClusters(document: JsonApiDocument): Cluster[] {
+  fromJsonApiClusters(document: JsonApiDocument): AtlasCluster[] {
     if (!document.data) {
       return []
     }
@@ -169,7 +165,7 @@ export class JsonApiTransformer {
     return resources.map((resource) => this.fromJsonApiCluster({ data: resource }))
   }
 
-  toEntityFromCluster(cluster: Cluster): Partial<Entity> {
+  toEntityFromCluster(cluster: AtlasCluster): Partial<Entity> {
     return {
       atlasId: cluster.atlasId,
 
@@ -220,8 +216,7 @@ export class JsonApiTransformer {
       clusterTypeId: cluster.clusterTypeId,
 
       // Workflow
-      status: cluster.status || 'draft',
-      moderationState: cluster.moderationState || 'draft',
+      status: (cluster.moderationState || 'draft') as EntityStatus,
       syncStatus: 'synced',
 
       metadata: cluster.metadata,
@@ -239,7 +234,7 @@ export class JsonApiTransformer {
       useCaseIds?: string[]
       fieldsOfActivityIds?: string[]
     },
-  ): ClusterInput {
+  ): AtlasClusterInput {
     return {
       // Basic information
       name: entity.name,
@@ -293,11 +288,11 @@ export class JsonApiTransformer {
       fieldsOfActivityIds: taxonomyIds?.fieldsOfActivityIds,
 
       // Workflow
-      moderationState: entity.moderationState || undefined,
+      moderationState: entity.status || undefined,
     }
   }
 
-  fromJsonApiTaxonomy(resource: JsonApiResource, type: string): TaxonomyTerm {
+  fromJsonApiTaxonomy(resource: JsonApiResource, type: string): AtlasTaxonomyTerm {
     if (!(TAXONOMY_TYPES as readonly string[]).includes(type)) {
       getLogger().warn(`Unknown taxonomy type received from ATLAS: '${type}' — treating as-is`)
     }
@@ -314,7 +309,7 @@ export class JsonApiTransformer {
     }
   }
 
-  toTaxonomyFromTerm(term: TaxonomyTerm): Omit<Taxonomy, 'id'> {
+  toTaxonomyFromTerm(term: AtlasTaxonomyTerm): Omit<Taxonomy, 'id'> {
     return {
       atlasId: term.atlasId,
       taxonomyType: term.type,

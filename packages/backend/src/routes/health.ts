@@ -2,41 +2,49 @@ import type { FastifyInstance } from 'fastify'
 import { sql } from 'drizzle-orm'
 import { db } from '../config/database.js'
 import type { HealthResponse } from '@/types.js'
-import { sendErrorReply } from '@/utils/reply-helpers.js'
 
 export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.get('/health', async (_request, reply) => {
-    let dbStatus: 'ok' | 'error' = 'error'
-
-    try {
-      await db.execute(sql`SELECT 1`)
-      dbStatus = 'ok'
-    } catch {
-      dbStatus = 'error'
-    }
-
-    const response: HealthResponse = {
-      status: dbStatus === 'ok' ? 'ok' : 'error',
-      timestamp: new Date().toISOString(),
-      services: {
-        database: dbStatus,
+  fastify.get(
+    '/health',
+    {
+      schema: {
+        tags: ['health'],
+        description: 'Check service health and database connectivity.',
       },
-    }
+    },
+    async (_request, reply) => {
+      let dbStatus: 'ok' | 'error' = 'error'
 
-    const statusCode = response.status === 'ok' ? 200 : 503
-    return reply.status(statusCode).send(response)
-  })
+      try {
+        await db.execute(sql`SELECT 1`)
+        dbStatus = 'ok'
+      } catch {
+        dbStatus = 'error'
+      }
 
-  fastify.get('/health/live', async (_request, reply) => {
-    return reply.send({ status: 'ok' })
-  })
+      const response: HealthResponse = {
+        status: dbStatus === 'ok' ? 'ok' : 'error',
+        timestamp: new Date().toISOString(),
+        services: {
+          database: dbStatus,
+        },
+      }
 
-  fastify.get('/health/ready', async (_request, reply) => {
-    try {
-      await db.execute(sql`SELECT 1`)
+      const statusCode = response.status === 'ok' ? 200 : 503
+      return reply.status(statusCode).send(response)
+    },
+  )
+
+  fastify.get(
+    '/health/live',
+    {
+      schema: {
+        tags: ['health'],
+        description: 'Check that the application is running.',
+      },
+    },
+    async (_request, reply) => {
       return reply.send({ status: 'ok' })
-    } catch {
-      return sendErrorReply({ reply, type: 'unexpected', message: 'Database not ready' })
-    }
-  })
+    },
+  )
 }

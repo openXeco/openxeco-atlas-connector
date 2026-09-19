@@ -105,12 +105,13 @@ export async function pushEntity(_prevState: unknown, formData: FormData): Promi
   const apiClient = getApiClient()
 
   try {
-    await apiClient.post(`/entities/${id}/push`, {}, { credentials: 'include' })
+    await apiClient.post(`/sync/entities/${id}/push`, {}, { credentials: 'include' })
     return {
       success: true,
       message: 'Successfully synced.',
     }
-  } catch (_e) {
+  } catch (e) {
+    logger.error(e)
     return {
       success: false,
       error: 'Error syncing Entity. Please check the logs',

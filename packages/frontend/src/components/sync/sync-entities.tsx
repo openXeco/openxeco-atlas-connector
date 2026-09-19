@@ -20,7 +20,7 @@ export const SyncEntities = () => {
       id: 'test id 2',
       atlasId: 'test atlas_id 2',
       name: 'Test entity 2',
-      syncStatus: 'local',
+      syncStatus: 'pending_push',
       updatedAt: new Date(),
       lastSyncedAt: null,
     },
