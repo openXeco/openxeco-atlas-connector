@@ -9,6 +9,10 @@ describe('normalizeClusterField', () => {
     expect(normalizeClusterField('website', undefined)).toBeNull()
   })
 
+  it('preserves multiple national names instead of discarding additional values', () => {
+    expect(normalizeClusterField('nameNational', ['First name', 'Second name'])).toEqual(['First name', 'Second name'])
+  })
+
   it('sorts taxonomy identifiers without mutating the source array', () => {
     const ids = ['sector-2', 'sector-1']
 
@@ -31,6 +35,20 @@ describe('findConflictFields', () => {
     })
 
     expect(findConflictFields(local, remote)).toEqual([])
+  })
+
+  it('treats empty text and missing text as equivalent in either direction', () => {
+    const local = makeAtlasInput({ email: '', phone: undefined })
+    const remote = makeAtlasCluster({ ...local, email: undefined, phone: '' })
+
+    expect(findConflictFields(local, remote)).toEqual([])
+  })
+
+  it('still reports cleared text and an unanswered boolean versus false', () => {
+    const local = makeAtlasInput({ email: 'local@example.com', isHeadquarter: undefined })
+    const remote = makeAtlasCluster({ ...local, email: '', isHeadquarter: false })
+
+    expect(findConflictFields(local, remote)).toEqual(['email', 'isHeadquarter'])
   })
 
   it('reports changed scalar and taxonomy fields', () => {

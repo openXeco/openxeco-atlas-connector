@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { forcePullEntity } from '@/actions/atlas/force-pull-entity.js'
+import { forceSyncEntity } from '@/actions/atlas/force-sync-entity.js'
 import { replaceLocalEntityFromAtlas } from '@/actions/atlas/internal/replace-local-entity-from-atlas.js'
 import { getClusterByID } from '@/actions/atlas/utils/atlas-clusters.js'
 import { AtlasApiError } from '@/actions/atlas/utils/atlas-api-error.js'
@@ -39,7 +39,8 @@ const transaction = vi.fn(async (callback: (transactionDb: DB) => unknown) => ca
 const db = { transaction } as unknown as DB
 const logger = makeLogger().logger
 
-const callForcePullEntity = (id = 'entity-1') => forcePullEntity({ id, db, logger, dependencies: { atlasClient } })
+const callForcePullEntity = (id = 'entity-1') =>
+  forceSyncEntity({ id, db, logger, dependencies: { atlasClient } }, 'pull')
 
 describe('forcePullEntity', () => {
   beforeEach(() => {
@@ -68,7 +69,7 @@ describe('forcePullEntity', () => {
     })
 
     expect(replaceLocalEntityFromAtlasMock).toHaveBeenCalledWith('entity-1', remote, tx)
-    expect(finalizeEntitySyncSuccessMock).toHaveBeenCalledWith('force-pull', 'entity-1', 'atlas-1', db, logger)
+    expect(finalizeEntitySyncSuccessMock).toHaveBeenCalledWith('force-pull', 'entity-1', 'atlas-1', tx, logger)
   })
 
   it('returns not linked when the entity has no atlas id', async () => {
@@ -86,19 +87,17 @@ describe('forcePullEntity', () => {
     expect(getClusterByIDMock).not.toHaveBeenCalled()
   })
 
-  it('does not force an entity that is not in conflict', async () => {
+  it('allows pulling differences discovered after a successful sync', async () => {
+    const remote = makeAtlasCluster({ atlasId: 'atlas-1' })
     getEntityMock.mockResolvedValue({
       success: true,
       data: makeEntity({ atlasId: 'atlas-1', syncStatus: 'synced', syncCode: null }),
     })
+    getClusterByIDMock.mockResolvedValue(remote)
 
-    await expect(callForcePullEntity()).resolves.toEqual({
-      success: false,
-      code: 'validation',
-      message: 'The entity entity-1 has not conflicts to resolve.',
-    })
+    await expect(callForcePullEntity()).resolves.toMatchObject({ success: true })
 
-    expect(getClusterByIDMock).not.toHaveBeenCalled()
+    expect(replaceLocalEntityFromAtlasMock).toHaveBeenCalledWith('entity-1', remote, tx)
   })
 
   it('records a confirmed missing remote entity', async () => {

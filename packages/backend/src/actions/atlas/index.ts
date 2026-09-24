@@ -9,10 +9,10 @@ import { getCluster } from '@/actions/atlas/get-cluster.js'
 import { pushEntity } from '@/actions/atlas/push-entity.js'
 import { selectCorrespondence } from '@/actions/atlas/select-correspondence.js'
 import { forceCreateEntity } from '@/actions/atlas/force-create-entity.js'
-import { forcePushEntity } from '@/actions/atlas/force-push-entity.js'
-import { forcePullEntity } from '@/actions/atlas/force-pull-entity.js'
+import { forceSyncEntity } from '@/actions/atlas/force-sync-entity.js'
 import { getSyncLogs } from '@/actions/atlas/get-sync-logs.js'
 import type { SyncLogsQuery } from '@/actions/atlas/types.js'
+import { checkConflicts } from '@/actions/atlas/check-conflicts.js'
 
 export const atlasActions = (db: DB, logger: ActionArgsWithDb['logger']) => {
   const atlasClient = getAtlasClient({ appConfig: config, logger })
@@ -41,8 +41,10 @@ export const atlasActions = (db: DB, logger: ActionArgsWithDb['logger']) => {
     forceCreateEntity: async (id: string) =>
       handleActionResult(await forceCreateEntity({ db, logger, dependencies: { atlasClient }, id })),
     forcePushEntity: async (id: string) =>
-      handleActionResult(await forcePushEntity({ db, logger, dependencies: { atlasClient }, id })),
+      handleActionResult(await forceSyncEntity({ db, logger, dependencies: { atlasClient }, id }, 'push')),
     forcePullEntity: async (id: string) =>
-      handleActionResult(await forcePullEntity({ db, logger, dependencies: { atlasClient }, id })),
+      handleActionResult(await forceSyncEntity({ db, logger, dependencies: { atlasClient }, id }, 'pull')),
+    checkConflicts: async (id: string) =>
+      handleActionResult(await checkConflicts({ db, logger, dependencies: { atlasClient }, id })),
   }
 }

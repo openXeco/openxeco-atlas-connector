@@ -209,3 +209,7 @@ export type ActionStateWithErrors =
 export type GeneralSettings = {
   country?: string
 }
+
+export type CheckConflictsState =
+  | { success: true; message: string; data: Record<string, unknown> }
+  | { success: false; error: string }

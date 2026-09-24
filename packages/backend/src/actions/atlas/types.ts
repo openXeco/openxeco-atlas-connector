@@ -224,7 +224,9 @@ export type ForceSyncEntityResult = {
   atlasId: string
 }
 
-export type ForcePushEntityResult = ForceSyncEntityResult
-export type ForcePullEntityResult = ForceSyncEntityResult
-
 export type AtlasFieldComparable = (typeof atlasFieldsComparable)[number]
+
+/** Remote values for differing fields. Taxonomy fields contain names (not IDs); null means absent. */
+export type CheckConflictsResult = {
+  [Field in AtlasFieldComparable]?: Exclude<AtlasClusterInput[Field], undefined> | null
+}

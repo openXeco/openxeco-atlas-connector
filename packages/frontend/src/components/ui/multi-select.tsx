@@ -19,10 +19,23 @@ export interface MultiSelectProps {
   disabled?: boolean
   className?: string
   hierarchical?: boolean
+  selectParentWithChild?: boolean
 }
 
 const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
-  ({ options, value, onChange, placeholder = 'Select options...', disabled, className, hierarchical }, ref) => {
+  (
+    {
+      options,
+      value,
+      onChange,
+      placeholder = 'Select options...',
+      disabled,
+      className,
+      hierarchical,
+      selectParentWithChild,
+    },
+    ref,
+  ) => {
     const [isOpen, setIsOpen] = React.useState(false)
     const containerRef = React.useRef<HTMLDivElement>(null)
     const comboId = React.useId()
@@ -42,16 +55,42 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     const selectedOptions = options.filter((opt) => value.includes(opt.id))
 
     const toggleOption = (optionId: string) => {
-      if (value.includes(optionId)) {
-        onChange(value.filter((id) => id !== optionId))
-      } else {
-        onChange([...value, optionId])
+      const option = options.find((candidate) => candidate.id === optionId)
+
+      if (!option) {
+        return
       }
+
+      if (value.includes(optionId)) {
+        let nextValue = value.filter((id) => id !== optionId)
+
+        if (selectParentWithChild && !option.parentId) {
+          const childIds = new Set(
+            options.filter((candidate) => candidate.parentId === option.atlasId).map((candidate) => candidate.id),
+          )
+          nextValue = nextValue.filter((id) => !childIds.has(id))
+        }
+
+        onChange(nextValue)
+        return
+      }
+
+      const nextValue = [...value, optionId]
+
+      if (selectParentWithChild && option.parentId) {
+        const parent = options.find((candidate) => candidate.atlasId === option.parentId)
+
+        if (parent && !nextValue.includes(parent.id)) {
+          nextValue.push(parent.id)
+        }
+      }
+
+      onChange(nextValue)
     }
 
     const removeOption = (optionId: string, e: React.MouseEvent) => {
       e.stopPropagation()
-      onChange(value.filter((id) => id !== optionId))
+      toggleOption(optionId)
     }
 
     return (

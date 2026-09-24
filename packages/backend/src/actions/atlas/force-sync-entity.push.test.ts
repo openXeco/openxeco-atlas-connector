@@ -1,7 +1,7 @@
 import { AtlasApiError } from '@/actions/atlas/utils/atlas-api-error.js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { forcePushEntity } from '@/actions/atlas/force-push-entity.js'
+import { forceSyncEntity } from '@/actions/atlas/force-sync-entity.js'
 import { updateRemoteEntity } from '@/actions/atlas/internal/update-remote-entity.js'
 import { toClusterInputFromEntity } from '@/actions/atlas/utils/transformers.js'
 import { getEntity } from '@/actions/entities/get-entity.js'
@@ -38,7 +38,8 @@ const logger = makeLogger().logger
 const db = makeDb()
 const input = makeAtlasInput()
 
-const callForcePushEntity = (id = 'entity-1') => forcePushEntity({ id, db, logger, dependencies: { atlasClient } })
+const callForcePushEntity = (id = 'entity-1') =>
+  forceSyncEntity({ id, db, logger, dependencies: { atlasClient } }, 'push')
 
 describe('forcePushEntity', () => {
   beforeEach(() => {
@@ -92,19 +93,17 @@ describe('forcePushEntity', () => {
     expect(updateRemoteEntityMock).not.toHaveBeenCalled()
   })
 
-  it('does not force an entity that is not in conflict', async () => {
+  it('allows pushing differences discovered after a successful sync', async () => {
+    const cluster = makeAtlasCluster({ atlasId: 'atlas-1' })
     getEntityMock.mockResolvedValue({
       success: true,
-      data: makeEntity({ atlasId: 'atlas-1', syncStatus: 'pending_push', syncCode: null }),
+      data: makeEntity({ atlasId: 'atlas-1', syncStatus: 'synced', syncCode: null }),
     })
+    updateRemoteEntityMock.mockResolvedValue({ code: 'updated', cluster })
 
-    await expect(callForcePushEntity()).resolves.toEqual({
-      success: false,
-      code: 'validation',
-      message: 'The entity entity-1 has not conflicts to resolve.',
-    })
+    await expect(callForcePushEntity()).resolves.toMatchObject({ success: true })
 
-    expect(updateRemoteEntityMock).not.toHaveBeenCalled()
+    expect(updateRemoteEntityMock).toHaveBeenCalledOnce()
   })
 
   it.each([undefined, new AtlasApiError('Not found', 404, [{ status: '404', detail: 'Cluster missing' }])])(

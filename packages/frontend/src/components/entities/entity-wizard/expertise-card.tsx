@@ -66,6 +66,7 @@ export const ExpertiseCard = ({
           onChange={(values) => setValue('thematicAreaIds', values)}
           placeholder='Select knowledge domains'
           hierarchical
+          selectParentWithChild
         />
       </div>
 

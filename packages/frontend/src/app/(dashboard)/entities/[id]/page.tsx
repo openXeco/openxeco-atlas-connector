@@ -2,10 +2,11 @@
 
 import type { Entity, SyncLog } from '@/types'
 import React from 'react'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { DeleteEntityButton } from '@/components/entities/delete-entity-button'
+import { DeleteEntityButton } from '@/components/entities/buttons/delete-entity-button'
 import { Link } from '@/components/ui/link'
+import { EditEntityButton } from '@/components/entities/buttons/edit-entity-button'
 import { StatusBadge } from '@/components/entities/status-badge'
 import useSWR from 'swr'
 import { apiFetcher } from '@/lib/swr'
@@ -56,10 +57,7 @@ export default function ViewEntityPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
         <div className='flex items-center gap-2'>
-          <Link href={`/entities/${id}/edit`} variant={'outline'}>
-            <Pencil className='h-4 w-4' />
-            Edit
-          </Link>
+          <EditEntityButton id={id} />
           <DeleteEntityButton id={id} />
         </div>
       </div>

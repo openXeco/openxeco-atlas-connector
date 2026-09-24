@@ -1,7 +1,7 @@
 'use server'
 
 import type { ManageEntityState } from '@/components/entities/entity-wizard'
-import type { EntityFormData, ActionState, Entity } from '@/types'
+import type { EntityFormData, ActionState, Entity, CheckConflictsState } from '@/types'
 import { parseFormData } from '@/lib/utils'
 import { getApiClient } from '@/lib/api-client'
 
@@ -119,13 +119,43 @@ export async function pushEntity(_prevState: unknown, formData: FormData): Promi
   }
 }
 
-export async function checkConflicts(_prevState: unknown, formData: FormData): Promise<ActionState> {
+export async function checkConflicts(_prevState: unknown, formData: FormData): Promise<CheckConflictsState> {
   const id = formData.get('id')
-  const apiClient = getApiClient()
 
-  return {
-    success: true,
-    message: 'Conflicts checked',
+  try {
+    const response = await getApiClient().get<{ data: Record<string, unknown> }>(`/sync/entities/${id}/conflicts`, {
+      credentials: 'include',
+      cache: 'no-store',
+    })
+
+    return {
+      success: true,
+      message: 'Conflicts successfully checked.',
+      data: response.data,
+    }
+  } catch (error) {
+    logger.error(error)
+    return { success: false, error: 'Unable to check conflicts. Please try again.' }
+  }
+}
+
+export async function forcePushEntity(_prevState: unknown, formData: FormData): Promise<ActionState> {
+  return forceSyncEntity(formData, 'force-push')
+}
+
+export async function forcePullEntity(_prevState: unknown, formData: FormData): Promise<ActionState> {
+  return forceSyncEntity(formData, 'force-pull')
+}
+
+async function forceSyncEntity(formData: FormData, operation: 'force-push' | 'force-pull'): Promise<ActionState> {
+  const id = formData.get('id')
+
+  try {
+    await getApiClient().post(`/sync/entities/${id}/${operation}`, {}, { credentials: 'include' })
+    return { success: true, message: 'The differences were solved.' }
+  } catch (error) {
+    logger.error(error)
+    return { success: false, error: 'Unable to resolve conflicts. Please check the logs and try again.' }
   }
 }
 

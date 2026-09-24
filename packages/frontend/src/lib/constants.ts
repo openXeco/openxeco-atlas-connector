@@ -23,6 +23,7 @@ export type EntityAction =
   | 'recover_correspondence'
   | 'select_correspondence'
   | 'force_create'
+  | 'check_conflicts'
 
 export type StatusTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
 
@@ -92,7 +93,7 @@ export const SYNC_STATUS_DEFINITIONS = {
     description: 'The local entity and its ATLAS version were synchronized successfully.',
     tone: 'success',
     requiresAttention: false,
-    actions: ['edit'],
+    actions: ['edit', 'check_conflicts'],
   },
   failed: {
     label: 'Failed',
@@ -106,10 +107,11 @@ export const SYNC_STATUS_DEFINITIONS = {
 export const SYNC_CODE_DEFINITIONS = {
   conflict: {
     label: 'Conflict',
-    description: 'Both the local entity and its ATLAS version contain changes. Choose which version should win.',
+    description:
+      'Both the local entity and its ATLAS version contain changes. Review the conflicts and choose which version should win.',
     tone: 'warning',
     requiresAttention: true,
-    actions: ['force_push', 'force_pull'],
+    actions: ['check_conflicts'],
   },
   not_found: {
     label: 'Not found in ATLAS',

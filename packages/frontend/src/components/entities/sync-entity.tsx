@@ -4,29 +4,10 @@ import { CardContent, Card, CardHeader, CardTitle, CardDescription } from '@/com
 import { StatusBadge } from '@/components/entities/status-badge'
 import { SYNC_STATUS_DEFINITIONS, SYNC_CODE_DEFINITIONS, atlasErrorLabels, syncOperationLabels } from '@/lib/constants'
 import { EntityMetadata } from '@/components/entities/entity-metadata'
-import { PushEntityButton } from '@/components/entities/push-entity-button'
-import { Pencil, DatabaseArrowUp, TableOfContents } from 'lucide-react'
-import { Link } from '@/components/ui/link'
+import { DatabaseArrowUp } from 'lucide-react'
 import { formatDate, fieldLabel, asText, asRecord } from '@/lib/utils'
 import { EntityDisplayField } from '@/components/entities/entity-display-field'
-
-const getActionButton = (action: string, entityId: string) => {
-  switch (action) {
-    case 'push':
-      return <PushEntityButton id={entityId} />
-
-    case 'edit':
-      return (
-        <Link href={`/entities/${entityId}/edit`} variant={'outline'}>
-          <Pencil className='h-4 w-4' />
-          Edit
-        </Link>
-      )
-
-    default:
-      return <p>Action {action} not defined.</p>
-  }
-}
+import { SyncActions } from '@/components/entities/sync-actions'
 
 const formatLog = (log: SyncLog) => {
   const details = asRecord(log.details)
@@ -169,29 +150,7 @@ export const SyncEntity = ({ entity, logs }: { entity: Entity; logs: SyncLog[] }
           </div>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className={'flex items-center gap-2'}>
-            <TableOfContents className={'h-5 w-5'} />
-            Available actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={'flex flex-col gap-4'}>
-            <div className={'flex items-center gap-2'}>
-              {entity.syncStatus === 'failed' && syncCodeDefinition !== undefined ? (
-                syncCodeDefinition.actions.map((a) => {
-                  return getActionButton(a, entity.id)
-                })
-              ) : syncDefinition.actions.length ? (
-                syncDefinition.actions.map((a) => <div key={a}>{getActionButton(a, entity.id)}</div>)
-              ) : (
-                <p>No actions available</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <SyncActions entity={entity} />
     </div>
   )
 }
