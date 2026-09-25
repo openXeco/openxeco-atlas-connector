@@ -32,8 +32,7 @@ services:
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/atlas_connector
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=dev-secret-key-min-32-chars-for-development
+      - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=1h
       - JWT_REFRESH_EXPIRES_IN=7d
       - ATLAS_BASE_URL=${ATLAS_BASE_URL:-https://dg-cnect-cybersecurity-atlas.acc.dhs.tech.ec.europa.eu/jsonapi}
@@ -42,8 +41,6 @@ services:
       - ATLAS_PASSWORD=${ATLAS_PASSWORD:-}
     depends_on:
       db:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - atlas-network
@@ -67,23 +64,8 @@ services:
     networks:
       - atlas-network
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - atlas-network
-
 volumes:
   postgres_data:
-  redis_data:
 
 networks:
   atlas-network:

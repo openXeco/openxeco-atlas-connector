@@ -33,11 +33,11 @@ export const EntityDisplayField = ({
   value,
   fieldName,
   children,
-}: React.PropsWithChildren<EntityDisplayFieldProps>) => {
-  // Simple field with children, no processing on it
+  className,
+}: React.PropsWithChildren<EntityDisplayFieldProps> & React.HTMLAttributes<HTMLDivElement>) => {
   if (children) {
     return (
-      <div>
+      <div className={className || ''}>
         <h4 className='mb-2 text-sm font-medium text-muted-foreground'>{title}</h4>
         {children}
       </div>
@@ -45,7 +45,7 @@ export const EntityDisplayField = ({
   }
 
   return (
-    <div>
+    <div className={className || ''}>
       <h4 className='mb-2 text-sm font-medium text-muted-foreground'>{title}</h4>
       {Array.isArray(value) ? (
         <div className={'flex flex-wrap gap-1'}>

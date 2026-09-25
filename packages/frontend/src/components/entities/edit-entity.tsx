@@ -40,7 +40,7 @@ export const EditEntity = ({ id, entity, taxonomies, onConfirmAction }: EditEnti
   useEffect(() => {
     if (state?.success) {
       onConfirmAction?.()
-      router.push('/entities')
+      router.back()
     }
   }, [state, router, onConfirmAction])
 
@@ -53,7 +53,7 @@ export const EditEntity = ({ id, entity, taxonomies, onConfirmAction }: EditEnti
       )}
       <EntityWizard
         onCancelAction={() => {
-          router.push('/entities')
+          router.back()
         }}
         taxonomies={taxonomies}
         useFormParams={useFormParams}

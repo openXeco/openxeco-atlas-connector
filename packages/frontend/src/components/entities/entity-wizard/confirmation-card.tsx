@@ -102,8 +102,8 @@ export const ConfirmationCard = ({
       <div className='space-y-2'>
         <Label htmlFor='moderationState'>Submission Status</Label>
         <Select
-          value={formData.moderationState || 'draft'}
-          onValueChange={(value: string) => setValue('moderationState', value as EntityFormData['moderationState'])}
+          value={formData.status || 'draft'}
+          onValueChange={(value: string) => setValue('status', value as EntityFormData['status'])}
         >
           <SelectTrigger>
             <SelectValue placeholder='Select status' />
@@ -111,6 +111,7 @@ export const ConfirmationCard = ({
           <SelectContent>
             <SelectItem value='draft'>Draft (Save for later)</SelectItem>
             <SelectItem value='ready_for_publication'>Ready for Publication (Submit for review)</SelectItem>
+            <SelectItem value='to_be_rejected'>To Be Rejected (Submit for rejection)</SelectItem>
           </SelectContent>
         </Select>
       </div>

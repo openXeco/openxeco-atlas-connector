@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react'
 import { Suspense } from 'react'
 import { EntitiesList } from '@/components/entities/entities-list'
 import { Link } from '@/components/ui/link'
+import { SyncStatusWidgets } from '@/components/entities/sync-status-widgets'
 
 export default async function EntitiesPage() {
   return (
@@ -18,6 +19,7 @@ export default async function EntitiesPage() {
       </div>
 
       <Suspense fallback={<>Loading...</>}>
+        <SyncStatusWidgets />
         <EntitiesList />
       </Suspense>
     </>

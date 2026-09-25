@@ -100,3 +100,21 @@ function setDeep<T extends Record<string, unknown>>(
     }
   })
 }
+
+export const asRecord = (value: unknown): Record<string, unknown> => {
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    return value as Record<string, unknown>
+  }
+  return {}
+}
+
+export const asText = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
+
+export const fieldLabel = (field: string) =>
+  field
+    .replace(/^\/data\/(attributes|relationships)\//, '')
+    .replace(/~1/g, '/')
+    .replace(/~0/g, '~')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[_-]/g, ' ')
+    .replace(/^./, (letter) => letter.toUpperCase())

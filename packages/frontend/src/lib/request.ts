@@ -1,7 +1,8 @@
 'use server'
 
 import type { ApiClientOptions } from '@/types'
-import { ApiClientError } from '@/lib/api-client-error'
+
+import { ApiClientError } from '@/lib/errors'
 
 export const request = async <T>(
   baseUrl: string,
@@ -51,5 +52,6 @@ export const request = async <T>(
     throw new ApiClientError(message, response.status)
   }
 
-  return response.json()
+  // response.json() resolves to Promise<unknown>; cast to T since callers supply the expected shape
+  return response.json() as unknown as T
 }

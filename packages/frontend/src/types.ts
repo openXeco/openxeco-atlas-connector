@@ -1,4 +1,6 @@
 // Auth
+import type { ENTITY_STATUSES, SYNC_CODES, SYNC_STATUSES } from '@/lib/constants'
+
 export interface ApiClientOptions extends RequestInit {
   params?: Record<string, string>
   accessToken?: string
@@ -19,20 +21,13 @@ export interface User {
 
 // ATLAS
 export type TaxonomyType =
-  | 'activities_of_interest'
   | 'applications_and_technologies'
   | 'cluster_thematic_area'
   | 'cluster_type'
   | 'country'
-  | 'cybersecurity_research_projects'
-  | 'european_cybersecurity_competenc'
   | 'fields_of_activity'
-  | 'funding_sources'
-  | 'initiatives'
   | 'languages'
-  | 'legal_status'
   | 'nationality'
-  | 'position_category'
   | 'sectors'
   | 'technologies'
   | 'use_cases'
@@ -56,15 +51,24 @@ export interface Taxonomy {
   lastSyncedAt: string
 }
 
-export type EntityStatus = 'draft' | 'ready_for_publication' | 'published' | 'to_be_rejected' | 'rejected'
-export type SyncStatus = 'local' | 'synced' | 'pending_push' | 'failed' | 'conflict'
+export type EntityStatus = (typeof ENTITY_STATUSES)[number]
+export type SyncStatus = (typeof SYNC_STATUSES)[number]
+export type SyncCode = (typeof SYNC_CODES)[number]
+
 export type SyncRecap = {
   total: number
-  local: number
-  synced: number
-  conflict: number
-  failed: number
-  pendingPush: number
+  moderation: Record<EntityStatus, number>
+  sync: Record<SyncStatus, number>
+}
+
+export interface SyncLog {
+  id: string
+  entityType: string
+  entityId: string | null
+  operation: string
+  status: string
+  details: unknown
+  createdAt: string | null
 }
 
 export interface Entity {
@@ -74,8 +78,8 @@ export interface Entity {
   nameNational: string | null
   entityDepartment: string | null
   status: EntityStatus
-  moderationState: EntityStatus | null
   syncStatus: SyncStatus
+  syncCode: SyncCode | null
   countryCode: string | null
   city: string | null
   streetAddress: string | null
@@ -86,8 +90,6 @@ export interface Entity {
   clusterTypeId: string | null
   organizationTypeId: string | null
   website: string | null
-  latitude: string | null
-  longitude: string | null
   isHeadquarter: boolean | null
   headquarterInfo: string | null
   hasSubsidiaries: boolean | null
@@ -122,14 +124,6 @@ export interface Entity {
   fieldsOfActivity?: Array<Taxonomy>
 }
 
-export interface EntityVersion {
-  id: string
-  entityId: string
-  version: string
-  data: unknown
-  createdAt: Date
-}
-
 export type EntityFormData = {
   name: string
   nameNational?: string
@@ -138,14 +132,10 @@ export type EntityFormData = {
   countryCode?: string
   city?: string
   streetAddress?: string
-  postalCode?: string
   email?: string
   phone?: string
   registrationNumber?: string
-  logoUrl?: string
   website?: string
-  latitude?: number
-  longitude?: number
   isHeadquarter?: boolean
   headquarterInfo?: string
   hasSubsidiaries?: boolean
@@ -172,7 +162,7 @@ export type EntityFormData = {
   technologyIds?: string[]
   useCaseIds?: string[]
   fieldsOfActivityIds?: string[]
-  moderationState?: EntityStatus
+  status?: EntityStatus
 }
 
 export interface EntityListParams {
@@ -180,9 +170,14 @@ export interface EntityListParams {
   limit?: number
   status?: EntityStatus
   syncStatus?: SyncStatus
+  syncCode?: SyncCode
   search?: string
   countryId?: string
   clusterTypeId?: string
+}
+
+export type EntitySync = Pick<Entity, 'id' | 'atlasId' | 'name' | 'lastSyncedAt' | 'updatedAt' | 'syncStatus'> & {
+  atlasUpdatedAt?: Date | null
 }
 
 export type EntityTaxonomies = {
@@ -214,3 +209,7 @@ export type ActionStateWithErrors =
 export type GeneralSettings = {
   country?: string
 }
+
+export type CheckConflictsState =
+  | { success: true; message: string; data: Record<string, unknown> }
+  | { success: false; error: string }

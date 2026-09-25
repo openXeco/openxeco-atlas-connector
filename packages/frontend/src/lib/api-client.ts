@@ -30,6 +30,19 @@ const apiClient = (
       )
     },
 
+    async put<T>(endpoint: string, data?: unknown, options: ApiClientOptions = {}) {
+      return request<T>(
+        baseUrl,
+        endpoint,
+        {
+          ...options,
+          method: 'PUT',
+          body: data ? JSON.stringify(data) : undefined,
+        },
+        auth,
+      )
+    },
+
     async patch<T>(endpoint: string, data?: unknown, options: ApiClientOptions = {}) {
       return request<T>(
         baseUrl,
@@ -47,10 +60,7 @@ const apiClient = (
       return request<T>(baseUrl, endpoint, { ...options, method: 'DELETE' }, auth)
     },
 
-    getCurrentUser: cache(async () => {
-      const response = await request<{ user: User }>(baseUrl, '/auth/me', { credentials: 'include' }, auth)
-      return response.user
-    }),
+    getCurrentUser: cache(async () => await request<User>(baseUrl, '/auth/me', { credentials: 'include' }, auth)),
 
     async loginUser(email: string, password: string) {
       return this.post<{

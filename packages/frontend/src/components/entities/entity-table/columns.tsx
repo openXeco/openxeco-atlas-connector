@@ -12,17 +12,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuContent,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Eye, Trash2 } from 'lucide-react'
+import { EditEntityButton } from '@/components/entities/buttons/edit-entity-button'
 import { Button } from '@/components/ui/button'
 import { Link } from '@/components/ui/link'
 
 export const columns = ({
   onViewAction,
-  onEditAction,
   onDeleteAction,
 }: {
   onViewAction: (id: string) => void
-  onEditAction: (id: string) => void
   onDeleteAction: (id: string) => void
 }): ColumnDef<Entity>[] => [
   {
@@ -40,7 +39,7 @@ export const columns = ({
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: 'Moderation State',
     cell: ({ row }) => {
       return <StatusBadge type={'entity'} status={row.getValue('status')} />
     },
@@ -49,7 +48,7 @@ export const columns = ({
     accessorKey: 'syncStatus',
     header: 'Sync Status',
     cell: ({ row }) => {
-      return <StatusBadge type={'sync'} status={row.getValue('syncStatus')} />
+      return <StatusBadge type={'sync'} status={row.getValue('syncStatus')} code={row.original.syncCode} />
     },
   },
   {
@@ -78,9 +77,8 @@ export const columns = ({
               <Eye className='mr-2 h-4 w-4' />
               View Details
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEditAction(entity.id)}>
-              <Pencil className='mr-2 h-4 w-4' />
-              Edit
+            <DropdownMenuItem asChild>
+              <EditEntityButton id={entity.id} variant='ghost' className='h-auto justify-start font-normal' />
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onDeleteAction(entity.id)} className='text-destructive'>

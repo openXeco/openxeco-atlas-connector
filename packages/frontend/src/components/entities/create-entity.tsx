@@ -39,7 +39,7 @@ export const CreateEntity = ({
 
   useEffect(() => {
     if (state?.success) {
-      router.push('/entities')
+      router.back()
     }
   }, [state, router])
 
@@ -56,7 +56,7 @@ export const CreateEntity = ({
       )}
       <EntityWizard
         onCancelAction={() => {
-          router.push('/entities')
+          router.back()
         }}
         taxonomies={taxonomies}
         useFormParams={useFormParams}

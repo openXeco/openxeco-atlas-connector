@@ -1,24 +1,16 @@
 import { ProxyAgent } from 'undici'
 import { config } from '@/config/index.js'
-import { type Logger, getLogger } from '@/utils/logger.js'
+import { getLogger } from '@/utils/logger.js'
 import { mapResourceToCluster } from './transformer.js'
-import type {
-  AtlasConfig,
-  JsonApiDocument,
-  JsonApiResource,
-  TaxonomyType,
-  TaxonomyTerm,
-  Cluster,
-  ClusterInput,
-  QueryParams,
-  PaginatedResponse,
-} from './types.js'
+import type { AtlasConfig, JsonApiResource, QueryParams, PaginatedResponse, JsonApiDocument } from './types.js'
+import type { Logger, TaxonomyType } from '@/types.js'
+import type { AtlasTaxonomyTerm, AtlasCluster, AtlasClusterInput } from '@/actions/atlas/types.js'
 
 class AtlasClient {
   private config: AtlasConfig
   private authToken?: string
   private tokenExpiry?: Date
-  private proxyDispatcher?: ProxyAgent
+  private readonly proxyDispatcher?: ProxyAgent
   private readonly logger: Logger
 
   constructor(atlasConfig?: Partial<AtlasConfig>) {
@@ -52,156 +44,10 @@ class AtlasClient {
     }
   }
 
-  private async request<T = JsonApiResource>(
-    method: string,
-    path: string,
-    options?: {
-      body?: unknown
-      params?: QueryParams
-    },
-  ): Promise<JsonApiDocument<T>> {
-    await this.prepareAuthentication()
-
-    const baseUrl = this.config.baseUrl.endsWith('/') ? this.config.baseUrl : `${this.config.baseUrl}/`
-    const relativePath = path.startsWith('/') ? path.slice(1) : path
-    const url = new URL(relativePath, baseUrl)
-
-    url.searchParams.set('api-key', this.config.apiKey)
-
-    if (options?.params) {
-      if (options.params.pageOffset !== undefined) {
-        url.searchParams.set('page[offset]', String(options.params.pageOffset))
-      }
-      if (options.params.pageLimit !== undefined) {
-        url.searchParams.set('page[limit]', String(options.params.pageLimit))
-      }
-      if (options.params.page) {
-        url.searchParams.set('page[number]', String(options.params.page))
-      }
-      if (options.params.pageSize) {
-        url.searchParams.set('page[size]', String(options.params.pageSize))
-      }
-      if (options.params.filter) {
-        Object.entries(options.params.filter).forEach(([key, value]) => {
-          url.searchParams.set(`filter[${key}]`, value)
-        })
-      }
-      if (options.params.include) {
-        url.searchParams.set('include', options.params.include.join(','))
-      }
-      if (options.params.sort) {
-        url.searchParams.set('sort', options.params.sort)
-      }
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/vnd.api+json',
-      Accept: 'application/vnd.api+json',
-    }
-
-    if (this.authToken) {
-      const authScheme = this.config.username && this.config.password ? 'Basic' : 'Bearer'
-      headers.Authorization = `${authScheme} ${this.authToken}`
-    }
-
-    const maxRetries = 3
-    const retryableStatuses = [408, 429, 502, 503, 504]
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      const logUrl = new URL(url.toString())
-      logUrl.searchParams.delete('api-key')
-      this.logger.info(`ATLAS API request: ${method} ${logUrl.toString()} (attempt ${attempt})`)
-
-      try {
-        const fetchOptions: RequestInit = {
-          method,
-          headers,
-          body: options?.body ? JSON.stringify(options.body) : undefined,
-          signal: AbortSignal.timeout(this.config.timeout || 30000),
-        }
-
-        if (this.proxyDispatcher) {
-          // undici ProxyAgent as dispatcher for proxy support
-          ;(fetchOptions as Record<string, unknown>).dispatcher = this.proxyDispatcher
-        }
-
-        const response = await fetch(url.toString(), fetchOptions)
-
-        if (!response.ok) {
-          if (retryableStatuses.includes(response.status) && attempt < maxRetries) {
-            const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
-            this.logger.warn(`ATLAS API returned ${response.status}, retrying in ${delay}ms...`)
-            await new Promise((resolve) => setTimeout(resolve, delay))
-            continue
-          }
-
-          const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument
-          const apiErrors = errorData.errors || []
-          const errorDetail =
-            apiErrors.length > 0
-              ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
-              : response.statusText
-          this.logger.error(
-            {
-              status: response.status,
-              statusText: response.statusText,
-              errors: apiErrors,
-              url: logUrl.toString(),
-            },
-            'ATLAS API error:',
-          )
-          throw new Error(`ATLAS API error ${response.status}: ${errorDetail}`)
-        }
-
-        const data = (await response.json()) as JsonApiDocument<T>
-
-        if (data.errors && data.errors.length > 0) {
-          this.logger.error({ errors: data.errors }, 'ATLAS API returned errors:')
-          throw new Error(`ATLAS API error: ${data.errors[0].title || 'Unknown error'}`)
-        }
-
-        return data
-      } catch (error) {
-        if (error instanceof TypeError && attempt < maxRetries) {
-          const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
-          const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
-          this.logger.warn(
-            `ATLAS API network error (attempt ${attempt}/${maxRetries}): ${cause}, retrying in ${delay}ms...`,
-          )
-          await new Promise((resolve) => setTimeout(resolve, delay))
-          continue
-        }
-
-        if (error instanceof TypeError) {
-          const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
-          this.logger.error(
-            {
-              message: error.message,
-              cause,
-              url: logUrl.toString(),
-            },
-            'ATLAS API network error (final):',
-          )
-          throw new Error(`ATLAS API network error: ${cause}`)
-        }
-
-        if (error instanceof Error) {
-          if (error.name === 'AbortError') {
-            throw new Error('ATLAS API request timeout')
-          }
-          throw error
-        }
-        throw new Error('Unknown error occurred during ATLAS API request')
-      }
-    }
-
-    throw new Error('ATLAS API request failed after retries')
-  }
-
-  async getTaxonomies(type: TaxonomyType): Promise<TaxonomyTerm[]> {
+  async getTaxonomies(type: TaxonomyType): Promise<AtlasTaxonomyTerm[]> {
     this.logger.info(`Fetching taxonomies of type: ${type}`)
 
-    const allTerms: TaxonomyTerm[] = []
+    const allTerms: AtlasTaxonomyTerm[] = []
     let offset = 0
     const limit = 50
     const pageDelayMs = 1500
@@ -211,7 +57,9 @@ class AtlasClient {
         params: { pageOffset: offset, pageLimit: limit },
       })
 
-      if (!response.data) break
+      if (!response.data) {
+        break
+      }
 
       const resources = Array.isArray(response.data) ? response.data : [response.data]
 
@@ -230,7 +78,10 @@ class AtlasClient {
       }
 
       // Stop if we got fewer results than limit (last page) or no next link
-      if (resources.length < limit || !response.links?.next) break
+      if (resources.length < limit || !response.links?.next) {
+        break
+      }
+
       offset += limit
 
       // Delay between pages to avoid ATLAS API rate limiting
@@ -240,7 +91,7 @@ class AtlasClient {
     return allTerms
   }
 
-  async getTaxonomy(type: TaxonomyType, id: string): Promise<TaxonomyTerm> {
+  async getTaxonomy(type: TaxonomyType, id: string): Promise<AtlasTaxonomyTerm> {
     this.logger.info(`Fetching taxonomy: ${type}/${id}`)
 
     const response = await this.request<JsonApiResource>('GET', `/taxonomy_term/${type}/${id}`)
@@ -264,7 +115,7 @@ class AtlasClient {
     }
   }
 
-  async getClusters(params?: QueryParams): Promise<PaginatedResponse<Cluster>> {
+  async getClusters(params?: QueryParams): Promise<PaginatedResponse<AtlasCluster>> {
     this.logger.info('Fetching clusters from ATLAS')
 
     const response = await this.request<JsonApiResource>('GET', '/node/cluster', { params })
@@ -278,7 +129,7 @@ class AtlasClient {
 
     const resources = Array.isArray(response.data) ? response.data : [response.data]
 
-    const clusters: Cluster[] = resources.map((resource) => mapResourceToCluster(resource))
+    const clusters: AtlasCluster[] = resources.map((resource) => mapResourceToCluster(resource))
 
     return {
       data: clusters,
@@ -291,7 +142,7 @@ class AtlasClient {
     }
   }
 
-  async getCluster(id: string): Promise<Cluster> {
+  async getCluster(id: string): Promise<AtlasCluster> {
     this.logger.info(`Fetching cluster: ${id}`)
 
     const response = await this.request<JsonApiResource>('GET', `/node/cluster/${id}`)
@@ -305,7 +156,7 @@ class AtlasClient {
     return mapResourceToCluster(resource)
   }
 
-  async createCluster(data: ClusterInput): Promise<Cluster> {
+  async createCluster(data: AtlasClusterInput): Promise<AtlasCluster> {
     this.logger.info('Creating cluster in ATLAS')
 
     const body = {
@@ -325,7 +176,6 @@ class AtlasClient {
                   country_code: data.countryCode,
                   locality: data.city,
                   address_line1: data.streetAddress,
-                  // postal_code: data.postalCode,
                 }
               : undefined,
 
@@ -377,7 +227,7 @@ class AtlasClient {
     return mapResourceToCluster(response.data)
   }
 
-  async updateCluster(id: string, data: Partial<ClusterInput>): Promise<Cluster> {
+  async updateCluster(id: string, data: Partial<AtlasClusterInput>): Promise<AtlasCluster> {
     this.logger.info(`Updating cluster: ${id}`)
 
     const attributes: Record<string, unknown> = {}
@@ -511,7 +361,164 @@ class AtlasClient {
     return mapResourceToCluster(response.data)
   }
 
-  private buildRelationships(data: Partial<ClusterInput>): Record<string, unknown> {
+  private async request<T = JsonApiResource>(
+    method: string,
+    path: string,
+    options?: {
+      body?: unknown
+      params?: QueryParams
+    },
+  ): Promise<JsonApiDocument<T>> {
+    await this.prepareAuthentication()
+
+    const baseUrl = this.config.baseUrl.endsWith('/') ? this.config.baseUrl : `${this.config.baseUrl}/`
+    const relativePath = path.startsWith('/') ? path.slice(1) : path
+    const url = new URL(relativePath, baseUrl)
+
+    if (options?.params) {
+      if (options.params.pageOffset !== undefined) {
+        url.searchParams.set('page[offset]', String(options.params.pageOffset))
+      }
+      if (options.params.pageLimit !== undefined) {
+        url.searchParams.set('page[limit]', String(options.params.pageLimit))
+      }
+      if (options.params.page) {
+        url.searchParams.set('page[number]', String(options.params.page))
+      }
+      if (options.params.pageSize) {
+        url.searchParams.set('page[size]', String(options.params.pageSize))
+      }
+      if (options.params.filter) {
+        Object.entries(options.params.filter).forEach(([key, value]) => {
+          this.appendQueryParams(url.searchParams, value, `filter[${key}]`)
+        })
+      }
+      if (options.params.include) {
+        url.searchParams.set('include', options.params.include.join(','))
+      }
+      if (options.params.sort) {
+        url.searchParams.set('sort', options.params.sort)
+      }
+    }
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/vnd.api+json',
+      Accept: 'application/vnd.api+json',
+      'api-key': this.config.apiKey,
+    }
+
+    if (this.authToken) {
+      const authScheme = this.config.username && this.config.password ? 'Basic' : 'Bearer'
+      headers.Authorization = `${authScheme} ${this.authToken}`
+    }
+
+    const maxRetries = 3
+    const retryableStatuses = [408, 429, 502, 503, 504]
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      this.logger.info(`ATLAS API request: ${method} ${url.toString()} (attempt ${attempt})`)
+
+      try {
+        const fetchOptions: RequestInit = {
+          method,
+          headers,
+          body: options?.body ? JSON.stringify(options.body) : undefined,
+          signal: AbortSignal.timeout(this.config.timeout || 30000),
+        }
+
+        if (this.proxyDispatcher) {
+          // undici ProxyAgent as dispatcher for proxy support
+          ;(fetchOptions as Record<string, unknown>).dispatcher = this.proxyDispatcher
+        }
+
+        const response = await fetch(url.toString(), fetchOptions)
+
+        if (!response.ok) {
+          if (retryableStatuses.includes(response.status) && attempt < maxRetries) {
+            const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
+            this.logger.warn(`ATLAS API returned ${response.status}, retrying in ${delay}ms...`)
+            await new Promise((resolve) => setTimeout(resolve, delay))
+            continue
+          }
+
+          const errorData = (await response.json().catch(() => ({}))) as JsonApiDocument
+          const apiErrors = errorData.errors || []
+          const errorDetail =
+            apiErrors.length > 0
+              ? apiErrors.map((e) => e.detail || e.title || 'Unknown').join('; ')
+              : response.statusText
+          this.logger.error(
+            {
+              status: response.status,
+              statusText: response.statusText,
+              errors: apiErrors,
+              url: url.toString(),
+            },
+            'ATLAS API error:',
+          )
+          throw new Error(`ATLAS API error ${response.status}: ${errorDetail}`)
+        }
+
+        const data = (await response.json()) as JsonApiDocument<T>
+
+        if (data.errors && data.errors.length > 0) {
+          this.logger.error({ errors: data.errors }, 'ATLAS API returned errors:')
+          throw new Error(`ATLAS API error: ${data.errors[0].title || 'Unknown error'}`)
+        }
+
+        return data
+      } catch (error) {
+        if (error instanceof TypeError && attempt < maxRetries) {
+          const delay = Math.min(1000 * 2 ** (attempt - 1), 10000)
+          const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
+          this.logger.warn(
+            `ATLAS API network error (attempt ${attempt}/${maxRetries}): ${cause}, retrying in ${delay}ms...`,
+          )
+          await new Promise((resolve) => setTimeout(resolve, delay))
+          continue
+        }
+
+        if (error instanceof TypeError) {
+          const cause = error.cause instanceof Error ? error.cause.message : String(error.cause || error.message)
+          this.logger.error(
+            {
+              message: error.message,
+              cause,
+              url: url.toString(),
+            },
+            'ATLAS API network error (final):',
+          )
+          throw new Error(`ATLAS API network error: ${cause}`)
+        }
+
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            throw new Error('ATLAS API request timeout')
+          }
+          throw error
+        }
+        throw new Error('Unknown error occurred during ATLAS API request')
+      }
+    }
+
+    throw new Error('ATLAS API request failed after retries')
+  }
+
+  private appendQueryParams = (searchParams: URLSearchParams, value: unknown, prefix: string) => {
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        this.appendQueryParams(searchParams, item, `${prefix}[]`)
+      })
+    } else if (value !== null && typeof value === 'object') {
+      Object.entries(value).forEach(([key, val]) => {
+        this.appendQueryParams(searchParams, val, `${prefix}[${key}]`)
+      })
+    } else if (value !== undefined) {
+      searchParams.append(prefix, String(value))
+    }
+  }
+
+  private buildRelationships(data: Partial<AtlasClusterInput>): Record<string, unknown> {
     const relationships: Record<string, unknown> = {}
 
     // Organisation type (cluster_type) *
@@ -576,5 +583,4 @@ class AtlasClient {
 }
 
 export default AtlasClient
-
 export const atlasClient = new AtlasClient()
