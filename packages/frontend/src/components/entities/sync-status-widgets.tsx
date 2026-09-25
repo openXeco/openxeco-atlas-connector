@@ -13,6 +13,9 @@ export const SyncStatusWidgets = () => {
   }>('/api/sync/status', apiFetcher, swrDefaultOptions)
 
   const status = data?.data
+  const synced = Number(status?.sync?.synced ?? 0)
+  const pendingPush = Number(status?.sync?.pending_push ?? 0)
+  const failed = Number(status?.sync?.failed ?? 0)
 
   if (!status || isLoading) {
     return <>Loading...</>
@@ -29,22 +32,22 @@ export const SyncStatusWidgets = () => {
       variant: 'success',
       title: 'Synced',
       Icon: CheckCircle2,
-      value: status.sync.synced,
-      description: status.total > 0 ? `${Math.round((status.sync.synced / status.total) * 100)}% of total` : '',
+      value: synced,
+      description: status.total > 0 ? `${Math.round((synced / status.total) * 100)}% of total` : '',
     },
     {
       variant: 'warning',
       title: 'Pending',
       Icon: Clock,
-      value: status.sync.pending_push,
-      description: status.total > 0 ? `${Math.round((status.sync.pending_push / status.total) * 100)}% of total` : '',
+      value: pendingPush,
+      description: status.total > 0 ? `${Math.round((pendingPush / status.total) * 100)}% of total` : '',
     },
     {
       variant: 'danger',
       title: 'Failed',
       Icon: AlertCircle,
-      value: status.sync.failed,
-      description: status.total > 0 ? `${Math.round((status.sync.failed / status.total) * 100)}% of total` : '',
+      value: failed,
+      description: status.total > 0 ? `${Math.round((failed / status.total) * 100)}% of total` : '',
     },
   ]
 
