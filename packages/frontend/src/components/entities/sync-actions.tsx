@@ -2,18 +2,27 @@
 
 import { useActionState } from 'react'
 import { useSWRConfig } from 'swr'
-import { TableOfContents } from 'lucide-react'
-import type { Entity } from '@/types'
+import { Link2, TableOfContents } from 'lucide-react'
+import type { ActionState, Entity } from '@/types'
 import { getEntitySyncActions, type EntityAction } from '@/lib/constants'
-import { checkConflicts, forcePullEntity, forcePushEntity, pushEntity } from '@/app/actions/entities'
+import {
+  checkConflicts,
+  forcePullEntity,
+  forcePushEntity,
+  pushEntity,
+  selectCorrespondence,
+  type CorrespondenceCandidate,
+} from '@/app/actions/entities'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { ActionButton } from '@/components/ui/action-button'
+import { Button } from '@/components/ui/button'
 import { PushEntityButton } from '@/components/entities/buttons/push-entity-button'
 import { EditEntityButton } from '@/components/entities/buttons/edit-entity-button'
 import { CheckEntityConflictsButton } from '@/components/entities/buttons/check-entity-conflicts-button'
 import { EntityDifferences } from '@/components/entities/entity-differences'
 
 type SyncActionsState = {
+  candidates?: CorrespondenceCandidate[]
   differences?: Record<string, unknown>
   error?: string
   message?: string
@@ -38,12 +47,47 @@ const SyncActionsContent = ({ entity }: { entity: Entity }) => {
         return result.success ? { differences: result.data } : { ...previous, error: result.error, message: undefined }
       }
 
+      if (operation === 'select_correspondence') {
+        const result = await selectCorrespondence(undefined, formData)
+
+        if (!result.success) {
+          return { ...previous, error: result.error, message: undefined }
+        }
+
+        const refreshed = await Promise.allSettled([
+          mutate(`/api/entities/${entity.id}`),
+          mutate(`/api/sync/logs?entityId=${entity.id}`),
+        ])
+
+        return {
+          message: result.message,
+          error: refreshed.some((result) => result.status === 'rejected')
+            ? 'The correspondence was linked, but the latest status could not be loaded. Refresh the page.'
+            : undefined,
+        }
+      }
+
       if (operation !== 'push' && operation !== 'force_push' && operation !== 'force_pull') {
         return { ...previous, error: 'This action is not available.' }
       }
 
-      const action = operation === 'push' ? pushEntity : operation === 'force_push' ? forcePushEntity : forcePullEntity
-      const result = await action(undefined, formData)
+      let result: ActionState
+
+      if (operation === 'push') {
+        const pushResult = await pushEntity(undefined, formData)
+
+        if (pushResult.success && pushResult.candidates?.length) {
+          return {
+            candidates: pushResult.candidates,
+            message: pushResult.message,
+          }
+        }
+
+        result = pushResult
+      } else {
+        const action = operation === 'force_push' ? forcePushEntity : forcePullEntity
+        result = await action(undefined, formData)
+      }
 
       // Failed synchronization can also change the backend status and logs.
       const refreshed = await Promise.allSettled([
@@ -68,22 +112,35 @@ const SyncActionsContent = ({ entity }: { entity: Entity }) => {
 
   const checked = state.differences !== undefined
   const hasDifferences = state.differences !== undefined && Object.keys(state.differences).length > 0
+  const hasCandidates = Boolean(state.candidates?.length)
   const hasPersistedConflict = entity.syncStatus === 'failed' && entity.syncCode === 'conflict'
   const canForce = Boolean(entity.atlasId) && (hasPersistedConflict || hasDifferences)
 
-  const actions: readonly EntityAction[] = checked
-    ? hasDifferences
-      ? ['check_conflicts', 'edit', ...(canForce ? (['force_push', 'force_pull'] as const) : [])]
-      : ['edit']
-    : getEntitySyncActions(entity)
+  const actions: readonly EntityAction[] = hasCandidates
+    ? []
+    : checked
+      ? hasDifferences
+        ? ['check_conflicts', 'edit', ...(canForce ? (['force_push', 'force_pull'] as const) : [])]
+        : ['edit']
+      : getEntitySyncActions(entity)
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           <TableOfContents className='h-5 w-5' />
-          {hasDifferences ? 'Entity differences' : 'Available actions'}
+          {hasCandidates
+            ? 'Potential ATLAS correspondences'
+            : hasDifferences
+              ? 'Entity differences'
+              : 'Available actions'}
         </CardTitle>
+        {hasCandidates && (
+          <CardDescription>
+            Select the ATLAS entity that represents this organization. Linking it will prepare the local entity for
+            synchronization.
+          </CardDescription>
+        )}
         {hasDifferences && (
           <CardDescription>
             {canForce
@@ -93,6 +150,14 @@ const SyncActionsContent = ({ entity }: { entity: Entity }) => {
         )}
       </CardHeader>
       <CardContent className='space-y-4'>
+        {state.candidates && (
+          <CorrespondenceCandidates
+            candidates={state.candidates}
+            entityId={entity.id}
+            formAction={formAction}
+            pending={pending}
+          />
+        )}
         {hasDifferences && state.differences && <EntityDifferences entity={entity} differences={state.differences} />}
         {checked && !hasDifferences && (
           <p role='status' className='text-sm'>
@@ -107,7 +172,7 @@ const SyncActionsContent = ({ entity }: { entity: Entity }) => {
             {state.error}
           </p>
         )}
-        {actions.length === 0 && <p>No actions available</p>}
+        {actions.length === 0 && !hasCandidates && <p>No actions available</p>}
       </CardContent>
       <CardFooter className='flex flex-wrap items-start gap-2'>
         {actions.map((action) => {
@@ -156,3 +221,62 @@ const SyncActionsContent = ({ entity }: { entity: Entity }) => {
     </Card>
   )
 }
+
+const CorrespondenceCandidates = ({
+  candidates,
+  entityId,
+  formAction,
+  pending,
+}: {
+  candidates: CorrespondenceCandidate[]
+  entityId: string
+  formAction: (formData: FormData) => void | Promise<void>
+  pending: boolean
+}) => (
+  <form action={formAction} className='space-y-4'>
+    <input type='hidden' name='id' value={entityId} />
+    <input type='hidden' name='operation' value='select_correspondence' />
+
+    <fieldset className='space-y-3' disabled={pending}>
+      <legend className='sr-only'>Select an ATLAS correspondence</legend>
+      {candidates.map((candidate) => {
+        const address = [candidate.streetAddress, candidate.city].filter(Boolean).join(', ')
+        const contactName = [candidate.contactFirstName, candidate.contactLastName].filter(Boolean).join(' ')
+
+        return (
+          <label
+            key={candidate.atlasId}
+            className='flex cursor-pointer gap-3 rounded-md border p-4 transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-accent'
+          >
+            <input
+              type='radio'
+              name='atlasId'
+              value={candidate.atlasId}
+              required
+              className='mt-1 h-4 w-4 accent-primary'
+            />
+            <span className='min-w-0 space-y-2'>
+              <span className='block font-medium'>
+                {candidate.name}
+                {candidate.nameNational ? ` (${candidate.nameNational})` : ''}
+              </span>
+              <span className='grid gap-x-6 gap-y-1 text-sm text-muted-foreground sm:grid-cols-2'>
+                {candidate.registrationNumber ? <span>Registration: {candidate.registrationNumber}</span> : null}
+                {address ? <span>Address: {address}</span> : null}
+                {candidate.email ? <span>Email: {candidate.email}</span> : null}
+                {candidate.phone ? <span>Phone: {candidate.phone}</span> : null}
+                {contactName ? <span>Contact: {contactName}</span> : null}
+                {candidate.contactEmail ? <span>Contact email: {candidate.contactEmail}</span> : null}
+              </span>
+            </span>
+          </label>
+        )
+      })}
+    </fieldset>
+
+    <Button type='submit' disabled={pending} className='gap-2'>
+      <Link2 className='h-4 w-4' />
+      {pending ? 'Linking...' : 'Link selected correspondence'}
+    </Button>
+  </form>
+)

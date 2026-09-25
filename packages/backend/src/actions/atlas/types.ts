@@ -185,8 +185,25 @@ export type PushEntityResult =
   | {
       code: 'selection_required'
       entityId: string
-      candidates: AtlasCluster[]
+      candidates: AtlasCorrespondenceCandidate[]
     }
+
+export type AtlasCorrespondenceCandidate = Pick<
+  AtlasCluster,
+  | 'atlasId'
+  | 'name'
+  | 'nameNational'
+  | 'registrationNumber'
+  | 'streetAddress'
+  | 'city'
+  | 'email'
+  | 'phone'
+  | 'contactEmail'
+  | 'contactFirstName'
+  | 'contactLastName'
+  | 'contactPhone'
+  | 'contactPosition'
+>
 
 export type UpdateAtlasEntityResult =
   | {

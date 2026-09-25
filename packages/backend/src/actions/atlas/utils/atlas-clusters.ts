@@ -2,7 +2,9 @@ import type { AtlasClient, AtlasCluster, AtlasJsonApiResource } from '@/actions/
 import { toClusterFromResource } from '@/actions/atlas/utils/transformers.js'
 import { getSetting } from '@/actions/app/common.js'
 import { SETTINGS_KEYS } from '@/config/constants.js'
-import type { DB } from '@/types.js'
+import type { DB, Logger } from '@/types.js'
+import { taxonomies } from '@/db/schema.js'
+import { eq } from 'drizzle-orm'
 
 export const getClusterByID = async (id: string, atlasClient: AtlasClient): Promise<AtlasCluster> => {
   const cluster = await atlasClient.get<AtlasJsonApiResource>(`/node/cluster/${id}`)
@@ -17,12 +19,19 @@ export const getClustersByRegistrationCode = async (
   atlasIds: string[],
   atlasClient: AtlasClient,
   db: DB,
+  logger: Logger,
 ): Promise<AtlasCluster[]> => {
   if (!regNumber.trim().length) {
     return []
   }
 
-  const countryCode = await getSetting(SETTINGS_KEYS.COUNTRY, db)
+  const countryLocalId = (await getSetting(SETTINGS_KEYS.COUNTRY, db)) || ''
+  const [taxonomy] = await db.select().from(taxonomies).where(eq(taxonomies.id, countryLocalId)).limit(1)
+
+  if (!taxonomy) {
+    logger.warn(`Country with id ${countryLocalId} not found.`)
+    return []
+  }
 
   const list = await atlasClient.get<AtlasJsonApiResource[]>('/node/cluster/', {
     filter: {
@@ -34,7 +43,7 @@ export const getClustersByRegistrationCode = async (
       country_code: {
         path: 'field_country.id',
         operator: '=',
-        value: countryCode,
+        value: taxonomy.atlasId,
       },
     },
   })

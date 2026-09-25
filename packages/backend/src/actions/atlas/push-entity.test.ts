@@ -191,7 +191,11 @@ describe('pushEntity', () => {
       atlasId: 'atlas-missing',
       registrationNumber: '  LU-123  ',
     })
-    const candidate = makeAtlasCluster({ atlasId: 'atlas-candidate' })
+    const candidate = makeAtlasCluster({
+      atlasId: 'atlas-candidate',
+      registrationNumber: 'LU-123',
+      city: 'Luxembourg',
+    })
     updateRemoteEntityMock.mockResolvedValue({
       code: 'not_found',
       atlasId: 'atlas-missing',
@@ -200,15 +204,25 @@ describe('pushEntity', () => {
 
     const result = await callPushEntity()
 
-    expect(findCorrespondencesMock).toHaveBeenCalledWith('LU-123', atlasClient, db)
-    expect(result).toEqual({
+    expect(findCorrespondencesMock).toHaveBeenCalledWith('LU-123', atlasClient, db, logger)
+    expect(result).toMatchObject({
       success: true,
       data: {
         code: 'selection_required',
-        candidates: [candidate],
+        candidates: [
+          {
+            atlasId: 'atlas-candidate',
+            name: 'Remote entity',
+            registrationNumber: 'LU-123',
+            city: 'Luxembourg',
+          },
+        ],
         entityId: 'entity-1',
       },
     })
+    if (result.success && result.data.code === 'selection_required') {
+      expect(result.data.candidates[0]).not.toHaveProperty('countryCode')
+    }
     expect(finalizeEntitySyncSuccessMock).not.toHaveBeenCalled()
     expect(finalizeEntitySyncFailureMock).not.toHaveBeenCalled()
   })
@@ -242,7 +256,7 @@ describe('pushEntity', () => {
 
     const result = await callPushEntity()
 
-    expect(findCorrespondencesMock).toHaveBeenCalledWith('LU-123', atlasClient, db)
+    expect(findCorrespondencesMock).toHaveBeenCalledWith('LU-123', atlasClient, db, logger)
     expect(finalizeEntitySyncSuccessMock).toHaveBeenCalledWith('create', 'entity-1', 'atlas-created', db, logger)
     expect(result).toMatchObject({
       success: true,
@@ -260,14 +274,23 @@ describe('pushEntity', () => {
 
     const result = await callPushEntity()
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       success: true,
       data: {
         code: 'selection_required',
-        candidates,
+        candidates: [
+          { atlasId: 'atlas-1', name: 'Remote entity' },
+          { atlasId: 'atlas-2', name: 'Remote entity' },
+        ],
         entityId: 'entity-1',
       },
     })
+    if (result.success && result.data.code === 'selection_required') {
+      expect(result.data.candidates).toHaveLength(2)
+      for (const correspondence of result.data.candidates) {
+        expect(correspondence).not.toHaveProperty('countryCode')
+      }
+    }
     expect(createRemoteEntityMock).not.toHaveBeenCalled()
     expect(finalizeEntitySyncSuccessMock).not.toHaveBeenCalled()
     expect(finalizeEntitySyncConflictMock).not.toHaveBeenCalled()

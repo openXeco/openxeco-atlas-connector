@@ -79,7 +79,11 @@ export async function syncRoutes(fastify: FastifyInstance): Promise<void> {
     async (request, reply) => {
       try {
         const { id } = idParamSchema.parse(request.params)
-        await actions.pushEntity(id)
+        const result = await actions.pushEntity(id)
+
+        return reply.send({
+          data: result.data,
+        })
       } catch (error) {
         return handleRouteError(error, reply, fastify.log)
       }

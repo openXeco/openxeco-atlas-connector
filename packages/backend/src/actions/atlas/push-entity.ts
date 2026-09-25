@@ -143,9 +143,8 @@ export const pushEntity = async ({
     return _createEntity(id, toClusterInputFromEntity(entity), atlasClient, db, logger)
   }
 
-  // Search for eventual correspondences
   try {
-    const correspondences = await findCorrespondences(registrationNumber, atlasClient, db)
+    const correspondences = await findCorrespondences(registrationNumber, atlasClient, db, logger)
 
     if (!correspondences.length) {
       logger.debug('No correspondences found. Creating the entity in ATLAS.')
@@ -156,7 +155,21 @@ export const pushEntity = async ({
       success: true,
       data: {
         code: 'selection_required',
-        candidates: correspondences,
+        candidates: correspondences.map((c) => ({
+          atlasId: c.atlasId,
+          name: c.name,
+          nameNational: c.nameNational,
+          registrationNumber: c.registrationNumber,
+          streetAddress: c.streetAddress,
+          city: c.city,
+          email: c.email,
+          phone: c.phone,
+          contactEmail: c.contactEmail,
+          contactFirstName: c.contactFirstName,
+          contactLastName: c.contactLastName,
+          contactPhone: c.contactPhone,
+          contactPosition: c.contactPosition,
+        })),
         entityId: id,
       },
     }

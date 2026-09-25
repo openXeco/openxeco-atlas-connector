@@ -8,6 +8,26 @@ import { getApiClient } from '@/lib/api-client'
 import { entitySchema } from '@/schema'
 import { logger } from '@/lib/logger'
 
+export type CorrespondenceCandidate = {
+  atlasId: string
+  name: string
+  nameNational?: string
+  registrationNumber?: string
+  streetAddress?: string
+  city?: string
+  email?: string
+  phone?: string
+  contactEmail?: string
+  contactFirstName?: string
+  contactLastName?: string
+  contactPhone?: string
+  contactPosition?: string
+}
+
+export type PushEntityState =
+  | { success: true; message: string; candidates?: CorrespondenceCandidate[] }
+  | { success: false; error: string }
+
 export async function createEntity(
   _prevState: ManageEntityState | null,
   formData: FormData,
@@ -100,12 +120,23 @@ export async function deleteEntityFormAction(_prevState: unknown, formData: Form
   }
 }
 
-export async function pushEntity(_prevState: unknown, formData: FormData): Promise<ActionState> {
+export async function pushEntity(_prevState: unknown, formData: FormData): Promise<PushEntityState> {
   const id = formData.get('id')
   const apiClient = getApiClient()
 
   try {
-    await apiClient.post(`/sync/entities/${id}/push`, {}, { credentials: 'include' })
+    const response = await apiClient.post<{
+      data: { code: 'synced' } | { code: 'selection_required'; candidates: CorrespondenceCandidate[]; entityId: string }
+    }>(`/sync/entities/${id}/push`, {}, { credentials: 'include' })
+
+    if (response.data.code === 'selection_required') {
+      return {
+        success: true,
+        message: 'Select the matching ATLAS entity.',
+        candidates: response.data.candidates,
+      }
+    }
+
     return {
       success: true,
       message: 'Successfully synced.',
@@ -116,6 +147,23 @@ export async function pushEntity(_prevState: unknown, formData: FormData): Promi
       success: false,
       error: 'Error syncing Entity. Please check the logs',
     }
+  }
+}
+
+export async function selectCorrespondence(_prevState: unknown, formData: FormData): Promise<ActionState> {
+  const id = formData.get('id')
+  const atlasId = formData.get('atlasId')
+
+  try {
+    await getApiClient().post(`/sync/entities/${id}/correspondences`, { atlasId }, { credentials: 'include' })
+
+    return {
+      success: true,
+      message: 'Correspondence linked. Push again to synchronize the entity.',
+    }
+  } catch (error) {
+    logger.error(error)
+    return { success: false, error: 'Unable to link the selected correspondence. Please try again.' }
   }
 }
 
