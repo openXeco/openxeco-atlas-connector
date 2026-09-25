@@ -55,3 +55,6 @@ opencode.*
 
 .localData
 tmp
+
+# Next
+next-env.d.ts
