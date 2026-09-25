@@ -1,115 +1,148 @@
 import type { FastifyInstance } from 'fastify'
-import { z } from 'zod'
-import { eq } from 'drizzle-orm'
 import { db } from '@/config/database.js'
-import { entities } from '../db/schema.js'
 import { authenticate } from '../middleware/auth.js'
 
-import { entitySyncService } from '@/services/sync/entity-sync.js'
-import { sendErrorReply, handleRouteError } from '@/utils/reply-helpers.js'
-import { createEntity } from '@/actions/entities/create.js'
-import { updateEntity } from '@/actions/entities/update.js'
-import { listQuerySchema } from '@/actions/entities/common.js'
-import { getEntities } from '@/actions/entities/list.js'
-import { getEntity } from '@/actions/entities/get.js'
+import { handleRouteError } from '@/utils/reply-helpers.js'
+import { entityActions } from '@/actions/entities/index.js'
+import { getIdFromRequest } from '@/utils/request-helpers.js'
+import { listQuerySchema } from '@/actions/entities/constants.js'
 
 export async function entityRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.get('/', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const { page, limit, status, syncStatus } = listQuerySchema.parse(request.query)
+  const actions = entityActions(db, fastify.log)
 
-      const response = await getEntities({ page, limit, status, syncStatus })
+  fastify.get(
+    '/',
+    {
+      schema: {
+        tags: ['entities'],
+        description: 'List entities with pagination and optional moderation and synchronization status filters.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      try {
+        const { page, limit, status, syncStatus } = listQuerySchema.parse(request.query)
 
-      return reply.send(response)
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
+        const response = await actions.list({ page, limit, status, syncStatus })
 
-  fastify.get('/:id', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
-
-      const entity = await getEntity(id)
-
-      if (!entity) {
-        return sendErrorReply({ reply, type: 'notFound' })
+        return reply.send({ ...response.data })
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
       }
+    },
+  )
 
-      return reply.send({ data: entity })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
+  fastify.get(
+    '/status',
+    {
+      schema: {
+        tags: ['entities'],
+        description: 'Get entity counts grouped by moderation and synchronization status.',
+      },
+      preHandler: authenticate,
+    },
+    async (_request, reply) => {
+      try {
+        const result = await actions.getStatusRecap()
 
-  fastify.post('/', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const entity = await createEntity({ data: request.body, db })
-
-      return reply.status(201).send({
-        data: entity,
-        message: 'Entity created successfully',
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
-
-  fastify.put('/:id', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
-
-      const entity = await updateEntity({ id, data: request.body, db })
-
-      return reply.send({
-        data: entity,
-        message: 'Entity updated successfully',
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
-
-  fastify.delete('/:id', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
-
-      const [existing] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
-
-      if (!existing) {
-        return sendErrorReply({ reply, type: 'notFound' })
+        return reply.send(result)
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
       }
+    },
+  )
 
-      await db.delete(entities).where(eq(entities.id, id))
+  fastify.get(
+    '/:id',
+    {
+      schema: {
+        tags: ['entities'],
+        description: 'Get a local entity by its ID.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      try {
+        const id = getIdFromRequest(request.params)
 
-      return reply.send({
-        message: 'Entity deleted successfully',
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
+        const result = await actions.get(id)
 
-  fastify.post('/:id/push', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      const { id } = z.object({ id: z.string().uuid() }).parse(request.params)
+        return reply.send({ data: result.data })
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
+      }
+    },
+  )
 
-      const result = await entitySyncService.pushEntity(id)
+  fastify.post(
+    '/',
+    {
+      schema: {
+        tags: ['entities'],
+        description: 'Create a local entity.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      try {
+        const result = await actions.create(request.body)
 
-      if (result.success) {
-        return reply.send({
-          data: result.atlasId,
-          message: 'Entity synced to ATLAS successfully',
+        return reply.status(201).send({
+          data: result.data,
+          message: 'Entity created successfully',
         })
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
       }
+    },
+  )
 
-      return sendErrorReply({
-        reply,
-        type: result.error === 'CONFLICT' ? 'conflict' : 'unexpected',
-        message: result.error,
-      })
-    } catch (error) {
-      return handleRouteError(error, reply, fastify)
-    }
-  })
+  fastify.put(
+    '/:id',
+    {
+      schema: {
+        tags: ['entities'],
+        description: 'Update a local entity by its ID.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      try {
+        const id = getIdFromRequest(request.params)
+
+        const result = await actions.update(id, request.body)
+
+        return reply.send({
+          data: result.data,
+          message: 'Entity updated successfully',
+        })
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
+      }
+    },
+  )
+
+  fastify.delete(
+    '/:id',
+    {
+      schema: {
+        tags: ['entities'],
+        description: 'Delete a local entity by its ID.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      try {
+        const id = getIdFromRequest(request.params)
+
+        await actions.delete(id)
+
+        return reply.send({
+          message: 'Entity deleted successfully',
+        })
+      } catch (error) {
+        return handleRouteError(error, reply, fastify.log)
+      }
+    },
+  )
 }

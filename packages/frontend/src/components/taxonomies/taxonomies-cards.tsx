@@ -33,33 +33,27 @@ export const TaxonomiesCards = () => {
   return (
     <>
       <div className='mb-6 grid gap-4 md:grid-cols-3'>
-        <FullCard title={'Total Types'} Icon={Database}>
-          <div className='text-2xl font-bold'>{TAXONOMY_TYPES.length}</div>
-          <p className='text-xs text-muted-foreground'>Taxonomy categories</p>
-        </FullCard>
+        <FullCard
+          title={'Total Types'}
+          Icon={Database}
+          value={TAXONOMY_TYPES.length}
+          description={'Taxonomy categories'}
+        />
 
-        <FullCard title={'Total Terms'} Icon={Database}>
-          <div className='text-2xl font-bold'>{isLoading ? '...' : total.toLocaleString()}</div>
-          <p className='text-xs text-muted-foreground'>Across all types</p>
-        </FullCard>
+        <FullCard title={'Total Terms'} Icon={Database} value={isLoading ? '...' : total.toLocaleString()} />
       </div>
 
       <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {TAXONOMY_TYPES.map((taxonomyType) => (
           <FullCard
+            variant={'clickable'}
             key={taxonomyType.type}
             title={taxonomyType.label}
             Icon={ChevronRight}
             className={'cursor-pointer transition-colors hover:bg-accent'}
             onClick={() => router.push(`/taxonomies/${taxonomyType.type}`)}
-          >
-            <div className='flex items-center justify-between'>
-              <span className='text-sm text-muted-foreground'>Terms:</span>
-              <span className='text-lg font-semibold'>
-                {isLoading ? '...' : (stats[taxonomyType.type] || 0).toLocaleString()}
-              </span>
-            </div>
-          </FullCard>
+            value={isLoading ? '...' : stats[taxonomyType.type] || 0}
+          />
         ))}
       </div>
     </>

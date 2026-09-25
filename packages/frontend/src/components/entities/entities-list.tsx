@@ -49,10 +49,6 @@ export const EntitiesList = () => {
     router.push(`/entities/${id}`)
   }
 
-  const handleEditEntity = (id: string) => {
-    router.push(`/entities/${id}/edit`)
-  }
-
   const handleDeleteEntity = async (id: string) => {
     if (!confirm('Are you sure you want to delete this entity?')) {
       return
@@ -103,7 +99,6 @@ export const EntitiesList = () => {
             columns={columns({
               onViewAction: handleViewEntity,
               onDeleteAction: handleDeleteEntity,
-              onEditAction: handleEditEntity,
             })}
             data={filteredEntities}
           />

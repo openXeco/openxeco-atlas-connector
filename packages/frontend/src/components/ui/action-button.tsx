@@ -2,7 +2,7 @@
 
 import type React from 'react'
 import { Button, type ButtonProps } from '@/components/ui/button'
-import { RefreshCw, Trash2, AlertCircle, type LucideIcon, DatabaseArrowUp } from 'lucide-react'
+import { RefreshCw, Trash2, AlertCircle, type LucideIcon, DatabaseArrowUp, DatabaseArrowDown } from 'lucide-react'
 import { Message } from '@/components/ui/message'
 import type { ActionState } from '@/types'
 
@@ -51,7 +51,7 @@ const getDefaultUI = ({
         syncingLabel: syncingLabel || 'Checking...',
         Icon: RefreshCw,
         className: 'gap-2 max-w-max',
-        buttonVariant: 'ghost',
+        buttonVariant: 'secondary',
         animation: 'animate-spin',
         hideStatusMessage: true,
       }
@@ -80,9 +80,18 @@ const getDefaultUI = ({
 
     case 'push':
       return {
-        label: label || 'Push}',
+        label: label || 'Push',
         syncingLabel: syncingLabel || 'Pushing...',
         Icon: DatabaseArrowUp,
+        className: 'gap-2 max-w-max',
+        animation: 'animate-pulse',
+      }
+
+    case 'pull':
+      return {
+        label: label || 'Pull',
+        syncingLabel: syncingLabel || 'Pulling...',
+        Icon: DatabaseArrowDown,
         className: 'gap-2 max-w-max',
         animation: 'animate-pulse',
       }

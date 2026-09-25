@@ -26,92 +26,111 @@ export async function importRoutes(fastify: FastifyInstance): Promise<void> {
    *
    * POST /api/import/openxeco
    */
-  fastify.post('/openxeco', { preHandler: authenticate }, async (request, reply) => {
-    try {
-      // Validate request body
-      const parseResult = importCredentialsSchema.safeParse(request.body)
-      if (!parseResult.success) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Invalid credentials format',
-          details: parseResult.error.flatten(),
-        })
-      }
-
-      const { email, password } = parseResult.data
-
-      // Login to OpenXeco
-      let session: OpenXecoSession
+  fastify.post(
+    '/openxeco',
+    {
+      schema: {
+        description: 'Fetch ECCC registration form answers from cybersecurity.lu and transform them into entity data.',
+      },
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
       try {
-        session = await openXecoClient.login({ email, password })
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Login failed'
-        fastify.log.error({ email, error: message }, 'OpenXeco import: login failed')
-        const statusCode = message.includes('Invalid credentials') ? 401 : 502
-        return reply.status(statusCode).send({
-          error: statusCode === 401 ? 'Authentication Failed' : 'External API Error',
-          message,
-        })
-      }
+        // Validate request body
+        const parseResult = importCredentialsSchema.safeParse(request.body)
+        if (!parseResult.success) {
+          return reply.status(400).send({
+            error: 'Validation Error',
+            message: 'Invalid credentials format',
+            details: parseResult.error.flatten(),
+          })
+        }
 
-      // Fetch form questions and answers
-      let questions: OpenXecoFormQuestion[]
-      let answers: OpenXecoFormAnswer[]
-      try {
-        ;[questions, answers] = await Promise.all([
-          openXecoClient.getFormQuestions({ formId: ECCC_FORM_ID, session }),
-          openXecoClient.getFormAnswers({ formId: ECCC_FORM_ID, session }),
-        ])
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to fetch form data'
-        return reply.status(502).send({
-          error: 'External API Error',
-          message: `Failed to fetch data from cybersecurity.lu: ${message}`,
-        })
-      }
+        const { email, password } = parseResult.data
 
-      // Check if user has answers
-      if (!answers || answers.length === 0) {
-        return reply.status(404).send({
-          error: 'No Data Found',
+        // Login to OpenXeco
+        let session: OpenXecoSession
+        try {
+          session = await openXecoClient.login({ email, password })
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Login failed'
+          fastify.log.error({ email, error: message }, 'OpenXeco import: login failed')
+          const statusCode = message.includes('Invalid credentials') ? 401 : 502
+          return reply.status(statusCode).send({
+            error: statusCode === 401 ? 'Authentication Failed' : 'External API Error',
+            message,
+          })
+        }
+
+        // Fetch form questions and answers
+        let questions: OpenXecoFormQuestion[]
+        let answers: OpenXecoFormAnswer[]
+        try {
+          ;[questions, answers] = await Promise.all([
+            openXecoClient.getFormQuestions({ formId: ECCC_FORM_ID, session }),
+            openXecoClient.getFormAnswers({ formId: ECCC_FORM_ID, session }),
+          ])
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to fetch form data'
+          return reply.status(502).send({
+            error: 'External API Error',
+            message: `Failed to fetch data from cybersecurity.lu: ${message}`,
+          })
+        }
+
+        // Check if user has answers
+        if (!answers || answers.length === 0) {
+          return reply.status(404).send({
+            error: 'No Data Found',
+            message:
+              'No form answers found for this account. Please complete the ECCC registration form on cybersecurity.lu first.',
+          })
+        }
+
+        // Transform answers to entity format
+        const result = await openXecoFormTransformer.transform(answers, questions)
+
+        return reply.send({
+          data: {
+            entity: result.entity,
+            questionsCount: questions.length,
+            answersCount: answers.length,
+          },
+          warnings: result.warnings,
+          errors: result.errors,
+          unmappedAnswers: result.unmappedAnswers,
           message:
-            'No form answers found for this account. Please complete the ECCC registration form on cybersecurity.lu first.',
+            result.errors.length === 0 ? 'Form data imported successfully' : 'Form data imported with some errors',
+        })
+      } catch (error) {
+        fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Import from OpenXeco failed')
+        return reply.status(500).send({
+          error: 'Internal Server Error',
+          message: error instanceof Error ? error.message : 'Failed to import form data',
         })
       }
-
-      // Transform answers to entity format
-      const result = await openXecoFormTransformer.transform(answers, questions)
-
-      return reply.send({
-        data: {
-          entity: result.entity,
-          questionsCount: questions.length,
-          answersCount: answers.length,
-        },
-        warnings: result.warnings,
-        errors: result.errors,
-        unmappedAnswers: result.unmappedAnswers,
-        message: result.errors.length === 0 ? 'Form data imported successfully' : 'Form data imported with some errors',
-      })
-    } catch (error) {
-      fastify.log.error(error instanceof Error ? error : { message: String(error) }, 'Import from OpenXeco failed')
-      return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to import form data',
-      })
-    }
-  })
+    },
+  )
 
   /**
    * Get import status/info (for debugging)
    *
    * GET /api/import/openxeco/info
    */
-  fastify.get('/openxeco/info', { preHandler: authenticate }, async (_request, reply) => {
-    return reply.send({
-      formId: ECCC_FORM_ID,
-      apiBaseUrl: 'https://api.cybersecurity.lu',
-      description: 'Import ECCC registration form data from cybersecurity.lu',
-    })
-  })
+  fastify.get(
+    '/openxeco/info',
+    {
+      schema: {
+        description: 'Get the OpenXeco import form ID and API URL.',
+      },
+      preHandler: authenticate,
+    },
+    async (_request, reply) => {
+      return reply.send({
+        formId: ECCC_FORM_ID,
+        apiBaseUrl: 'https://api.cybersecurity.lu',
+        description: 'Import ECCC registration form data from cybersecurity.lu',
+      })
+    },
+  )
 }

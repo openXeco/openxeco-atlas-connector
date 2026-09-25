@@ -1,0 +1,74 @@
+import { describe, expect, it } from 'vitest'
+
+import { findConflictFields, normalizeClusterField } from '@/actions/atlas/utils/conflicts.js'
+import { makeAtlasCluster, makeAtlasInput } from '@/actions/atlas/test-support/fixtures.js'
+
+describe('normalizeClusterField', () => {
+  it('treats null and undefined scalar values as the same absent value', () => {
+    expect(normalizeClusterField('website', null)).toBeNull()
+    expect(normalizeClusterField('website', undefined)).toBeNull()
+  })
+
+  it('preserves multiple national names instead of discarding additional values', () => {
+    expect(normalizeClusterField('nameNational', ['First name', 'Second name'])).toEqual(['First name', 'Second name'])
+  })
+
+  it('sorts taxonomy identifiers without mutating the source array', () => {
+    const ids = ['sector-2', 'sector-1']
+
+    expect(normalizeClusterField('sectorIds', ids)).toEqual(['sector-1', 'sector-2'])
+    expect(ids).toEqual(['sector-2', 'sector-1'])
+    expect(normalizeClusterField('sectorIds', undefined)).toEqual([])
+  })
+
+  it('treats an absent moderation status as draft', () => {
+    expect(normalizeClusterField('moderationState', undefined)).toBe('draft')
+    expect(normalizeClusterField('moderationState', '')).toBe('draft')
+  })
+})
+
+describe('findConflictFields', () => {
+  it('ignores taxonomy ordering', () => {
+    const local = makeAtlasInput({
+      thematicAreaIds: ['thematic-2', 'thematic-1'],
+    })
+    const remote = makeAtlasCluster({
+      ...local,
+      thematicAreaIds: ['thematic-1', 'thematic-2'],
+    })
+
+    expect(findConflictFields(local, remote)).toEqual([])
+  })
+
+  it('reports a moderation status changed in ATLAS', () => {
+    const local = makeAtlasInput({ moderationState: 'draft' })
+    const remote = makeAtlasCluster({ ...local, moderationState: 'published' })
+
+    expect(findConflictFields(local, remote)).toEqual(['moderationState'])
+  })
+
+  it('treats empty text and missing text as equivalent in either direction', () => {
+    const local = makeAtlasInput({ email: '', phone: undefined })
+    const remote = makeAtlasCluster({ ...local, email: undefined, phone: '' })
+
+    expect(findConflictFields(local, remote)).toEqual([])
+  })
+
+  it('still reports cleared text and an unanswered boolean versus false', () => {
+    const local = makeAtlasInput({ email: 'local@example.com', isHeadquarter: undefined })
+    const remote = makeAtlasCluster({ ...local, email: '', isHeadquarter: false })
+
+    expect(findConflictFields(local, remote)).toEqual(['email', 'isHeadquarter'])
+  })
+
+  it('reports changed scalar and taxonomy fields', () => {
+    const local = makeAtlasInput({ website: 'https://local.example', sectorIds: ['sector-1'] })
+    const remote = makeAtlasCluster({
+      ...local,
+      website: 'https://remote.example',
+      sectorIds: ['sector-2'],
+    })
+
+    expect(findConflictFields(local, remote)).toEqual(['website', 'sectorIds'])
+  })
+})
