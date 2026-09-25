@@ -16,6 +16,10 @@ export const normalizeClusterField = (
     return normalizeClusterField(field, value[0])
   }
 
+  if (field === 'moderationState') {
+    return normalizeField(value || 'draft')
+  }
+
   // Empty form values and absent ATLAS fields represent the same unset value.
   return normalizeField(value === '' ? null : value)
 }

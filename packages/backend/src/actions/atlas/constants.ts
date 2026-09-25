@@ -241,6 +241,7 @@ export const atlasFieldsComparable = [
   'expertiseDescription',
   'goalsToAchieve',
   'goalsToContribute',
+  'moderationState',
   'clusterTypeId',
   'thematicAreaIds',
   'sectorIds',

@@ -20,21 +20,31 @@ describe('normalizeClusterField', () => {
     expect(ids).toEqual(['sector-2', 'sector-1'])
     expect(normalizeClusterField('sectorIds', undefined)).toEqual([])
   })
+
+  it('treats an absent moderation status as draft', () => {
+    expect(normalizeClusterField('moderationState', undefined)).toBe('draft')
+    expect(normalizeClusterField('moderationState', '')).toBe('draft')
+  })
 })
 
 describe('findConflictFields', () => {
-  it('ignores taxonomy ordering and moderation status', () => {
+  it('ignores taxonomy ordering', () => {
     const local = makeAtlasInput({
       thematicAreaIds: ['thematic-2', 'thematic-1'],
-      moderationState: 'draft',
     })
     const remote = makeAtlasCluster({
       ...local,
       thematicAreaIds: ['thematic-1', 'thematic-2'],
-      moderationState: 'published',
     })
 
     expect(findConflictFields(local, remote)).toEqual([])
+  })
+
+  it('reports a moderation status changed in ATLAS', () => {
+    const local = makeAtlasInput({ moderationState: 'draft' })
+    const remote = makeAtlasCluster({ ...local, moderationState: 'published' })
+
+    expect(findConflictFields(local, remote)).toEqual(['moderationState'])
   })
 
   it('treats empty text and missing text as equivalent in either direction', () => {

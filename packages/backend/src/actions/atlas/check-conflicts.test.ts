@@ -70,6 +70,24 @@ describe('checkConflicts', () => {
     await expect(callCheckConflicts()).resolves.toEqual({ success: true, data: {} })
   })
 
+  it('returns the ATLAS moderation status when it differs locally', async () => {
+    getEntityMock.mockResolvedValue({
+      success: true,
+      data: makeEntity({
+        atlasId: 'atlas-1',
+        name: 'Local entity',
+        countryCode: 'LU',
+        status: 'draft',
+      }),
+    })
+    getClusterByIDMock.mockResolvedValue(makeAtlasCluster({ name: 'Local entity', moderationState: 'published' }))
+
+    await expect(callCheckConflicts()).resolves.toEqual({
+      success: true,
+      data: { moderationState: 'published' },
+    })
+  })
+
   it('preserves cleared fields, false booleans and taxonomy values in JSON', async () => {
     getEntityMock.mockResolvedValue({
       success: true,

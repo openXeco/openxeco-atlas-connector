@@ -69,6 +69,34 @@ describe('updateRemoteEntity', () => {
     expect(atlas.patch).not.toHaveBeenCalled()
   })
 
+  it('returns a conflict when ATLAS changed the moderation status', async () => {
+    atlas.get.mockResolvedValue({
+      data: makeAtlasResource({
+        attributes: {
+          title: 'Local entity',
+          field_address: { country_code: 'LU' },
+          moderation_state: 'published',
+          changed: '2026-08-02T10:00:00Z',
+        },
+      }),
+    })
+
+    await expect(
+      updateRemoteEntity({
+        atlasId: 'atlas-1',
+        input: makeAtlasInput({ registrationNumber: undefined, moderationState: 'draft' }),
+        lastSyncedAt: new Date('2026-08-01T10:00:00Z'),
+        atlasClient: atlas.client,
+      }),
+    ).resolves.toMatchObject({
+      code: 'conflict',
+      conflictFields: ['moderationState'],
+      remote: { moderationState: 'published' },
+    })
+
+    expect(atlas.patch).not.toHaveBeenCalled()
+  })
+
   it('patches only changed attributes and omits an unchanged moderation state', async () => {
     atlas.get.mockResolvedValue({
       data: makeAtlasResource({
