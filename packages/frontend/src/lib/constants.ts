@@ -1,4 +1,5 @@
 import type { EntityStatus, SyncCode, SyncStatus } from '@/types'
+import { LayoutDashboard, Tags, Building2, Settings, Globe } from 'lucide-react'
 
 export const ENTITY_STATUSES = [
   'draft',
@@ -169,3 +170,11 @@ export const atlasErrorLabels: Record<string, string> = {
   '422': 'ATLAS validation failed',
   '429': 'ATLAS request limit reached',
 }
+
+export const navigation = [
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Taxonomies', href: '/taxonomies', icon: Tags },
+  { name: 'Entities', href: '/entities', icon: Building2 },
+  { name: 'openXeco', href: '/openXeco', icon: Globe },
+  { name: 'Settings', href: '/settings', icon: Settings },
+] as const

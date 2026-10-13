@@ -4,11 +4,14 @@ import type {
   AtlasJsonApiDocument,
   AtlasRequestParams,
   AtlasQueryParams,
+  AtlasJsonApiError,
 } from '@/actions/atlas/types.js'
-import { ProxyAgent, type RequestInit, fetch } from 'undici'
+import { ProxyAgent, type RequestInit } from 'undici'
 import type { Logger, Env } from '@/types.js'
 
 import { AtlasApiError } from '@/actions/atlas/utils/atlas-api-error.js'
+import { request } from '@/actions/shared/api-request.js'
+import { ExternalApiError } from '@/actions/shared/api-error.js'
 
 class AtlasClient {
   private readonly config: AtlasConfig
@@ -16,7 +19,6 @@ class AtlasClient {
   private tokenExpiry?: Date
   private readonly proxyDispatcher?: ProxyAgent
   private readonly logger: Logger
-  private readonly RETRYABLE_STATUSES = [408, 429, 502, 503, 504]
 
   constructor(config: AtlasConfig, logger: Logger) {
     this.config = config
@@ -83,155 +85,20 @@ class AtlasClient {
       ;(fetchOptions as Record<string, unknown>).dispatcher = this.proxyDispatcher
     }
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      this.logger.info(`ATLAS API request: ${method} ${url.toString()} (attempt ${attempt}/${maxRetries})`)
-
-      try {
-        return await this._executeRequest(url, {
-          ...fetchOptions,
-          signal: AbortSignal.timeout(this.config.timeout ?? 30000),
-        })
-      } catch (e) {
-        const canRetry = attempt < maxRetries && this._isRetrySafeMethod(method)
-
-        if (e instanceof AtlasApiError) {
-          const retryable = canRetry && this.RETRYABLE_STATUSES.includes(e.status)
-
-          if (retryable) {
-            await this._retry(e, attempt, maxRetries)
-            continue
-          }
-
-          this.logger.error(
-            {
-              err: e,
-              status: e.status,
-              errors: e.errors,
-              method,
-              url: url.toString(),
-            },
-            'ATLAS API request failed',
-          )
-
-          throw e
-        }
-
-        // We never retry explicit cancelation
-        if (e instanceof DOMException && e.name === 'AbortError') {
-          this.logger.info({ method, url: url.toString() }, 'ATLAS API request aborted')
-
-          throw e
-        }
-
-        if (e instanceof DOMException && e.name === 'TimeoutError') {
-          if (canRetry) {
-            await this._retry(e, attempt, maxRetries)
-            continue
-          }
-
-          throw new Error('ATLAS API request timed out', {
-            cause: e,
-          })
-        }
-
-        if (e instanceof SyntaxError) {
-          throw new Error('ATLAS API returned an invalid JSON response', {
-            cause: e,
-          })
-        }
-
-        if (e instanceof TypeError) {
-          if (canRetry && this._isTransientNetworkError(e)) {
-            await this._retry(e, attempt, maxRetries)
-            continue
-          }
-
-          throw new Error('ATLAS API transport error', {
-            cause: e,
-          })
-        }
-
-        if (e instanceof Error) {
-          this.logger.error(
-            {
-              err: e,
-              method,
-              url: url.toString(),
-            },
-            'Unexpected ATLAS API error',
-          )
-
-          throw e
-        }
-
-        throw new Error('Unknown ATLAS API failure', {
-          cause: e,
-        })
+    try {
+      return await request<AtlasJsonApiDocument<T>>(url, {
+        fetchOptions,
+        logger: this.logger,
+        maxRetries,
+        timeout: this.config.timeout,
+      })
+    } catch (e) {
+      if (e instanceof ExternalApiError) {
+        throw new AtlasApiError(e.message, e.status, e.errors as AtlasJsonApiError[])
       }
+
+      throw e
     }
-
-    throw new Error('ATLAS API unexpected error after retries.')
-  }
-
-  private async _executeRequest<T = AtlasJsonApiResource>(url: URL, fetchOptions: RequestInit) {
-    const response = await fetch(url.toString(), fetchOptions)
-
-    if (!response.ok) {
-      const data = (await response.json().catch(() => ({}))) as AtlasJsonApiDocument
-      throw new AtlasApiError('ATLAS API error', response.status, data.errors || [])
-    }
-
-    const payload = (await response.json()) as AtlasJsonApiDocument<T>
-
-    if (payload.errors && payload.errors.length > 0) {
-      throw new AtlasApiError('ATLAS API error', response.status, payload.errors)
-    }
-
-    return payload
-  }
-
-  // NOTE: we don't add POST, PUT, PATCH because we're not sure how ATLAS threats duplicate requests
-  private _isRetrySafeMethod(method: string): boolean {
-    return ['GET', 'HEAD', 'OPTIONS'].includes(method)
-  }
-
-  private _isTransientNetworkError(error: TypeError): boolean {
-    const cause = error.cause
-
-    if (!(cause instanceof Error) || !('code' in cause)) {
-      return false
-    }
-
-    const code = String(cause.code)
-
-    return [
-      'ECONNRESET',
-      'ECONNREFUSED',
-      'EPIPE',
-      'ETIMEDOUT',
-      'ENETUNREACH',
-      'EAI_AGAIN',
-      'UND_ERR_CONNECT_TIMEOUT',
-      'UND_ERR_HEADERS_TIMEOUT',
-      'UND_ERR_BODY_TIMEOUT',
-      'UND_ERR_SOCKET',
-    ].includes(code)
-  }
-
-  private async _retry(error: Error, attempt: number, maxAttempts: number): Promise<void> {
-    const delay = Math.min(1000 * 2 ** (attempt - 1), 10_000)
-
-    this.logger.warn(
-      {
-        err: error,
-        attempt,
-        maxAttempts,
-        delay,
-      },
-      'Retrying ATLAS API request',
-    )
-
-    await new Promise((resolve) => setTimeout(resolve, delay))
   }
 
   private _prepareAuthentication(): void {

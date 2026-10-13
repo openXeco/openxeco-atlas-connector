@@ -2,17 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Building2, Tags, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import oxeLogo from '@/assets/openxeco-logo-compact.svg'
 import Image from 'next/image'
-
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Taxonomies', href: '/taxonomies', icon: Tags },
-  { name: 'Entities', href: '/entities', icon: Building2 },
-  { name: 'Settings', href: '/settings', icon: Settings },
-]
+import { navigation } from '@/lib/constants'
 
 export function Sidebar() {
   const pathname = usePathname()

@@ -1,6 +1,6 @@
 import type { ActionArgsWithDb, TaxonomyType, DB } from '@/types.js'
 import { getTaxonomies } from '@/actions/atlas/get-taxonomies.js'
-import { getAtlasClient } from '@/actions/atlas/atlas-client.js'
+import { getAtlasClient } from '@/actions/atlas/utils/atlas-client.js'
 import { config } from '@/config/index.js'
 import { handleActionResult } from '@/utils/action-helpers.js'
 import { syncTaxonomiesByType } from '@/actions/atlas/sync-taxonomies-by-type.js'

@@ -1,8 +1,9 @@
 import type { TaxonomyType } from '@/types.js'
-import type { getAtlasClient } from '@/actions/atlas/atlas-client.js'
+import type { getAtlasClient } from '@/actions/atlas/utils/atlas-client.js'
 import type { atlasFieldsComparable } from '@/actions/atlas/constants.js'
 import type { syncLogsQuerySchema } from '@/actions/atlas/get-sync-logs.js'
 import type { z } from 'zod'
+import type { ExternalApiError } from '@/actions/shared/types.js'
 
 export type SyncLogsQuery = z.infer<typeof syncLogsQuerySchema>
 
@@ -73,7 +74,7 @@ export type AtlasJsonApiError = {
   }
 }
 
-export interface AtlasApiError extends Error {
+export interface AtlasApiError extends ExternalApiError {
   readonly status: number
   readonly errors?: AtlasJsonApiError[]
 }

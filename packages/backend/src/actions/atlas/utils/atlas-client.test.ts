@@ -1,5 +1,5 @@
 import type { Env } from '@/types.js'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fetch } from 'undici'
 import type { AtlasClient } from '@/actions/atlas/types.js'
 import { makeLogger } from '@/actions/atlas/test-support/fakes.js'
@@ -52,16 +52,12 @@ describe('AtlasClient', () => {
     vi.stubEnv('ATLAS_USERNAME', appConfig.ATLAS_USERNAME ?? '')
     vi.stubEnv('ATLAS_PASSWORD', appConfig.ATLAS_PASSWORD ?? '')
 
-    const { getAtlasClient } = await import('@/actions/atlas/atlas-client.js')
+    const { getAtlasClient } = await import('@/actions/atlas/utils/atlas-client.js')
     client = getAtlasClient({ appConfig, logger })
   })
 
   beforeEach(() => {
     fetchMock.mockReset()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   afterAll(() => {
@@ -159,79 +155,5 @@ describe('AtlasClient', () => {
       errors,
     })
     expect(fetchMock).toHaveBeenCalledOnce()
-  })
-
-  it('retries a retryable HTTP response when get allows multiple attempts', async () => {
-    vi.useFakeTimers()
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse(503, { errors: [{ status: '503', title: 'Unavailable' }] }))
-      .mockResolvedValueOnce(jsonResponse(200, { data: [] }))
-
-    const request = client.get('/node/cluster', undefined, 2)
-    await vi.runAllTimersAsync()
-
-    await expect(request).resolves.toEqual({ data: [] })
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-  })
-
-  it('retries a transient transport error when get allows multiple attempts', async () => {
-    vi.useFakeTimers()
-    const cause = Object.assign(new Error('socket closed'), { code: 'UND_ERR_SOCKET' })
-    const transportError = new TypeError('fetch failed', { cause })
-    fetchMock.mockRejectedValueOnce(transportError).mockResolvedValueOnce(jsonResponse(200, { data: [] }))
-
-    const request = client.get('/node/cluster', undefined, 2)
-    await vi.runAllTimersAsync()
-
-    await expect(request).resolves.toEqual({ data: [] })
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-  })
-
-  it('turns a timeout into a request timeout error', async () => {
-    const timeout = new DOMException('The operation was aborted due to timeout', 'TimeoutError')
-    fetchMock.mockRejectedValueOnce(timeout)
-
-    await expect(client.get('/node/cluster')).rejects.toMatchObject({
-      message: 'ATLAS API request timed out',
-      cause: timeout,
-    })
-  })
-
-  it('preserves an explicit request cancellation', async () => {
-    const abort = new DOMException('This operation was aborted', 'AbortError')
-    fetchMock.mockRejectedValueOnce(abort)
-
-    await expect(client.get('/node/cluster')).rejects.toBe(abort)
-  })
-
-  it('identifies an invalid JSON response', async () => {
-    const syntaxError = new SyntaxError('Unexpected end of JSON input')
-    fetchMock.mockResolvedValueOnce({
-      ...jsonResponse(200, {}),
-      json: vi.fn().mockRejectedValue(syntaxError),
-    } as unknown as FetchResponse)
-
-    await expect(client.get('/node/cluster')).rejects.toMatchObject({
-      message: 'ATLAS API returned an invalid JSON response',
-      cause: syntaxError,
-    })
-  })
-
-  it('wraps a non-transient TypeError as a transport error', async () => {
-    const typeError = new TypeError('Invalid request options')
-    fetchMock.mockRejectedValueOnce(typeError)
-
-    await expect(client.get('/node/cluster')).rejects.toMatchObject({
-      message: 'ATLAS API transport error',
-      cause: typeError,
-    })
-    expect(fetchMock).toHaveBeenCalledOnce()
-  })
-
-  it('rethrows an unexpected Error unchanged', async () => {
-    const unexpectedError = new Error('Unexpected failure')
-    fetchMock.mockRejectedValueOnce(unexpectedError)
-
-    await expect(client.get('/node/cluster')).rejects.toBe(unexpectedError)
   })
 })
