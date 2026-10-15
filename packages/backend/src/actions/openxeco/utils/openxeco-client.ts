@@ -14,11 +14,8 @@ import { z } from 'zod'
 
 export class OxeClient {
   private readonly config: OxeClientConfig
-  private readonly credentials: OxeCredentials
   private readonly proxyDispatcher?: ProxyAgent
   private readonly logger: Logger
-  private session?: OxeSession
-  private authentication?: Promise<OxeSession>
   private readonly loginBodySchema = z
     .object({
       access_token: z.string().optional(),
@@ -26,14 +23,8 @@ export class OxeClient {
     })
     .passthrough()
 
-  constructor(config: OxeClientConfig, credentials: OxeCredentials, logger: Logger) {
-    const baseUrl = new URL(config.baseUrl)
-    baseUrl.pathname = `${baseUrl.pathname.replace(/\/+$/, '')}/`
-    baseUrl.search = ''
-    baseUrl.hash = ''
-
-    this.config = { timeout: 30000, ...config, baseUrl: baseUrl.toString() }
-    this.credentials = credentials
+  constructor(config: OxeClientConfig, logger: Logger) {
+    this.config = { timeout: 30000, ...config }
     this.logger = logger
 
     if (config.httpsProxy) {
@@ -41,21 +32,60 @@ export class OxeClient {
     }
   }
 
-  public async get<R = unknown>(path: string, params?: OxeQueryParams, maxRetries = 1): Promise<R> {
-    return await this._request<R>('GET', path, { params }, maxRetries)
+  async login(credentials: OxeCredentials): Promise<OxeSession> {
+    const url = this._buildUrl('/account/login')
+    const fetchOptions: RequestInit = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'User-Agent': 'OpenXeco-ATLAS-Connector/1.0',
+      },
+      body: JSON.stringify(credentials),
+    }
+
+    this._applyProxy(fetchOptions)
+
+    try {
+      return await request<OxeSession>(url, {
+        fetchOptions,
+        logger: this.logger,
+        timeout: this.config.timeout,
+        parseResponse: (response) => this._parseOxeSession(response),
+      })
+    } catch (error) {
+      if (error instanceof ExternalApiError && error.status === 401) {
+        throw new OxeAuthenticationError()
+      }
+
+      if (error instanceof ExternalApiError) {
+        throw new OxeApiError(error.message, error.status, error.errors)
+      }
+
+      throw error
+    }
   }
 
-  public async post<R = unknown>(path: string, options?: OxeRequestParams): Promise<R> {
-    return await this._request<R>('POST', path, options)
+  public async get<R = unknown>(
+    session: OxeSession,
+    path: string,
+    params?: OxeQueryParams,
+    maxRetries = 1,
+  ): Promise<R> {
+    return await this._request<R>('GET', path, session, { params }, maxRetries)
+  }
+
+  public async post<R = unknown>(session: OxeSession, path: string, options?: OxeRequestParams): Promise<R> {
+    return await this._request<R>('POST', path, session, options)
   }
 
   private async _request<R = unknown>(
     method: string,
     path: string,
+    session: OxeSession,
     options?: OxeRequestParams,
     maxRetries = 1,
   ): Promise<R> {
-    const session = await this._prepareAuthentication()
     const url = this._buildUrl(path, options?.params)
     const cookies = [`access_token_cookie=${session.accessToken}`]
 
@@ -84,55 +114,6 @@ export class OxeClient {
         timeout: this.config.timeout,
       })
     } catch (error) {
-      if (error instanceof ExternalApiError) {
-        throw new OxeApiError(error.message, error.status, error.errors)
-      }
-
-      throw error
-    }
-  }
-
-  private async _prepareAuthentication(): Promise<OxeSession> {
-    if (this.session) {
-      return this.session
-    }
-
-    this.authentication ??= this._login()
-
-    try {
-      this.session = await this.authentication
-      return this.session
-    } finally {
-      this.authentication = undefined
-    }
-  }
-
-  private async _login(): Promise<OxeSession> {
-    const url = this._buildUrl('/account/login')
-    const fetchOptions: RequestInit = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'User-Agent': 'OpenXeco-ATLAS-Connector/1.0',
-      },
-      body: JSON.stringify(this.credentials),
-    }
-
-    this._applyProxy(fetchOptions)
-
-    try {
-      return await request<OxeSession>(url, {
-        fetchOptions,
-        logger: this.logger,
-        timeout: this.config.timeout,
-        parseResponse: (response) => this._parseOxeSession(response),
-      })
-    } catch (error) {
-      if (error instanceof ExternalApiError && error.status === 401) {
-        throw new OxeAuthenticationError()
-      }
-
       if (error instanceof ExternalApiError) {
         throw new OxeApiError(error.message, error.status, error.errors)
       }

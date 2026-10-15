@@ -1,21 +1,18 @@
 import type { Logger } from '@/types.js'
+import type { Response } from 'undici'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetch } from 'undici'
 
+import type { OxeSession } from '@/actions/openxeco/types.js'
 import { OxeClient } from '@/actions/openxeco/utils/openxeco-client.js'
+import { ExternalApiError } from '@/actions/shared/api-error.js'
+import { request } from '@/actions/shared/api-request.js'
+import type { ExternalApiRequestOptions } from '@/actions/shared/types.js'
 
-vi.mock('undici', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('undici')>()
+vi.mock('@/actions/shared/api-request.js', () => ({
+  request: vi.fn(),
+}))
 
-  return {
-    ...actual,
-    fetch: vi.fn(),
-  }
-})
-
-type FetchResponse = Awaited<ReturnType<typeof fetch>>
-
-const fetchMock = vi.mocked(fetch)
+const requestMock = vi.mocked(request)
 const logger = {
   debug: vi.fn(),
   info: vi.fn(),
@@ -27,136 +24,179 @@ const credentials = {
   password: 'secret',
 }
 
-const response = (status: number, body: unknown, setCookies: string[] = []): FetchResponse =>
+const response = (body: unknown, setCookies: string[] = []): Response =>
   ({
-    ok: status >= 200 && status < 300,
-    status,
     headers: {
       getSetCookie: vi.fn().mockReturnValue(setCookies),
     },
     json: vi.fn().mockResolvedValue(body),
-  }) as unknown as FetchResponse
+  }) as unknown as Response
+
+const mockLoginResponse = (body: unknown, setCookies: string[] = []): void => {
+  requestMock.mockImplementationOnce(async <R>(_url: URL, options: ExternalApiRequestOptions<R>): Promise<R> => {
+    if (!options.parseResponse) {
+      throw new Error('Expected the login request to provide a response parser')
+    }
+
+    return await options.parseResponse(response(body, setCookies))
+  })
+}
+
+const session: OxeSession = {
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+}
 
 describe('OxeClient', () => {
   beforeEach(() => {
-    fetchMock.mockReset()
+    requestMock.mockReset()
   })
 
-  it('authenticates before GET and sends both authentication cookies', async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        response(200, {}, [
-          'access_token_cookie=access-token; Path=/; HttpOnly',
-          'refresh_token_cookie=refresh-token; Path=/; HttpOnly',
-        ]),
-      )
-      .mockResolvedValueOnce(response(200, [{ id: 1 }]))
-    const client = new OxeClient({ baseUrl: 'https://openxeco.example.test/api' }, credentials, logger)
+  it('sends credentials to the login endpoint', async () => {
+    mockLoginResponse({}, ['access_token_cookie=access-token; Path=/'])
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/api/') }, logger)
 
-    const result = await client.get<Array<{ id: number }>>('/form/get_form_answers', {
-      form_id: 11,
-      active: true,
-      omitted: undefined,
-    })
+    await client.login(credentials)
 
-    expect(result).toEqual([{ id: 1 }])
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-
-    const [loginUrl, loginInit] = fetchMock.mock.calls[0]
-    expect(loginUrl).toBe('https://openxeco.example.test/api/account/login')
-    expect(loginInit).toMatchObject({
+    expect(requestMock).toHaveBeenCalledOnce()
+    const [loginUrl, loginOptions] = requestMock.mock.calls[0]
+    expect(loginUrl.toString()).toBe('https://openxeco.example.test/api/account/login')
+    expect(loginOptions.fetchOptions).toMatchObject({
       method: 'POST',
       body: JSON.stringify(credentials),
+      headers: { 'Content-Type': 'application/json' },
     })
-
-    const [requestUrl, requestInit] = fetchMock.mock.calls[1]
-    const url = new URL(String(requestUrl))
-    const headers = requestInit?.headers as Record<string, string>
-
-    expect(url.pathname).toBe('/api/form/get_form_answers')
-    expect(url.searchParams.get('form_id')).toBe('11')
-    expect(url.searchParams.get('active')).toBe('true')
-    expect(url.searchParams.has('omitted')).toBe(false)
-    expect(requestInit?.method).toBe('GET')
-    expect(headers.Authorization).toBe('Bearer access-token')
-    expect(headers.Cookie).toBe('access_token_cookie=access-token; refresh_token_cookie=refresh-token')
   })
 
-  it('uses login tokens from the response body and sends an authenticated POST', async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        response(200, {
-          access_token: 'body-access-token',
-          refresh_token: 'body-refresh-token',
-        }),
-      )
-      .mockResolvedValueOnce(response(200, { id: 42 }))
-    const client = new OxeClient({ baseUrl: 'https://openxeco.example.test' }, credentials, logger)
+  it('extracts access and refresh tokens from login cookies', async () => {
+    mockLoginResponse({}, [
+      'access_token_cookie=access-token; Path=/; HttpOnly',
+      'refresh_token_cookie=refresh-token; Path=/; HttpOnly',
+    ])
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/') }, logger)
 
-    const result = await client.post<{ id: number }>('/resource', {
-      body: { name: 'Resource' },
-      params: { notify: false },
+    await expect(client.login(credentials)).resolves.toEqual(session)
+  })
+
+  it('extracts access and refresh tokens from the login response body', async () => {
+    mockLoginResponse({ access_token: 'body-access-token', refresh_token: 'body-refresh-token' })
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/') }, logger)
+
+    await expect(client.login(credentials)).resolves.toEqual({
+      accessToken: 'body-access-token',
+      refreshToken: 'body-refresh-token',
     })
+  })
+
+  it('sends the supplied session tokens in authenticated requests without logging in', async () => {
+    requestMock.mockResolvedValueOnce({ id: 1 })
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/') }, logger)
+
+    await client.get(session, '/resource')
+
+    expect(requestMock).toHaveBeenCalledOnce()
+    const [url, options] = requestMock.mock.calls[0]
+    expect(url.pathname).toBe('/resource')
+    expect(options.fetchOptions).toMatchObject({
+      method: 'GET',
+      headers: {
+        Authorization: 'Bearer access-token',
+        Cookie: 'access_token_cookie=access-token; refresh_token_cookie=refresh-token',
+      },
+    })
+  })
+
+  it('omits the refresh cookie when the supplied session has no refresh token', async () => {
+    requestMock.mockResolvedValueOnce({ id: 1 })
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/') }, logger)
+
+    await client.get({ accessToken: 'access-only' }, '/resource')
+
+    expect(requestMock.mock.calls[0][1].fetchOptions?.headers).toMatchObject({
+      Cookie: 'access_token_cookie=access-only',
+    })
+  })
+
+  it('uses each supplied session independently for concurrent requests on the same client', async () => {
+    requestMock.mockResolvedValue({ id: 1 })
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/') }, logger)
+    const otherSession = { accessToken: 'other-access', refreshToken: 'other-refresh' }
+
+    await Promise.all([client.get(session, '/first'), client.get(otherSession, '/second')])
+
+    expect(requestMock).toHaveBeenCalledTimes(2)
+    expect(requestMock.mock.calls[0][1].fetchOptions?.headers).toMatchObject({
+      Authorization: 'Bearer access-token',
+      Cookie: 'access_token_cookie=access-token; refresh_token_cookie=refresh-token',
+    })
+    expect(requestMock.mock.calls[1][1].fetchOptions?.headers).toMatchObject({
+      Authorization: 'Bearer other-access',
+      Cookie: 'access_token_cookie=other-access; refresh_token_cookie=other-refresh',
+    })
+  })
+
+  it('serializes false query parameters and omits nullish values', async () => {
+    requestMock.mockResolvedValueOnce({ id: 1 })
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/api/') }, logger)
+
+    await client.get(session, '/form/get_form_answers', {
+      form_id: 11,
+      active: false,
+      omitted: undefined,
+      empty: null,
+    })
+
+    const [requestUrl] = requestMock.mock.calls[0]
+    expect(requestUrl.pathname).toBe('/api/form/get_form_answers')
+    expect(requestUrl.searchParams.get('form_id')).toBe('11')
+    expect(requestUrl.searchParams.get('active')).toBe('false')
+    expect(requestUrl.searchParams.has('omitted')).toBe(false)
+    expect(requestUrl.searchParams.has('empty')).toBe(false)
+  })
+
+  it('sends a JSON body in POST requests', async () => {
+    requestMock.mockResolvedValueOnce({ id: 42 })
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/') }, logger)
+    const body = { name: 'Resource' }
+
+    const result = await client.post<{ id: number }>(session, '/resource', { body })
 
     expect(result).toEqual({ id: 42 })
-
-    const [requestUrl, requestInit] = fetchMock.mock.calls[1]
-    const headers = requestInit?.headers as Record<string, string>
-
-    expect(requestUrl).toBe('https://openxeco.example.test/resource?notify=false')
-    expect(requestInit?.method).toBe('POST')
-    expect(requestInit?.body).toBe('{"name":"Resource"}')
+    const [requestUrl, requestOptions] = requestMock.mock.calls[0]
+    const headers = requestOptions.fetchOptions?.headers as Record<string, string>
+    expect(requestUrl.toString()).toBe('https://openxeco.example.test/resource')
+    expect(requestOptions.fetchOptions?.method).toBe('POST')
+    expect(requestOptions.fetchOptions?.body).toBe(JSON.stringify(body))
     expect(headers['Content-Type']).toBe('application/json')
-    expect(headers.Authorization).toBe('Bearer body-access-token')
-    expect(headers.Cookie).toBe('access_token_cookie=body-access-token; refresh_token_cookie=body-refresh-token')
   })
 
-  it('reuses the authenticated session across requests', async () => {
-    fetchMock
-      .mockResolvedValueOnce(response(200, {}, ['access_token_cookie=access-token; Path=/']))
-      .mockResolvedValueOnce(response(200, { first: true }))
-      .mockResolvedValueOnce(response(200, { second: true }))
-    const client = new OxeClient({ baseUrl: 'https://openxeco.example.test' }, credentials, logger)
+  it('forwards the configured timeout and requested retry count', async () => {
+    requestMock.mockResolvedValueOnce({ id: 1 })
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/'), timeout: 5000 }, logger)
 
-    await client.get('/first')
-    await client.get('/second')
+    await client.get(session, '/resource', undefined, 3)
 
-    expect(fetchMock).toHaveBeenCalledTimes(3)
-    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/account/login'))).toHaveLength(1)
-  })
-
-  it('shares one login between concurrent requests', async () => {
-    fetchMock
-      .mockResolvedValueOnce(response(200, {}, ['access_token_cookie=access-token; Path=/']))
-      .mockResolvedValueOnce(response(200, { first: true }))
-      .mockResolvedValueOnce(response(200, { second: true }))
-    const client = new OxeClient({ baseUrl: 'https://openxeco.example.test' }, credentials, logger)
-
-    await Promise.all([client.get('/first'), client.get('/second')])
-
-    expect(fetchMock).toHaveBeenCalledTimes(3)
-    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/account/login'))).toHaveLength(1)
+    const [, requestOptions] = requestMock.mock.calls[0]
+    expect(requestOptions.timeout).toBe(5000)
+    expect(requestOptions.maxRetries).toBe(3)
   })
 
   it('maps rejected login credentials to OxeAuthenticationError', async () => {
-    fetchMock.mockResolvedValueOnce(response(401, {}))
-    const client = new OxeClient({ baseUrl: 'https://openxeco.example.test' }, credentials, logger)
+    requestMock.mockRejectedValueOnce(new ExternalApiError('API Error', 401, []))
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/') }, logger)
 
-    await expect(client.get('/resource')).rejects.toMatchObject({
+    await expect(client.login(credentials)).rejects.toMatchObject({
       name: 'OxeAuthenticationError',
       status: 401,
     })
-    expect(fetchMock).toHaveBeenCalledOnce()
   })
 
   it('maps authenticated API failures to OxeApiError', async () => {
     const errors = [{ detail: 'Form not found' }]
-    fetchMock
-      .mockResolvedValueOnce(response(200, {}, ['access_token_cookie=access-token; Path=/']))
-      .mockResolvedValueOnce(response(422, { errors }))
-    const client = new OxeClient({ baseUrl: 'https://openxeco.example.test' }, credentials, logger)
+    requestMock.mockRejectedValueOnce(new ExternalApiError('API Error', 422, errors))
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/') }, logger)
 
-    await expect(client.get('/form')).rejects.toMatchObject({
+    await expect(client.get(session, '/form')).rejects.toMatchObject({
       name: 'OxeApiError',
       status: 422,
       errors,
@@ -164,14 +204,13 @@ describe('OxeClient', () => {
   })
 
   it('rejects a successful login response without an access token', async () => {
-    fetchMock.mockResolvedValueOnce(response(200, { user_id: 123 }))
-    const client = new OxeClient({ baseUrl: 'https://openxeco.example.test' }, credentials, logger)
+    mockLoginResponse({ user_id: 123 })
+    const client = new OxeClient({ baseUrl: new URL('https://openxeco.example.test/') }, logger)
 
-    await expect(client.get('/resource')).rejects.toMatchObject({
+    await expect(client.login(credentials)).rejects.toMatchObject({
       name: 'OxeApiError',
       status: 502,
       message: 'Login succeeded but no authentication token was returned.',
     })
-    expect(fetchMock).toHaveBeenCalledOnce()
   })
 })

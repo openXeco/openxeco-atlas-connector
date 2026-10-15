@@ -1,4 +1,5 @@
 import type { ExternalApiError } from '@/actions/shared/types.js'
+import type { getOxeSessionManager } from '@/actions/openxeco/utils/openxeco-session.js'
 
 export type OxeCredentials = {
   email: string
@@ -11,7 +12,7 @@ export type OxeSession = {
 }
 
 export type OxeClientConfig = {
-  baseUrl: string
+  baseUrl: URL
   timeout?: number
   httpsProxy?: string
 }
@@ -24,3 +25,8 @@ export type OxeRequestParams = {
 }
 
 export interface OxeApiError extends ExternalApiError {}
+
+export type OxeSessionManager = ReturnType<typeof getOxeSessionManager>
+export type OxeActionDependencies = {
+  oxeSessionManager: OxeSessionManager
+}
