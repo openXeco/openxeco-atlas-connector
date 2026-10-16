@@ -52,6 +52,5 @@ export const request = async <T>(
     throw new ApiClientError(message, response.status)
   }
 
-  // response.json() resolves to Promise<unknown>; cast to T since callers supply the expected shape
   return response.json() as unknown as T
 }

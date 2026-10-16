@@ -26,6 +26,10 @@ class OxeSessionManager {
   logout(userId: string): void {
     this.sessions.delete(userId)
   }
+
+  isLogged(userId: string): boolean {
+    return this.sessions.has(userId)
+  }
 }
 
 let oxeSessionManager: OxeSessionManager | undefined

@@ -15,6 +15,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ data: response.data })
   } catch (e) {
-    return handleRouteError(e, logger)
+    return NextResponse.json(handleRouteError(e, logger))
   }
 }

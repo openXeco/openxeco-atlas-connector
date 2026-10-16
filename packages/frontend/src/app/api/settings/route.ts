@@ -13,6 +13,6 @@ export async function GET() {
 
     return NextResponse.json({ data: { general: generalResponse } })
   } catch (e) {
-    return handleRouteError(e, logger)
+    return NextResponse.json(handleRouteError(e, logger))
   }
 }

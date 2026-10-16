@@ -2,11 +2,19 @@
 
 import type React from 'react'
 import { Button, type ButtonProps } from '@/components/ui/button'
-import { RefreshCw, Trash2, AlertCircle, type LucideIcon, DatabaseArrowUp, DatabaseArrowDown } from 'lucide-react'
+import {
+  RefreshCw,
+  Trash2,
+  AlertCircle,
+  type LucideIcon,
+  DatabaseArrowUp,
+  DatabaseArrowDown,
+  LogOut,
+} from 'lucide-react'
 import { Message } from '@/components/ui/message'
 import type { ActionState } from '@/types'
 
-type ActionButtonVariant = 'sync' | 'delete' | 'refresh' | 'alert' | 'push' | 'pull' | 'check'
+type ActionButtonVariant = 'sync' | 'delete' | 'refresh' | 'alert' | 'push' | 'pull' | 'check' | 'logout'
 
 type ActionButtonProps = {
   variant?: ActionButtonVariant
@@ -36,6 +44,14 @@ const getDefaultUI = ({
   hideStatusMessage?: boolean
 } => {
   switch (variant) {
+    case 'logout':
+      return {
+        label: label || 'Logout',
+        syncingLabel: syncingLabel || 'Logging out...',
+        Icon: LogOut,
+        className: 'gap-2 max-w-max',
+        animation: 'animate-bounce',
+      }
     case 'sync':
       return {
         label: label || 'Sync',
