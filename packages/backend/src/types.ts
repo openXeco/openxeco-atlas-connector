@@ -1,6 +1,5 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { relations } from '@/db/relations.js'
-import type pino from 'pino'
 import type { ZodError, z } from 'zod'
 import type {
   SYNC_CODES,
@@ -44,7 +43,7 @@ export type Env = z.infer<typeof envSchema>
 
 export type DB = PostgresJsDatabase<typeof relations>
 
-export type Logger = pino.Logger | FastifyBaseLogger
+export type Logger = FastifyBaseLogger
 
 declare module 'fastify' {
   interface FastifyRequest {
