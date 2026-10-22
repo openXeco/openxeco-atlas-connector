@@ -138,7 +138,6 @@ User and settings endpoints require an administrator token to be executed.
 ## ECCC Registration Fields
 
 The persisted entity model currently includes:
-
 - **Basic info**: name (English + national language), department
 - **Address**: country code (ISO 3166-1), city, street
 - **Contact**: email, phone, website, registration number
@@ -149,7 +148,7 @@ The persisted entity model currently includes:
 - **Taxonomy dimensions**: thematic areas (knowledge domains and sub-domains), sectors, technologies, use cases, fields
   of activity
 - **Workflow**:
-    - `status`: moderation state synchronized with ATLAS
+  - `status`: moderation state synchronized with ATLAS
     - `syncStatus`: synchronization lifecycle state
     - `syncCode`: optional reason associated with a failed synchronization
 
@@ -166,7 +165,6 @@ The entity `status` field is the canonical moderation state. It is mapped to and
 `moderation_state` field.
 
 Supported entity statuses are:
-
 - `draft`
 - `ready_for_publication`
 - `published` (coming from ATLAS)
@@ -178,13 +176,11 @@ Entity creation and update requests currently accept `draft`, `ready_for_publica
 received from ATLAS are stored in the same `status` field.
 
 Supported synchronization statuses are:
-
 - `pending_push`: the entity was created or changed locally and needs to be pushed to ATLAS
 - `synced`: the entity was successfully synchronized with ATLAS
 - `failed`: the last synchronization attempt failed
 
 A failed synchronization can have an optional `syncCode`:
-
 - `conflict`: the local and remote entity data conflict
 - `not_found`: the entity identified by its `atlasId` could not be found
 - `null`: the failure has no specific application-level classification

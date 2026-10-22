@@ -15,7 +15,6 @@ By participating in this project, you agree to abide by our [Code of Conduct](./
 ### Reporting Bugs
 
 If you find a bug, please open an issue on GitHub with the following information:
-
 - **Clear description** of the problem
 - **Steps to reproduce** the issue
 - **Expected vs actual behavior**
@@ -25,7 +24,6 @@ If you find a bug, please open an issue on GitHub with the following information
 ### Suggesting Features
 
 We welcome feature suggestions! When proposing a new feature:
-
 - **Explain the use case** - Why is this feature needed?
 - **Describe the solution** - How should it work?
 - **Consider alternatives** - Any other approaches considered?
@@ -64,6 +62,7 @@ pnpm lint:fix
 
 - All code must be written in TypeScript
 - Run typecheck before committing:
+
   ```bash
   pnpm typecheck
   ```
@@ -80,7 +79,6 @@ refactor: simplify repository structure
 ```
 
 **Prefixes:**
-
 - `feat` - New feature
 - `fix` - Bug fix
 - `docs` - Documentation changes
@@ -116,7 +114,6 @@ pnpm turbo test --filter=@openxeco/atlas-connector-backend
 ### Updating Documentation
 
 When contributing code, please update relevant documentation:
-
 - API changes → Update authentication.md or developer-guide/
 - Database schema changes → Update database.md
 - New features → Add appropriate documentation
@@ -124,7 +121,6 @@ When contributing code, please update relevant documentation:
 ### Building Documentation
 
 The documentation is in the `/docs` folder. Make sure to:
-
 - Use clear headings
 - Include code examples where appropriate
 - Keep tables properly formatted
@@ -137,6 +133,7 @@ The documentation is in the `/docs` folder. Make sure to:
 
 1. **Sync your fork** with the main branch
 2. **Run all checks** locally:
+
    ```bash
    pnpm lint
    pnpm typecheck
@@ -147,7 +144,6 @@ The documentation is in the `/docs` folder. Make sure to:
 ### PR Description
 
 Include in your pull request:
-
 - **Summary** of changes
 - **Related issues** (e.g., "Fixes #123")
 - **Testing performed**
@@ -163,7 +159,6 @@ Include in your pull request:
 ## Questions?
 
 If you have questions about contributing:
-
 - Open an issue for bugs or feature requests
 - Start a discussion for general questions
 - Contact the maintainers via email
